@@ -1,0 +1,24 @@
+# tests/discarded_constructs/pristine.txt — the negative control: pristine upstream c3ff8c53f's first output line
+# (`--exec --batch --nolibc`, measured 2026-11-20) on every program whose answer the fork changed. Tab-separated.
+alignas_alignof	Defined {value: "Specified(4)", stdout: "", stderr: "", blocked: "false"}
+alignas_atomic_typename	Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+alignas_cast	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+alignas_compound_literal	Defined {value: "Specified(1)", stdout: "", stderr: "", blocked: "false"}
+alignas_for_init	Defined {value: "Specified(1)", stdout: "", stderr: "", blocked: "false"}
+alignas_for_init_register	Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+alignas_for_init_two	Defined {value: "Specified(2)", stdout: "", stderr: "", blocked: "false"}
+alignas_for_init_weaker	Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+alignas_sizeof	Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+array_param_const_decl	Defined {value: "Specified(2)", stdout: "", stderr: "", blocked: "false"}
+array_param_restrict_decl	array_param_restrict_decl.c:1:7: error: constraint violation: restrict requires a pointer
+atomic_array_block	internal error: Ctyp.mk_ctype_atomic: called on an invalid inner type
+atomic_param_def	Defined {value: "Specified(1)", stdout: "", stderr: "", blocked: "false"}
+atomic_ptr_block	Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+atomic_ptr_param_abstract	Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+atomic_ptr_param_decl	Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+builtin_expect_compare	Defined {value: "Specified(1)", stdout: "", stderr: "", blocked: "false"}
+builtin_expect_sum	Defined {value: "Specified(1)", stdout: "", stderr: "", blocked: "false"}
+knr_decl_list_after_prototype	Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+knr_ptr_decl_list	knr_ptr_decl_list.c:1:31: error: use of undeclared identifier 'a'
+knr_ptr_no_list	knr_ptr_no_list.c:1:24: error: use of undeclared identifier 'a'
+noreturn_operand_ub	Undefined {ub: "UB071_noreturn", stderr: "", loc: "<1:39--1:55>"}

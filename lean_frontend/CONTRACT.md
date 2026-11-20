@@ -584,3 +584,32 @@ witnesses and are not "thinly tested": they do not answer.
   gives (gcc `-pedantic-errors` rejects them). Witness: `scripts/check_half_mirrors.sh` (row 1), 41 programs (27
   gcc-pinned, 9 fork-pinned, 5 gap controls; the totals and the moved count pinned), pristine's lines the negative
   control (18 moved).
+- **D19 — no parsed construct is silently discarded: every attribute the grammar accepts is carried to Ail, and the
+  other constructs the front end dropped are fixed, diagnosed or refused** ([USER 2026-11-20] ruled, on a consumer's
+  report of eight lost attribute placements, that it be established whether the loss is an instance of a broader
+  category of defect and that the category be repaired if so; the orchestrator's rulings on the census's
+  report-at-once rows are [AGENT 2026-11-20], `docs/2026-11-20_discarded-constructs-census.md` §4). The census found
+  one shape, a syntax wider than its tree, at three hand-overs (parser action to Cabs, Cabs to Ail, Ail to Core).
+  **Attributes** (C23 6.7.12): an attribute reaches the Ail slot of the entity it appertains to where Ail has one (a
+  function, an object with linkage, a typedef name, a tag definition, a member, a statement), and otherwise the
+  sigma's `carried_attributes`, a list of (placement, declared identifier, attributes); `[[a]];` is carried (in a block
+  as an attributed null statement); a nested argument group and a prefixed string literal are carried as source text.
+  The promise is CARRIAGE: the fork gives no attribute a meaning (`[[noreturn]]` is not `_Noreturn`), and the one
+  attribute upstream's desugarer reads, `cerb::byte`, applies at both placements that appertain to the typedef name.
+  Refused: an attribute on a union or enum tag reference (the struct arm's stop), `cerb::with_address` after the name
+  of a block-scope `extern` (in place of upstream's TODO crash), an attribute declaration in a `for`-init clause.
+  **The rest of the category**: an alignment specifier on a `for`-init declaration is applied (C17 6.8.5#3) and the
+  operand of `return` in a `_Noreturn` function is evaluated before the UB071 (C17 6.7.4#8) — fixes; an alignment
+  specifier in a type name is the constraint violation of C17 6.7.5#2, and in a compound literal's type name a
+  refusal (Ail has no alignment there); the `_Atomic` qualifier on a parameter of a function definition, the `_Atomic`
+  qualifier in the specifiers of a block-scope or parameter declaration with a derived declarator, and type
+  qualifiers inside the brackets of an array parameter of a function declaration are refused (upstream attached them
+  at the wrong level or not at all; the specifier form `_Atomic(T)`, the plain object and the qualified pointer are
+  unchanged); old-style identifier and declaration lists that the parser dropped stop with upstream's K&R
+  diagnostic; the forced header's `__builtin_expect` parenthesises its parameter. Refusals are Lem `error`s, one
+  text on both engines by generation (the D11/D12 shape). Left as upstream's, filed: `#pragma` lines are skipped (C17
+  6.10.6#1; `#pragma pack` changes no layout), and a list of accepted constraint violations and missed undefined
+  behaviours (tray 83, 85-93). Deliberate fork-vs-pristine differences, manifested in the fork-drift gate. Witnesses:
+  `scripts/check_attribute_carriage.sh` (row 1: 64 programs; `--full`, Tier B row 17: 202) and
+  `scripts/check_discarded_constructs.sh` (row 1: 45 programs), pristine's answers the negative control; the libc
+  witness `tests/libc_exec/044`. No baselined row moved (`docs/2026-11-20_attribute-preservation-record.md`).

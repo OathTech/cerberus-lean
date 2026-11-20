@@ -1,0 +1,49 @@
+# tests/discarded_constructs/expected.txt — pins of scripts/check_discarded_constructs.sh (contract D19; record
+# lean_frontend/docs/2026-11-20_attribute-preservation-record.md). Tab-separated: name, class, payload[, the Lean
+# engine's line for a `stop`]. Classes are defined in scripts/discard_witness.py. Derived 2026-11-20 from the oracle
+# (`discard_witness.py --derive-exec`) and reviewed row by row against gcc 13 (`-std=gnu2x`, gcc.txt).
+alignas_alignof	stop	alignas_alignof.c:1:47: error: constraint violation: alignment specifier in a type name that is not the type name of a compound literal	Error {msg: "desugaring failed at alignas_alignof.c:1:47-50"}
+alignas_atomic_typename	stop	alignas_atomic_typename.c:1:22: error: constraint violation: alignment specifier in a type name that is not the type name of a compound literal	Error {msg: "desugaring failed at alignas_atomic_typename.c:1:22-25"}
+alignas_block_control	exec	Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+alignas_cast	stop	alignas_cast.c:1:39: error: constraint violation: alignment specifier in a type name that is not the type name of a compound literal	Error {msg: "desugaring failed at alignas_cast.c:1:39-42"}
+alignas_compound_literal	refusal	Cabs_to_ail.desugar_expression: refused - an alignment specifier in the type name of a compound literal (C17 6.7.5#2 permits it there; contract D19): upstream ignores it ('TODO: align_specs is ignored here', c3ff8c53f cabs_to_ail.lem :3321), so the unnamed object is created at its type's natural alignment and its address need not be a multiple of the requested one; Ail's compound literal has no alignment to carry. Declare a named object with the alignment specifier instead.
+alignas_compound_literal_plain	exec	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+alignas_for_init	exec	Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+alignas_for_init_plain	exec	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+alignas_for_init_register	stop	alignas_for_init_register.c:1:48: error: constraint violation: alignment specifier is in the declaration of an object declared with the register storage-class specifier	Error {msg: "desugaring failed at alignas_for_init_register.c:1:48-49"}
+alignas_for_init_two	exec	Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+alignas_for_init_weaker	stop	alignas_for_init_weaker.c:1:39: error: constraint violation: alignment specifier less strict than the declaration type 'signed int'	Error {msg: "desugaring failed at alignas_for_init_weaker.c:1:39-40"}
+alignas_member_control	exec	Defined {value: "Specified(32)", stdout: "", stderr: "", blocked: "false"}
+alignas_sizeof	stop	alignas_sizeof.c:1:45: error: constraint violation: alignment specifier in a type name that is not the type name of a compound literal	Error {msg: "desugaring failed at alignas_sizeof.c:1:45-48"}
+array_param_const_decl	refusal	Cabs_to_ail.desugar_array_declarator: refused - type qualifiers inside the brackets of an array parameter of a function declaration (C17 6.7.6.3#7: they qualify the POINTER the parameter is adjusted to; contract D19): upstream puts them on the element type ('int a[const 1]' becomes 'const int *a'; its own commented code at c3ff8c53f cabs_to_ail.lem :2245-2256 has the pointer placement). Write the parameter as a qualified pointer ('int * const a').
+array_param_plain_decl	exec	Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+array_param_ptr_const_decl	exec	Defined {value: "Specified(1)", stdout: "", stderr: "", blocked: "false"}
+array_param_restrict_decl	refusal	Cabs_to_ail.desugar_array_declarator: refused - type qualifiers inside the brackets of an array parameter of a function declaration (C17 6.7.6.3#7: they qualify the POINTER the parameter is adjusted to; contract D19): upstream puts them on the element type ('int a[const 1]' becomes 'const int *a'; its own commented code at c3ff8c53f cabs_to_ail.lem :2245-2256 has the pointer placement). Write the parameter as a qualified pointer ('int * const a').
+atomic_array_block	refusal	Cabs_to_ail: refused - the _Atomic type qualifier in the specifiers of a block-scope or parameter declaration whose declarator is not a plain identifier ('a') (contract D19): upstream makes the WHOLE declared type atomic there (c3ff8c53f cabs_to_ail.lem :3966, :2567, :2588) where the qualifier belongs to the specified type (C17 6.7.3, 6.7.6): '_Atomic int *p' is a pointer to atomic int, which upstream types as an atomic pointer to int, and an array declarator ends in an internal error; its file-scope arm (wrap_atomic) has the other placement. Write the specifier form _Atomic(T), or a typedef of the atomic type.
+atomic_param_decl_only	exec	Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+atomic_param_def	refusal	Cabs_to_ail.desugar_parameter_declaration: refused - the _Atomic type qualifier on parameter 'x' of a function definition (contract D19): upstream registers the object the function body sees WITHOUT the qualifier (c3ff8c53f cabs_to_ail.lem :2565) while the function type carries it, so typeof, sizeof and & of the parameter see a non-atomic type. Write the parameter with the specifier form _Atomic(T).
+atomic_param_def_specifier	exec	Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+atomic_plain_block	exec	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+atomic_plain_paren_block	exec	Defined {value: "Specified(1)", stdout: "", stderr: "", blocked: "false"}
+atomic_ptr_block	refusal	Cabs_to_ail: refused - the _Atomic type qualifier in the specifiers of a block-scope or parameter declaration whose declarator is not a plain identifier ('p') (contract D19): upstream makes the WHOLE declared type atomic there (c3ff8c53f cabs_to_ail.lem :3966, :2567, :2588) where the qualifier belongs to the specified type (C17 6.7.3, 6.7.6): '_Atomic int *p' is a pointer to atomic int, which upstream types as an atomic pointer to int, and an array declarator ends in an internal error; its file-scope arm (wrap_atomic) has the other placement. Write the specifier form _Atomic(T), or a typedef of the atomic type.
+atomic_ptr_block_specifier	exec	Defined {value: "Specified(1)", stdout: "", stderr: "", blocked: "false"}
+atomic_ptr_file	exec	Defined {value: "Specified(1)", stdout: "", stderr: "", blocked: "false"}
+atomic_ptr_param_abstract	refusal	Cabs_to_ail: refused - the _Atomic type qualifier in the specifiers of a block-scope or parameter declaration whose declarator is not a plain identifier (contract D19): upstream makes the WHOLE declared type atomic there (c3ff8c53f cabs_to_ail.lem :3966, :2567, :2588) where the qualifier belongs to the specified type (C17 6.7.3, 6.7.6): '_Atomic int *p' is a pointer to atomic int, which upstream types as an atomic pointer to int, and an array declarator ends in an internal error; its file-scope arm (wrap_atomic) has the other placement. Write the specifier form _Atomic(T), or a typedef of the atomic type.
+atomic_ptr_param_decl	refusal	Cabs_to_ail: refused - the _Atomic type qualifier in the specifiers of a block-scope or parameter declaration whose declarator is not a plain identifier ('p') (contract D19): upstream makes the WHOLE declared type atomic there (c3ff8c53f cabs_to_ail.lem :3966, :2567, :2588) where the qualifier belongs to the specified type (C17 6.7.3, 6.7.6): '_Atomic int *p' is a pointer to atomic int, which upstream types as an atomic pointer to int, and an array declarator ends in an internal error; its file-scope arm (wrap_atomic) has the other placement. Write the specifier form _Atomic(T), or a typedef of the atomic type.
+atomic_ptr_qualifier_block	exec	Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+builtin_expect_compare	exec	Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+builtin_expect_conditional	exec	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+builtin_expect_likely	exec	Defined {value: "Specified(7)", stdout: "", stderr: "", blocked: "false"}
+builtin_expect_plain	exec	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+builtin_expect_sum	exec	Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+knr_decl_list_after_prototype	parse	knr_decl_list_after_prototype.c:1:1: error: found K&R-style declaration (unsupported)
+knr_empty_parens	exec	Defined {value: "Specified(4)", stdout: "", stderr: "", blocked: "false"}
+knr_plain_decl_list	parse	knr_plain_decl_list.c:1:1: error: found K&R-style declaration (unsupported)
+knr_plain_no_list	exec	Defined {value: "Specified(4)", stdout: "", stderr: "", blocked: "false"}
+knr_ptr_decl_list	parse	knr_ptr_decl_list.c:1:8: error: found K&R-style declaration (unsupported)
+knr_ptr_no_list	parse	knr_ptr_no_list.c:1:8: error: found K&R-style declaration (unsupported)
+knr_ptr_prototype	exec	Defined {value: "Specified(1)", stdout: "", stderr: "", blocked: "false"}
+noreturn_falls_off	ub	Undefined {ub: "UB071_noreturn"
+noreturn_operand_ub	ub	Undefined {ub: "UB045a_division_by_zero"
+noreturn_returns_value	ub	Undefined {ub: "UB071_noreturn"
+noreturn_returns_void	ub	Undefined {ub: "UB071_noreturn"

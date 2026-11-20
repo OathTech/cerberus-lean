@@ -640,6 +640,28 @@ if ! "$ADDRESS_CONSTANTS_SH" --selftest; then
     exit 1
 fi
 
+# No parsed construct is silently discarded (fix/attribute-preservation, 2026-11-20, contract D19; census
+# lean_frontend/docs/2026-11-20_discarded-constructs-census.md): (1) every attribute the grammar accepts reaches
+# Ail -- the row-1 CORE, 64 of the 202 programs under tests/attribute_carriage/ (the consumer's ten placements, the
+# cerb:: rows, one program per placement class; the whole matrix is Tier B row 17, `--full`): both engines print
+# the same pinned `attribute:` lines, the pinned stop, the whole refusal text; (2) the wider category, 40 programs
+# under tests/discarded_constructs/: the for-init alignment and the _Noreturn return operand FIXED, the type-name
+# alignment a constraint violation, the compound-literal alignment, the _Atomic and the array-parameter forms
+# REFUSED with whole texts, the old-style lists stopped, each with its controls. Negative control: pristine's
+# answers (pristine.txt); --selftest: a pristine-replaying pair must fail exactly the moved rows, an engine that
+# drops the carried table, a fixed-line Lean stub and a truncated refusal text must fail. Record
+# lean_frontend/docs/2026-11-20_attribute-preservation-record.md.
+ATTRIBUTE_CARRIAGE_SH="$(dirname "$PURITY_SH")/check_attribute_carriage.sh"
+if ! "$ATTRIBUTE_CARRIAGE_SH" --selftest; then
+    echo "test_unit: attribute-carriage witnesses FAILED"
+    exit 1
+fi
+DISCARDED_CONSTRUCTS_SH="$(dirname "$PURITY_SH")/check_discarded_constructs.sh"
+if ! "$DISCARDED_CONSTRUCTS_SH" --selftest; then
+    echo "test_unit: discarded-construct witnesses FAILED"
+    exit 1
+fi
+
 # The formatter's declared refusals and fixes (fix/printf-refusals, 2026-11-07, contract D16; upstream-tray
 # reports 26, 16, 68, 69, 70): the row-1 CORE, 32 of the 161 programs under tests/printf_refusals/ in libc mode (4 nolibc
 # controls; the whole matrix is Tier B row 15, `--full`) -- in the matrix:

@@ -785,6 +785,20 @@ hygiene items the audit confirmed (each re-verified by the orchestrator):
 
 ## Small items (independent; can ride along with any fix batch)
 
+- **Discarded constructs left as they are (2026-11-20, contract D19; census
+  `docs/2026-11-20_discarded-constructs-census.md` §2, record `docs/2026-11-20_attribute-preservation-record.md` §8).**
+  Filed, not built: `#pragma` lines skipped, `pack` included (tray 85); an identifier list in a non-definition
+  declarator and its nested crash (83); accepted constraint violations — a block-scope typedef's alignment specifier
+  or initializer (86), function specifiers on non-functions (87), a declaration that declares nothing (88), parameter
+  qualifiers lost after a prior declaration (89), a qualified function type at block scope (90), a character array
+  initialized from a wide string (91), excess initializers (92); `const` not enforced on compound literals,
+  parameters and members (93); the loud rows — block-scope `static _Thread_local` (94), the composite array type
+  (95), a `for`-init array of unknown size (96), `static`/qualifiers in a definition's array parameter and a
+  file-scope `_Atomic` array (81, 82). Refused where upstream's placement is wrong, to be lifted when upstream repairs
+  it: the `_Atomic` qualifier on parameters and derived block-scope declarators (81), array-parameter qualifiers
+  (82), the compound literal's alignment specifier (79). No attribute has a meaning; a consumer that wants
+  `[[noreturn]]` to be `_Noreturn` asks for it.
+
 - **`match_pattern`/`typecheck_pattern` fail CLOSED on tuple-arity mismatch — LANDED
   (2026-09-20, `fix/match-pattern-arity`, record
   `docs/2026-09-20_match-pattern-arity-record.md`; cerberus-sl hidden-state note item 7,

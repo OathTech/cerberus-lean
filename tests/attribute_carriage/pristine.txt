@@ -1,0 +1,102 @@
+# tests/attribute_carriage/pristine.txt — the negative control: what pristine upstream c3ff8c53f carried to Ail
+# before the change. Pristine has no carriage dump, so each `carried` row here is DERIVED: the pinned lines minus
+# the probe's marker attribute, for the programs whose marker was absent from pristine's `--pp=ail --ast=ail`
+# (measured 2026-11-20, census docs/2026-11-20_discarded-constructs-census.md section 1; for a row pristine
+# rejected, the lines of an Ail it never built are likewise `-`). The three verdict rows are pristine's
+# measured `--exec --batch --nolibc` lines. Tab-separated.
+a04_decl_block_object	-
+a05_decl_block_static	-
+a09_decl_for_init	-
+a10_decl_file_no_declarator	-
+c01_after_storage_class	-
+c02_after_qualifier	-
+c03_after_function_specifier	-
+c04_after_alignas	-
+d01_after_type_file_object	-
+d02_after_type_block_object	-
+d03_after_return_type_def	-
+d04_after_return_type_decl	-
+d05_after_struct_spec	-
+d06_after_typedef_name	-
+d07_after_enum_spec	-
+d08_after_void	-
+d09_mid_specifiers	-
+d10_after_type_typedef	-
+d11_after_type_param	-
+d12_after_atomic_spec	-
+d13_after_typeof	-
+e05_struct_forward	-
+e06_union_forward	-
+e12_struct_forward_then_def	-
+f02_member_after_type	-
+f04_member_after_qualifier	-
+f05_member_after_alignas	-
+g01_enum_def	-
+g03_enumerator	-
+g04_enumerator_valued	-
+g05_enum_anon_def	-
+h02_after_name_file_function_decl	-
+h03_after_name_function_def	-
+h04_after_name_block_object	-
+h05_after_name_block_object_uninit	-
+h06_after_name_param_def	-
+h07_after_name_param_decl	-
+h08_after_name_typedef	-
+h09_after_name_block_static	-
+h10_after_name_for_init	-
+h11_after_name_block_function	-
+h12_after_name_block_extern	-
+h16_after_name_block_typedef	-
+i01_after_array_file	-
+i02_after_array_block	-
+i03_after_array_param	-
+i04_after_array_member	-
+j01_after_params_decl	-
+j02_after_params_def	-
+j03_after_params_fnptr	-
+j04_after_params_typedef	-
+k01_after_star_file	-
+k02_after_star_block	-
+k03_after_star_param	-
+k04_after_star_return	-
+k05_after_star_qualified	-
+k06_after_star_typename	-
+l01_param_leading_def	-
+l02_param_leading_decl	-
+l03_param_leading_abstract	-
+l04_param_leading_fnptr	-
+l05_param_leading_second	-
+l06_param_leading_void	-
+m01_typename_sizeof	-
+m02_typename_cast	-
+m03_typename_compound_literal	-
+m04_typename_alignof	-
+m05_abs_array	-
+m06_abs_function	-
+m07_abs_param_array	-
+m08_abs_param_function	-
+m09_typename_generic	-
+m10_typename_atomic	-
+m11_typename_alignas	-
+m12_typename_va_arg	-
+m13_typename_offsetof	-
+m14_typename_typeof	-
+q07_nested_paren_arg	object g: m::mk() @ q07_nested_paren_arg.c:1:6-8
+q08_nested_bracket_arg	object g: m::mk() @ q08_nested_bracket_arg.c:1:6-8
+q09_nested_brace_arg	object g: m::mk() @ q09_nested_brace_arg.c:1:6-8
+q18_string_then_nested	object g: m::mk("s") @ q18_string_then_nested.c:1:6-8
+q20_wide_string_arg	object g: m::mk("s") @ q20_wide_string_arg.c:1:6-8
+r03_std_maybe_unused	-
+r06_std_unsequenced	-
+r07_std_reproducible	-
+t03_after_parameter_list	function sample: rc::returns("{0} @ int<i32>") @ t03_after_parameter_list.c:1:32-39 ;; function sample: rc::args("int<i32>") @ t03_after_parameter_list.c:1:7-11 ;; definition sample: rc::returns("{0} @ int<i32>") @ t03_after_parameter_list.c:1:32-39 ;; definition sample: rc::args("int<i32>") @ t03_after_parameter_list.c:1:7-11
+t04_after_function_name	function sample: rc::returns("{0} @ int<i32>") @ t04_after_function_name.c:1:32-39 ;; function sample: rc::args("int<i32>") @ t04_after_function_name.c:1:7-11 ;; definition sample: rc::returns("{0} @ int<i32>") @ t04_after_function_name.c:1:32-39 ;; definition sample: rc::args("int<i32>") @ t04_after_function_name.c:1:7-11
+t05_after_return_type	function sample: rc::returns("{0} @ int<i32>") @ t05_after_return_type.c:1:32-39 ;; function sample: rc::args("int<i32>") @ t05_after_return_type.c:1:7-11 ;; definition sample: rc::returns("{0} @ int<i32>") @ t05_after_return_type.c:1:32-39 ;; definition sample: rc::args("int<i32>") @ t05_after_return_type.c:1:7-11
+t06_after_parameter_name	function sample: rc::returns("{0} @ int<i32>") @ t06_after_parameter_name.c:1:32-39 ;; function sample: rc::args("int<i32>") @ t06_after_parameter_name.c:1:7-11 ;; definition sample: rc::returns("{0} @ int<i32>") @ t06_after_parameter_name.c:1:32-39 ;; definition sample: rc::args("int<i32>") @ t06_after_parameter_name.c:1:7-11
+t07_on_parameter	function sample: rc::returns("{0} @ int<i32>") @ t07_on_parameter.c:1:32-39 ;; function sample: rc::args("int<i32>") @ t07_on_parameter.c:1:7-11 ;; definition sample: rc::returns("{0} @ int<i32>") @ t07_on_parameter.c:1:32-39 ;; definition sample: rc::args("int<i32>") @ t07_on_parameter.c:1:7-11
+t08_after_local_type	function sample: rc::returns("{0} @ int<i32>") @ t08_after_local_type.c:1:32-39 ;; function sample: rc::args("int<i32>") @ t08_after_local_type.c:1:7-11 ;; definition sample: rc::returns("{0} @ int<i32>") @ t08_after_local_type.c:1:32-39 ;; definition sample: rc::args("int<i32>") @ t08_after_local_type.c:1:7-11
+t09_after_local_name	function sample: rc::returns("{0} @ int<i32>") @ t09_after_local_name.c:1:32-39 ;; function sample: rc::args("int<i32>") @ t09_after_local_name.c:1:7-11 ;; definition sample: rc::returns("{0} @ int<i32>") @ t09_after_local_name.c:1:32-39 ;; definition sample: rc::args("int<i32>") @ t09_after_local_name.c:1:7-11
+t10_on_local_declaration	function sample: rc::returns("{0} @ int<i32>") @ t10_on_local_declaration.c:1:32-39 ;; function sample: rc::args("int<i32>") @ t10_on_local_declaration.c:1:7-11 ;; definition sample: rc::returns("{0} @ int<i32>") @ t10_on_local_declaration.c:1:32-39 ;; definition sample: rc::args("int<i32>") @ t10_on_local_declaration.c:1:7-11
+u_byte_after_name_bad	Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+u_gen_after_name	Defined {value: "Specified(1)", stdout: "", stderr: "", blocked: "false"}
+u_gen_block_after_name	Defined {value: "Specified(1)", stdout: "", stderr: "", blocked: "false"}

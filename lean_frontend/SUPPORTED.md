@@ -68,6 +68,16 @@ row 1): the `printf` family's conversions are supported or refused as follows; a
 refusal is a loud stop on both engines (oracle exit 125, Lean abort 134) with one
 attributed text naming the conversion, never a wrong answer.
 
+Attributes and discarded constructs (contract D19, 2026-11-20; witnesses
+`scripts/check_attribute_carriage.sh` and `scripts/check_discarded_constructs.sh`, row 1): a
+C23 `[[...]]` attribute is carried to Ail wherever the grammar accepts it and is given
+no meaning (a standard attribute changes nothing the engines compute); GNU
+`__attribute__` is a parse error. Refused with an attributed text: an alignment
+specifier in a compound literal's type name, the `_Atomic` qualifier on a parameter of a
+function definition or with a pointer/array declarator at block scope or in a
+parameter (write `_Atomic(T)`), qualifiers inside an array parameter's brackets in a
+function declaration. `#pragma` lines are ignored, `#pragma pack` included.
+
 | Conversion / form | State |
 |---|---|
 | `%d %i %o %u %x %X` with `hh h l ll j z t` and none; `%c`; `%s` (precision honoured); `%p` (`void *`; the text is implementation-defined, pinned); `%%` | SUPPORTED, = gcc 13 on the witness rows |

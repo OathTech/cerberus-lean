@@ -1,0 +1,207 @@
+# tests/attribute_carriage/expected.txt — pins of scripts/check_attribute_carriage.sh (contract D19; record
+# lean_frontend/docs/2026-11-20_attribute-preservation-record.md). Tab-separated: name, class, payload[, the Lean
+# engine's line for a `stop`]. Classes are defined in scripts/discard_witness.py; a `carried` payload is the list of
+# `attribute:` lines both engines print (cabs_to_ail.lem show_attribute_carriage), ` ;; `-joined, `-` for none.
+# Derived 2026-11-20 from the oracle (`discard_witness.py --derive`), the u_gen_*/u_byte_* rows pinned by verdict.
+a01_decl_file_object	carried	object g: m::mk("s") @ a01_decl_file_object.c:1:6-8
+a02_decl_file_function	carried	function f: m::mk("s") @ a02_decl_file_function.c:1:6-8
+a03_decl_file_typedef	carried	typedef T: m::mk("s") @ a03_decl_file_typedef.c:1:6-8
+a04_decl_block_object	carried	carried declaration y: m::mk("s") @ a04_decl_block_object.c:1:23-25
+a05_decl_block_static	carried	carried declaration y: m::mk("s") @ a05_decl_block_static.c:1:23-25
+a06_decl_block_extern	carried	object g: m::mk("s") @ a06_decl_block_extern.c:1:30-32
+a07_decl_block_function	carried	function f: m::mk("s") @ a07_decl_block_function.c:1:23-25
+a08_decl_block_typedef	carried	typedef T: m::mk("s") @ a08_decl_block_typedef.c:1:23-25
+a09_decl_for_init	carried	carried declaration i: m::mk("s") @ a09_decl_for_init.c:1:28-30
+a10_decl_file_no_declarator	carried	carried declaration -: m::mk("s") @ a10_decl_file_no_declarator.c:1:6-8
+a11_decl_file_object_multi	carried	object g: m::mk("s") @ a11_decl_file_object_multi.c:1:6-8 ;; object h: m::mk("s") @ a11_decl_file_object_multi.c:1:6-8
+b01_attrdecl_file	carried	carried attribute-declaration -: m::mk("s") @ b01_attrdecl_file.c:1:6-8
+b02_attrdecl_block	carried	statement skip: m::mk("s") @ b02_attrdecl_block.c:1:23-25
+b03_attrdecl_fallthrough	carried	statement skip: fallthrough() @ b03_attrdecl_fallthrough.c:1:59-70
+b04_attrdecl_twice_block	carried	statement skip: m::mk("s") @ b04_attrdecl_twice_block.c:1:23-25 ;; statement skip: m::mk("s") @ b04_attrdecl_twice_block.c:1:39-41
+b05_attrdecl_then_test	carried	statement skip: m::mk("s") @ b05_attrdecl_then_test.c:1:23-25
+b06_attrdecl_uses_test	stop	b06_attrdecl_uses_test.c:1:48: error: use of undeclared identifier 'test'	Error {msg: "desugaring failed at b06_attrdecl_uses_test.c:1:48:"}
+c01_after_storage_class	carried	carried specifiers g: m::mk("s") @ c01_after_storage_class.c:1:13-15
+c02_after_qualifier	carried	carried specifiers g: m::mk("s") @ c02_after_qualifier.c:1:12-14
+c03_after_function_specifier	carried	carried specifiers f: m::mk("s") @ c03_after_function_specifier.c:1:13-15
+c04_after_alignas	carried	carried specifiers g: m::mk("s") @ c04_after_alignas.c:1:18-20
+d01_after_type_file_object	carried	carried specifiers g: m::mk("s") @ d01_after_type_file_object.c:1:10-12
+d02_after_type_block_object	carried	carried specifiers y: m::mk("s") @ d02_after_type_block_object.c:1:27-29
+d03_after_return_type_def	carried	carried specifiers f: m::mk("s") @ d03_after_return_type_def.c:1:10-12
+d04_after_return_type_decl	carried	carried specifiers f: m::mk("s") @ d04_after_return_type_decl.c:1:10-12
+d05_after_struct_spec	carried	carried specifiers g: m::mk("s") @ d05_after_struct_spec.c:1:26-28
+d06_after_typedef_name	carried	carried specifiers g: m::mk("s") @ d06_after_typedef_name.c:1:23-25
+d07_after_enum_spec	carried	carried specifiers g: m::mk("s") @ d07_after_enum_spec.c:1:20-22
+d08_after_void	carried	carried specifiers f: m::mk("s") @ d08_after_void.c:1:11-13
+d09_mid_specifiers	carried	carried specifiers g: m::mk("s") @ d09_mid_specifiers.c:1:15-17
+d10_after_type_typedef	carried	carried specifiers T: m::mk("s") @ d10_after_type_typedef.c:1:18-20
+d11_after_type_param	carried	carried specifiers x: m::mk("s") @ d11_after_type_param.c:1:16-18
+d12_after_atomic_spec	carried	carried specifiers g: m::mk("s") @ d12_after_atomic_spec.c:1:19-21
+d13_after_typeof	carried	carried specifiers g: m::mk("s") @ d13_after_typeof.c:1:23-25
+e01_struct_def	carried	struct S: m::mk("s") @ e01_struct_def.c:1:13-15
+e02_union_def	carried	union U: m::mk("s") @ e02_union_def.c:1:12-14
+e03_struct_ref_object	stop	e03_struct_ref_object.c:1:22: error: TODO: Attribute constraint violation ==> N2335 6.7.2.1#6 and 6.7.2.3#4 (unknown ISO C reference)	Error {msg: "desugaring failed at e03_struct_ref_object.c:1:22-45"}
+e04_union_ref_object	stop	e04_union_ref_object.c:1:21: error: TODO: Attribute constraint violation ==> N2335 6.7.2.1#6 and 6.7.2.3#4 (unknown ISO C reference)	Error {msg: "desugaring failed at e04_union_ref_object.c:1:21-43"}
+e05_struct_forward	carried	carried tag-declaration S: m::mk("s") @ e05_struct_forward.c:1:13-15
+e06_union_forward	carried	carried tag-declaration U: m::mk("s") @ e06_union_forward.c:1:12-14
+e07_struct_anon_def	carried	struct ?: m::mk("s") @ e07_struct_anon_def.c:1:13-15
+e08_struct_empty_gnu	ub	Undefined {ub: "UB061_no_named_members"
+e09_struct_ref_block	stop	e09_struct_ref_block.c:1:39: error: TODO: Attribute constraint violation ==> N2335 6.7.2.1#6 and 6.7.2.3#4 (unknown ISO C reference)	Error {msg: "desugaring failed at e09_struct_ref_block.c:1:39-62"}
+e10_struct_def_block	carried	struct S: m::mk("s") @ e10_struct_def_block.c:1:30-32
+e11_struct_forward_block	carried	carried tag-declaration S: m::mk("s") @ e11_struct_forward_block.c:1:30-32
+e12_struct_forward_then_def	carried	carried tag-declaration S: m::mk("s") @ e12_struct_forward_then_def.c:1:13-15
+f01_member_leading	carried	member S.m: m::mk("s") @ f01_member_leading.c:1:17-19
+f02_member_after_type	carried	carried specifiers m: m::mk("s") @ f02_member_after_type.c:1:21-23
+f03_member_after_name	carried	member S.m: m::mk("s") @ f03_member_after_name.c:1:23-25
+f04_member_after_qualifier	carried	carried specifiers m: m::mk("s") @ f04_member_after_qualifier.c:1:23-25
+f05_member_after_alignas	carried	carried specifiers m: m::mk("s") @ f05_member_after_alignas.c:1:29-31
+f06_member_bitfield_after_name	stop	f06_member_bitfield_after_name.c:1:35: error: feature not yet supported: bit-fields	Error {msg: "desugaring failed at f06_member_bitfield_after_name.c:1:35-36"}
+f07_member_bitfield_leading	stop	f07_member_bitfield_leading.c:1:35: error: feature not yet supported: bit-fields	Error {msg: "desugaring failed at f07_member_bitfield_leading.c:1:35-36"}
+f08_member_unnamed_bitfield	stop	f08_member_unnamed_bitfield.c:1:40: error: feature not yet supported: bit-fields	Error {msg: "desugaring failed at f08_member_unnamed_bitfield.c:1:40-41"}
+f09_member_flexible	carried	member S.tail: m::mk("s") @ f09_member_flexible.c:1:24-26
+f10_member_leading_multi	carried	member S.m: m::mk("s") @ f10_member_leading_multi.c:1:17-19 ;; member S.n: m::mk("s") @ f10_member_leading_multi.c:1:17-19
+f11_union_member_leading	carried	member U.m: m::mk("s") @ f11_union_member_leading.c:1:16-18
+g01_enum_def	carried	carried enum E: m::mk("s") @ g01_enum_def.c:1:11-13
+g02_enum_ref	stop	g02_enum_ref.c:1:16: error: TODO: Attribute constraint violation ==> an enum specifier without an enumerator list takes no attribute specifier sequence (N2335 6.7.2.2, syntax) (unknown ISO C reference)	Error {msg: "desugaring failed at g02_enum_ref.c:1:16-37"}
+g03_enumerator	carried	carried enumerator EA: m::mk("s") @ g03_enumerator.c:1:18-20
+g04_enumerator_valued	carried	carried enumerator EA: m::mk("s") @ g04_enumerator_valued.c:1:18-20
+g05_enum_anon_def	carried	carried enum -: m::mk("s") @ g05_enum_anon_def.c:1:11-13
+h01_after_name_file_object	carried	object g: m::mk("s") @ h01_after_name_file_object.c:1:12-14
+h02_after_name_file_function_decl	carried	function f: m::mk("s") @ h02_after_name_file_function_decl.c:1:12-14
+h03_after_name_function_def	carried	function f: m::mk("s") @ h03_after_name_function_def.c:1:12-14 ;; definition f: m::mk("s") @ h03_after_name_function_def.c:1:12-14
+h04_after_name_block_object	carried	carried declarator-id y: m::mk("s") @ h04_after_name_block_object.c:1:29-31
+h05_after_name_block_object_uninit	carried	carried declarator-id y: m::mk("s") @ h05_after_name_block_object_uninit.c:1:29-31
+h06_after_name_param_def	carried	carried declarator-id x: m::mk("s") @ h06_after_name_param_def.c:1:18-20
+h07_after_name_param_decl	carried	carried declarator-id x: m::mk("s") @ h07_after_name_param_decl.c:1:18-20
+h08_after_name_typedef	carried	typedef T: m::mk("s") @ h08_after_name_typedef.c:1:20-22
+h09_after_name_block_static	carried	carried declarator-id y: m::mk("s") @ h09_after_name_block_static.c:1:36-38
+h10_after_name_for_init	carried	carried declarator-id i: m::mk("s") @ h10_after_name_for_init.c:1:34-36
+h11_after_name_block_function	carried	function f: m::mk("s") @ h11_after_name_block_function.c:1:29-31
+h12_after_name_block_extern	carried	object g: m::mk("s") @ h12_after_name_block_extern.c:1:43-45
+h13_after_name_file_multi	carried	object g: m::mk("s") @ h13_after_name_file_multi.c:1:12-14
+h14_after_name_array	carried	object g: m::mk("s") @ h14_after_name_array.c:1:12-14
+h15_after_name_paren	carried	object g: m::mk("s") @ h15_after_name_paren.c:1:13-15
+h16_after_name_block_typedef	carried	typedef T: m::mk("s") @ h16_after_name_block_typedef.c:1:37-39
+h17_after_name_file_object_init	carried	object g: m::mk("s") @ h17_after_name_file_object_init.c:1:12-14
+h18_after_name_file_static	carried	object g: m::mk("s") @ h18_after_name_file_static.c:1:19-21
+h19_after_name_file_extern	carried	object g: m::mk("s") @ h19_after_name_file_extern.c:1:19-21
+i01_after_array_file	carried	carried array g: m::mk("s") @ i01_after_array_file.c:1:15-17
+i02_after_array_block	carried	carried array y: m::mk("s") @ i02_after_array_block.c:1:32-34
+i03_after_array_param	carried	carried array x: m::mk("s") @ i03_after_array_param.c:1:21-23
+i04_after_array_member	carried	carried array m: m::mk("s") @ i04_after_array_member.c:1:26-28
+j01_after_params_decl	carried	carried function f: m::mk("s") @ j01_after_params_decl.c:1:18-20
+j02_after_params_def	carried	carried function f: m::mk("s") @ j02_after_params_def.c:1:18-20
+j03_after_params_fnptr	carried	carried function fp: m::mk("s") @ j03_after_params_fnptr.c:1:22-24
+j04_after_params_typedef	carried	carried function F: m::mk("s") @ j04_after_params_typedef.c:1:26-28
+k01_after_star_file	carried	carried pointer g: m::mk("s") @ k01_after_star_file.c:1:12-14
+k02_after_star_block	carried	carried pointer y: m::mk("s") @ k02_after_star_block.c:1:29-31
+k03_after_star_param	carried	carried pointer x: m::mk("s") @ k03_after_star_param.c:1:18-20
+k04_after_star_return	carried	carried pointer f: m::mk("s") @ k04_after_star_return.c:1:12-14
+k05_after_star_qualified	carried	carried pointer g: m::mk("s") @ k05_after_star_qualified.c:1:12-14
+k06_after_star_typename	carried	carried pointer -: m::mk("s") @ k06_after_star_typename.c:1:43-45
+l01_param_leading_def	carried	carried parameter x: m::mk("s") @ l01_param_leading_def.c:1:12-14
+l02_param_leading_decl	carried	carried parameter x: m::mk("s") @ l02_param_leading_decl.c:1:12-14
+l03_param_leading_abstract	carried	carried parameter -: m::mk("s") @ l03_param_leading_abstract.c:1:12-14
+l04_param_leading_fnptr	carried	carried parameter x: m::mk("s") @ l04_param_leading_fnptr.c:1:16-18
+l05_param_leading_second	carried	carried parameter x: m::mk("s") @ l05_param_leading_second.c:1:19-21
+l06_param_leading_void	carried	carried parameter -: m::mk("s") @ l06_param_leading_void.c:1:12-14
+m01_typename_sizeof	carried	carried specifiers -: m::mk("s") @ m01_typename_sizeof.c:1:41-43
+m02_typename_cast	carried	carried specifiers -: m::mk("s") @ m02_typename_cast.c:1:35-37
+m03_typename_compound_literal	carried	carried specifiers -: m::mk("s") @ m03_typename_compound_literal.c:1:35-37
+m04_typename_alignof	carried	carried specifiers -: m::mk("s") @ m04_typename_alignof.c:1:43-45
+m05_abs_array	carried	carried array -: m::mk("s") @ m05_abs_array.c:1:45-47
+m06_abs_function	carried	carried function -: m::mk("s") @ m06_abs_function.c:1:51-53
+m07_abs_param_array	carried	carried array -: m::mk("s") @ m07_abs_param_array.c:1:20-22
+m08_abs_param_function	carried	carried function -: m::mk("s") @ m08_abs_param_function.c:1:23-25
+m09_typename_generic	carried	carried specifiers -: m::mk("s") @ m09_typename_generic.c:1:46-48
+m10_typename_atomic	carried	carried specifiers -: m::mk("s") @ m10_typename_atomic.c:1:18-20
+m11_typename_alignas	carried	carried specifiers -: m::mk("s") @ m11_typename_alignas.c:1:19-21
+m12_typename_va_arg	carried	carried specifiers -: m::mk("s") @ m12_typename_va_arg.c:2:99-101
+m13_typename_offsetof	carried	carried specifiers -: m::mk("s") @ m13_typename_offsetof.c:2:69-71
+m14_typename_typeof	carried	carried specifiers -: m::mk("s") @ m14_typename_typeof.c:1:17-19
+n01_stmt_compound	carried	statement block: m::mk("s") @ n01_stmt_compound.c:1:23-25
+n02_stmt_if	carried	statement if: m::mk("s") @ n02_stmt_if.c:1:23-25
+n03_stmt_switch	carried	statement switch: m::mk("s") @ n03_stmt_switch.c:1:23-25
+n04_stmt_while	carried	statement while: m::mk("s") @ n04_stmt_while.c:1:23-25
+n05_stmt_do	carried	statement do: m::mk("s") @ n05_stmt_do.c:1:23-25
+n06_stmt_for	carried	statement while: m::mk("s") @ n06_stmt_for.c:1:23-25
+n07_stmt_for_decl	carried	statement block: m::mk("s") @ n07_stmt_for_decl.c:1:23-25
+n08_stmt_goto	carried	statement goto: m::mk("s") @ n08_stmt_goto.c:1:23-25
+n09_stmt_continue	carried	statement goto: m::mk("s") @ n09_stmt_continue.c:1:52-54
+n10_stmt_break	carried	statement break: m::mk("s") @ n10_stmt_break.c:1:35-37
+n11_stmt_return	carried	statement return: m::mk("s") @ n11_stmt_return.c:1:23-25
+n12_stmt_expr	carried	statement expression: m::mk("s") @ n12_stmt_expr.c:1:30-32
+n13_stmt_if_else_branch	carried	statement return: m::mk("s") @ n13_stmt_if_else_branch.c:1:37-39
+n14_stmt_loop_body	carried	statement expression: m::mk("s") @ n14_stmt_loop_body.c:1:48-50
+n15_stmt_return_void	carried	statement return: m::mk("s") @ n15_stmt_return_void.c:1:21-23
+n16_stmt_nested_block_decl	carried	statement block: m::mk("s") @ n16_stmt_nested_block_decl.c:1:25-27
+o01_label	carried	statement label: m::mk("s") @ o01_label.c:1:31-33
+o02_case	carried	statement case: m::mk("s") @ o02_case.c:1:36-38
+o03_default	carried	statement default: m::mk("s") @ o03_default.c:1:36-38
+o04_case_range	carried	statement case-range: m::mk("s") @ o04_case_range.c:1:36-38
+o05_label_unused	carried	statement label: m::mk("s") @ o05_label_unused.c:1:23-25
+p01_fundef_leading	carried	function f: m::mk("s") @ p01_fundef_leading.c:1:6-8 ;; definition f: m::mk("s") @ p01_fundef_leading.c:1:6-8
+p02_fundef_leading_static	carried	function f: m::mk("s") @ p02_fundef_leading_static.c:1:6-8 ;; definition f: m::mk("s") @ p02_fundef_leading_static.c:1:6-8
+p03_fundef_decl_then_def	carried	function f: m::mk("s") @ p03_fundef_decl_then_def.c:1:6-8
+p04_fundef_def_then_decl	carried	function f: m::mk("s") @ p04_fundef_def_then_decl.c:1:32-34
+p05_fundef_main	carried	function main: m::mk("s") @ p05_fundef_main.c:1:6-8 ;; definition main: m::mk("s") @ p05_fundef_main.c:1:6-8
+q01_list_two	carried	object g: m::mk("s") @ q01_list_two.c:1:6-8 ;; object g: m::mk2("t") @ q01_list_two.c:1:18-21
+q02_two_specifiers	carried	object g: m::mk("s") @ q02_two_specifiers.c:1:6-8 ;; object g: m::mk2("t") @ q02_two_specifiers.c:1:21-24
+q03_no_namespace	carried	object g: mk("s") @ q03_no_namespace.c:1:3-5
+q04_no_args	carried	object g: m::mk() @ q04_no_args.c:1:6-8
+q05_two_args	carried	object g: m::mk("s", "t") @ q05_two_args.c:1:6-8
+q06_concat_args	carried	object g: m::mk("s" "t") @ q06_concat_args.c:1:6-8
+q07_nested_paren_arg	carried	object g: m::mk(("inner")) @ q07_nested_paren_arg.c:1:6-8
+q08_nested_bracket_arg	carried	object g: m::mk(["inner"]) @ q08_nested_bracket_arg.c:1:6-8
+q09_nested_brace_arg	carried	object g: m::mk({"inner"}) @ q09_nested_brace_arg.c:1:6-8
+q10_int_arg	parse	q10_int_arg.c:1:9: error: unexpected token after '(' and before '1'
+q11_ident_arg	parse	q11_ident_arg.c:1:9: error: unexpected token after '(' and before 'inner'
+q12_empty_args	parse	q12_empty_args.c:1:9: error: unexpected token after '(' and before ')'
+q13_empty_list	parse	q13_empty_list.c:1:3: error: unexpected token after '[[' and before ']'
+q14_trailing_comma	parse	q14_trailing_comma.c:1:14: error: unexpected token after ',' and before ']'
+q15_keyword_name	carried	object g: m::const("s") @ q15_keyword_name.c:1:6:
+q16_mixed_args	parse	q16_mixed_args.c:1:14: error: unexpected token after ',' and before '('
+q17_spaced_brackets	carried	object g: m::mk("s") @ q17_spaced_brackets.c:1:7-9
+q18_string_then_nested	carried	object g: m::mk("s", ("inner")) @ q18_string_then_nested.c:1:6-8
+q19_deprecated_msg	carried	object g: deprecated("inner") @ q19_deprecated_msg.c:1:3-13
+q20_wide_string_arg	carried	object g: m::mk(L"s") @ q20_wide_string_arg.c:1:6-8
+r01_std_deprecated	carried	object g: deprecated() @ r01_std_deprecated.c:1:3-13
+r02_std_fallthrough	carried	statement skip: fallthrough() @ r02_std_fallthrough.c:1:59-70
+r03_std_maybe_unused	carried	carried declaration y: maybe_unused() @ r03_std_maybe_unused.c:1:20-32
+r04_std_nodiscard	carried	function f: nodiscard() @ r04_std_nodiscard.c:1:3-12 ;; definition f: nodiscard() @ r04_std_nodiscard.c:1:3-12
+r05_std_noreturn_returns	carried	function f: noreturn() @ r05_std_noreturn_returns.c:1:3-11 ;; definition f: noreturn() @ r05_std_noreturn_returns.c:1:3-11
+r06_std_unsequenced	carried	carried function f: unsequenced() @ r06_std_unsequenced.c:1:16-27
+r07_std_reproducible	carried	carried function f: reproducible() @ r07_std_reproducible.c:1:16-28
+r08_std_noreturn_underscore	carried	function f: _Noreturn() @ r08_std_noreturn_underscore.c:1:3: ;; definition f: _Noreturn() @ r08_std_noreturn_underscore.c:1:3:
+r09_kw_Noreturn_returns	carried	-
+r10_std_deprecated_dunder	carried	object g: __deprecated__() @ r10_std_deprecated_dunder.c:1:3-17
+s01_gnu_attribute	parse	s01_gnu_attribute.c:1:1: error: unexpected token after '__attribute__' and before '__attribute__'
+s02_gnu_attribute_packed	parse	s02_gnu_attribute_packed.c:1:43: error: unexpected token after '(' and before '('
+s03_gnu_attribute_aligned	parse	s03_gnu_attribute_aligned.c:1:7: error: unexpected token after '__attribute__' and before '__attribute__'
+s04_gnu_attribute_marker	parse	s04_gnu_attribute_marker.c:1:1: error: unexpected token after '__attribute__' and before '__attribute__'
+s05_gnu_attribute_after_struct	parse	s05_gnu_attribute_after_struct.c:1:32: error: unexpected token after 'S' and before 'S'
+s06_std_gnu_packed	carried	struct S: gnu::packed() @ s06_std_gnu_packed.c:1:15-21
+s07_std_gnu_aligned	parse	s07_std_gnu_aligned.c:1:16: error: unexpected token after '(' and before '16'
+t01_function_declaration	carried	function sample: rc::ensures("{False}") @ t01_function_declaration.c:2:7-14 ;; function sample: rc::returns("{0} @ int<i32>") @ t01_function_declaration.c:1:32-39 ;; function sample: rc::args("int<i32>") @ t01_function_declaration.c:1:7-11 ;; definition sample: rc::ensures("{False}") @ t01_function_declaration.c:2:7-14 ;; definition sample: rc::returns("{0} @ int<i32>") @ t01_function_declaration.c:1:32-39 ;; definition sample: rc::args("int<i32>") @ t01_function_declaration.c:1:7-11
+t02_return_statement	carried	function sample: rc::returns("{0} @ int<i32>") @ t02_return_statement.c:1:32-39 ;; function sample: rc::args("int<i32>") @ t02_return_statement.c:1:7-11 ;; definition sample: rc::returns("{0} @ int<i32>") @ t02_return_statement.c:1:32-39 ;; definition sample: rc::args("int<i32>") @ t02_return_statement.c:1:7-11 ;; statement return: rc::ensures("{False}") @ t02_return_statement.c:2:27-34
+t03_after_parameter_list	carried	function sample: rc::returns("{0} @ int<i32>") @ t03_after_parameter_list.c:1:32-39 ;; function sample: rc::args("int<i32>") @ t03_after_parameter_list.c:1:7-11 ;; definition sample: rc::returns("{0} @ int<i32>") @ t03_after_parameter_list.c:1:32-39 ;; definition sample: rc::args("int<i32>") @ t03_after_parameter_list.c:1:7-11 ;; carried function sample: rc::ensures("{False}") @ t03_after_parameter_list.c:2:25-32
+t04_after_function_name	carried	function sample: rc::returns("{0} @ int<i32>") @ t04_after_function_name.c:1:32-39 ;; function sample: rc::args("int<i32>") @ t04_after_function_name.c:1:7-11 ;; function sample: rc::ensures("{False}") @ t04_after_function_name.c:2:18-25 ;; definition sample: rc::returns("{0} @ int<i32>") @ t04_after_function_name.c:1:32-39 ;; definition sample: rc::args("int<i32>") @ t04_after_function_name.c:1:7-11 ;; definition sample: rc::ensures("{False}") @ t04_after_function_name.c:2:18-25
+t05_after_return_type	carried	function sample: rc::returns("{0} @ int<i32>") @ t05_after_return_type.c:1:32-39 ;; function sample: rc::args("int<i32>") @ t05_after_return_type.c:1:7-11 ;; definition sample: rc::returns("{0} @ int<i32>") @ t05_after_return_type.c:1:32-39 ;; definition sample: rc::args("int<i32>") @ t05_after_return_type.c:1:7-11 ;; carried specifiers sample: rc::ensures("{False}") @ t05_after_return_type.c:2:11-18
+t06_after_parameter_name	carried	function sample: rc::returns("{0} @ int<i32>") @ t06_after_parameter_name.c:1:32-39 ;; function sample: rc::args("int<i32>") @ t06_after_parameter_name.c:1:7-11 ;; definition sample: rc::returns("{0} @ int<i32>") @ t06_after_parameter_name.c:1:32-39 ;; definition sample: rc::args("int<i32>") @ t06_after_parameter_name.c:1:7-11 ;; carried declarator-id x: rc::ensures("{False}") @ t06_after_parameter_name.c:2:24-31
+t07_on_parameter	carried	function sample: rc::returns("{0} @ int<i32>") @ t07_on_parameter.c:1:32-39 ;; function sample: rc::args("int<i32>") @ t07_on_parameter.c:1:7-11 ;; definition sample: rc::returns("{0} @ int<i32>") @ t07_on_parameter.c:1:32-39 ;; definition sample: rc::args("int<i32>") @ t07_on_parameter.c:1:7-11 ;; carried parameter x: rc::ensures("{False}") @ t07_on_parameter.c:2:18-25
+t08_after_local_type	carried	function sample: rc::returns("{0} @ int<i32>") @ t08_after_local_type.c:1:32-39 ;; function sample: rc::args("int<i32>") @ t08_after_local_type.c:1:7-11 ;; definition sample: rc::returns("{0} @ int<i32>") @ t08_after_local_type.c:1:32-39 ;; definition sample: rc::args("int<i32>") @ t08_after_local_type.c:1:7-11 ;; carried specifiers y: rc::ensures("{False}") @ t08_after_local_type.c:2:31-38
+t09_after_local_name	carried	function sample: rc::returns("{0} @ int<i32>") @ t09_after_local_name.c:1:32-39 ;; function sample: rc::args("int<i32>") @ t09_after_local_name.c:1:7-11 ;; definition sample: rc::returns("{0} @ int<i32>") @ t09_after_local_name.c:1:32-39 ;; definition sample: rc::args("int<i32>") @ t09_after_local_name.c:1:7-11 ;; carried declarator-id y: rc::ensures("{False}") @ t09_after_local_name.c:2:33-40
+t10_on_local_declaration	carried	function sample: rc::returns("{0} @ int<i32>") @ t10_on_local_declaration.c:1:32-39 ;; function sample: rc::args("int<i32>") @ t10_on_local_declaration.c:1:7-11 ;; definition sample: rc::returns("{0} @ int<i32>") @ t10_on_local_declaration.c:1:32-39 ;; definition sample: rc::args("int<i32>") @ t10_on_local_declaration.c:1:7-11 ;; carried declaration y: rc::ensures("{False}") @ t10_on_local_declaration.c:2:27-34
+u_addr_block_extern_after_name	refusal	Cabs_to_ail.desugar_declaration_base: refused - [[cerb::with_address]] after the declarator-id of the block-scope extern declaration of 'g' (contract D19): the attribute appertains to the declared object (C23 6.7.12.1) and is now carried to its declaration, where upstream's elaboration reads it (translation.lem decode_with_address) and the run then dies in upstream's 'TODO: cerb::with_address() is yet implemented'; the fork neither implements nor alters cerb::with_address, so the placement is refused in place of that crash. Write the object without the attribute.
+u_addr_block_extern_lead	carried	object g: cerb::with_address("0x1000") @ u_addr_block_extern_lead.c:1:33-45
+u_addr_block_static_after_name	carried	carried declarator-id y: cerb::with_address("0x1000") @ u_addr_block_static_after_name.c:1:39-51
+u_addr_block_static_lead	carried	carried declaration y: cerb::with_address("0x1000") @ u_addr_block_static_lead.c:1:26-38
+u_addr_file_after_name	carried	object g: cerb::with_address("0x1000") @ u_addr_file_after_name.c:1:15-27
+u_addr_file_after_type	carried	carried specifiers g: cerb::with_address("0x1000") @ u_addr_file_after_type.c:1:13-25
+u_addr_file_lead	carried	object g: cerb::with_address("0x1000") @ u_addr_file_lead.c:1:9-21
+u_byte_after_name_bad	stop	u_byte_after_name_bad.c:1:70: error: constraint violation: initializing 'byte' with an expression of incompatible type 'signed int'	Error {msg: "typechecking failed at u_byte_after_name_bad.c:1:70-71"}
+u_byte_lead_bad	stop	u_byte_lead_bad.c:1:70: error: constraint violation: initializing 'byte' with an expression of incompatible type 'signed int'	Error {msg: "typechecking failed at u_byte_lead_bad.c:1:70-71"}
+u_for_attrdecl	refusal	Cabs_to_ail.desugar_statement: refused - an attribute declaration ('[[...]];', C23 6.7.12.1) as the first clause of a for statement (contract D19): Ail has no statement to carry it on in that position and no standard attribute may be written there; move the attribute declaration before the for statement.
+u_gen_after_name	exec	Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+u_gen_block_after_name	exec	Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+u_gen_block_lead	exec	Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+u_gen_lead	exec	Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}

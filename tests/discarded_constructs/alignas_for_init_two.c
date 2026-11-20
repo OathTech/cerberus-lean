@@ -1,0 +1,1 @@
+int main(void) { char pad = 0; int r = 0; for (_Alignas(64) char c = 0; c < 1; c++) { char pad3 = 0; for (_Alignas(64) char d = 0; d < 1; d++) r += ((unsigned long)&c % 64 != 0) + ((unsigned long)&d % 64 != 0) + pad3; } return r + pad; }
