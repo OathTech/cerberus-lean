@@ -279,6 +279,13 @@ three dune steps and the capped lake build; lines verbatim as the orchestrator r
   `Source unchanged: True. Complete tier selection: True.` / `release rc=0`
 - The full battery on the tip `bcfc66d92`: `full: passed; 48/48 selected commands completed successfully.` /
   `Source unchanged: True. Complete tier selection: True.` / `release rc=0`
+- THE RUN THAT COVERS THE LANDED CODE: the full battery on `e69e2a380` (the code of `755e1baa1`, §11; a separate audit
+  checkout detached at that commit, forced regeneration, the three dune steps, the capped lake build):
+  `full: passed; 48/48 selected commands completed successfully.` /
+  `Source unchanged: True. Complete tier selection: True.` / `release rc=0`. The commits after it (`0cda0ff17`,
+  `70182ae75` and this close-out) change Markdown files only; the orchestrator verified that
+  `git diff --name-only e69e2a380 70182ae75` names no non-`.md` path. The two runs above are history: they were on
+  earlier trees.
 - The orchestrator read the witness driver's plant logic and accepted it: the wider-category witness requires
   `pristine,lean-fixed,refusal-truncated`, and its three skipped plants are the carriage-specific ones, which have no
   row in that corpus.
