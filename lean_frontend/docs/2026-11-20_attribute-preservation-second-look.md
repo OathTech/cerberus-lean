@@ -515,3 +515,144 @@ the regeneration and the battery again. Scratch (`.tmp/review3/`) is deleted.
 
 Gates on `755e1baa1` are quoted in the record §11. Not done by the worker: the Tier A and Tier B rows outside that
 list.
+
+## Check of the second response (e69e2a380)
+
+Reviewer [AGENT 2026-11-20], the author of the sections above. Checked: `755e1baa1` (code and witnesses) and
+`e69e2a380` (documents), the worktree's engines as built at that code, pristine upstream beside them. About 35 new
+probe programs, six hand-edited Cabs JSON files, both witness lanes re-run; no ladder tier, no build.
+
+### Verdict
+
+**No blocking finding. From this reviewer's side the branch is ready for the orchestrator's gate and the operator's
+merge decision.** R1 is closed, and closed by a mechanism whose totality I could check rather than by a fourth guard:
+every program that crashed in the three earlier rounds is now a declared parse stop, I found no route from a C source
+to a `with_address` annotation or a requested address that does not pass the one production, and no program without
+the attribute changes. Four notes follow (P3); none needs code before a merge. One matter is for the operator rather
+than the worker: see S1.
+
+### The totality argument (record §11): sound for C sources, checked step by step
+
+- **Step 1, the crash site's only feeder.** `grep` for `with_address`, `ACerb`, `Acerb` over the Lem model, the
+  hand-written OCaml and the Lean seams: `ACerb_with_address` is constructed at `translation.lem:4480` only
+  (`decode_with_address_NEW` has no caller). Every `Mem.allocate_object` call in the model passes `Nothing` for the
+  requested address except `driver.lem:689`, whose argument comes from `CreateRequest2`
+  (`core_reduction.lem:688,710`, `get_with_address`). Neither Core text parser can produce the annotation: the OCaml
+  `core_parser.mly` knows one attribute, `ailname`, and `CoreParser.lean` likewise; `pp_core.ml:591` prints nothing
+  for `Acerb`.
+- **Step 2, the same two string tests.** Confirmed in the code, and by probe: `with_address` bare,
+  `Cerb::with_address`, `cerb::With_address`, `cerb::__with_address__`, `gnu::with_address`, `cerb::with_addres`,
+  `cerb::with_address_` are all carried, inert and `Specified(0)` on both engines and on pristine.
+- **Step 3, three makers.** `grep 'attr_id'` over the hand-written OCaml: `to_attrs`, `create_function_definition`,
+  `magic_to_attr`; the two others that mention the fields (`cabs_json.ml`, the unbuilt `memory/cheri-coq`) read or
+  convert. The Lem model makes no attribute value outside `annot.lem`'s combinators.
+- **Step 4, one production.** `attribute_specifier -> attribute_list -> attribute` is the only chain; the grammar has
+  six start symbols and the action is on the production, so the start symbol does not matter. GNU
+  `__attribute__((…))` is a parse error on fork and pristine alike. The lexer makes `LBRACK_LBRACK` from
+  `'[' whitespace* '['`, so the spaced opener goes through the same production (probe below).
+
+Probes, each refused with text 9, 0 bytes of JSON, exit 1 (pristine's answer in brackets): the three programs of the
+earlier rounds, F1's `[[cerb::with_address("0x1000")]] static int g; … { extern int g; }` [ran], R1's
+`("0x1000", L"0x2000")` [ran] and `(("0x1000"))` [ran]; the plain one-argument form [TODO crash];
+`[[ cerb :: with_address ( "0x1000" ) ]]` [crash]; `[ [cerb::with_address("0x1000")] ]` [crash]; the whole attribute
+from a macro, and namespace and name each from a macro [crash]; the name pasted with `##` [crash]; the name split by
+a line splice [crash]; second in a list after another attribute [crash]; in a second specifier with no argument
+[ran]; in a `sizeof` type name [ran]; on a label [ran]; in an included header (the diagnostic names the header)
+[ran]. Not refused, and unchanged from pristine: the text in a string literal, in a comment and in an `#if 0`
+region; `int cerb, with_address; struct with_address { int cerb; };` as ordinary identifiers; `cerb::hidden`,
+`cerb::byte`, `cerb::magic` written as attributes. Under `--switches=at_magic_comments`, a magic comment whose text
+is `cerb::with_address("0x1000")` becomes `cerb::magic(" cerb::with_address("0x1000") ")` on both engines and runs
+`Specified(0)`, as on pristine: the magic route makes `cerb::magic` and nothing else. The digraph opener `<:<:` is
+not an attribute opener on the fork or on pristine (a parse error on both).
+
+**Did removing the guards bring a crash back?** No. With no `cerb::with_address` value in any Cabs the parser
+returns, the three removed guards were unreachable; the earlier crashing programs above are all the parse stop.
+
+**Does a program without the attribute change?** The Lem delta of `755e1baa1` is the removal of
+`is_cerb_with_address`, two refusal texts and three guarded branches, each of which fired only on that attribute;
+the parser delta is one semantic action. In `tests/attribute_carriage/expected.txt` the only rows that changed, were
+added or were removed are `with_address` rows and the one new control `y_control_cerb_hidden`; `tests/
+discarded_constructs` is untouched. I found no way for a program that does not spell the attribute to see the change.
+
+### The witness matrix
+
+Derived from the tables by my own script: 184 rows carry text 9, with ONE distinct text after the position; every
+program whose source spells `cerb::with_address` is such a row and no other row is; pristine's control on the 184 is
+163 `Specified(0)`, 12 a constraint violation, 9 the TODO crash, which are the record's numbers. 163 `y_*.c` files
+(160 matrix programs and three controls). I re-measured 26 of the controls on pristine (every seventh `y_` row, and
+`u_addr_file_lead`, `v20`, `x08`): all agree with `pristine.txt`.
+
+Run by me at the tip:
+
+- `./scripts/check_attribute_carriage.sh --selftest --full`:
+  `PLANT OK  [pristine] fails exactly the 313 negative-control rows` … `PLANT OK  [parse-accepted] fails all 198 rows it touches` /
+  `discard_witness(attribute_carriage): SELFTEST OK (7 plants ran and were caught; 0 skipped: none)` /
+  `discard_witness(attribute_carriage): OK — 419 programs on both engines (carried 196, exec 13, parse 198, refusal 1, stop 10, ub 1); 313 negative-control rows differ from pristine`
+- `./scripts/check_discarded_constructs.sh --selftest`:
+  `PLANT OK  [parse-accepted] fails all 10 rows it touches` /
+  `discard_witness(discarded_constructs): SELFTEST OK (4 plants ran and were caught; 3 skipped: lean-drops-carried, oracle-drops-carried, args-truncated)` /
+  `discard_witness(discarded_constructs): OK — 56 programs on both engines (exec 25, parse 10, refusal 10, stop 7, ub 4); 31 negative-control rows differ from pristine`
+
+The new plant is honest and simple: it sets the recorded parser status to "accepted" and every `parse` row must
+fail. It shows the comparator reads the status; like the other plants it does not touch an engine. The `parse` rows
+observe the oracle's parser only, which the record, VALIDATION and the table's header now say in so many words.
+
+### The documented boundary, measured
+
+A Cabs JSON exported from a near-miss name and edited by hand to say `with_address`, given to the Lean engine:
+
+```
+[[cerb::with_address("0x1000")]] int g; …            staged: typechecks, prints `attribute: object g: cerb::with_address("0x1000")`
+                                                     --batch, exit 1: ModelFailure {msg: "cerberus-lean stop [\"1\",\"UPSTREAM_CRASH\",\"CerbMem.allocateRequested\",\"Mirrored upstream failure: TODO: cerb::with_address() is yet implemented\",[\"cerberus\",…,\"memory/concrete/impl_mem.ml\",\"1294\",\"1295\",…
+… static int g; … { extern int g; }                  the same stop
+[[cerb::with_address(("0x1000"))]] int g; …          the same stop
+[[cerb::with_address("")]] int g; …                  exit 134: PANIC … cerberus-lean stop ["1","UPSTREAM_CRASH","CerbDecode.integerEmpty", …
+[[cerb::with_address("0x1000", "x")]] int g; …       Defined {value: "Specified(0)", …}   (ignored, as upstream ignores it)
+[[cerb::with_address("0x1000")]] extern int g; …     Defined {value: "Specified(0)", …}   (never allocated)
+```
+
+So the stop is loud, nonzero and attributed to upstream's file and lines, as §11 says; it is the upstream-crash
+class, not a refusal, and the two forms upstream ignores still run. That is exactly the pre-slice behaviour of the
+Lean engine on such an input, now unreachable from the oracle's export.
+
+### Notes (P3)
+
+- **S1. The size of the verdict change is the operator's to see.** 163 of the 184 witness programs ran on pristine
+  with the attribute ignored and now stop. The record states it plainly as a declared change of verdict made by an
+  agent ruling ([AGENT 2026-11-20, orchestrator]), filed as tray 99, and I think it is the right engineering after
+  three failed per-path guards. But it is a fork refusal of forms upstream accepts, wider than "crash to refusal",
+  and the ruling is not the operator's; the merge request should put that sentence in front of the operator rather
+  than leave it in §11. No gated corpus and no consumer corpus I could grep contains the attribute.
+- **S2. The boundary is in the record only.** CONTRACT D19, SUPPORTED and the three consumer notes say the
+  attribute is refused "anywhere"; none says the refusal is the parser's and that a Cabs JSON not exported by the
+  oracle reaches the upstream-crash stop instead. The consumers are the only parties who could hand the Lean engine
+  such a file; one sentence in D19 and the notes would do. If the orchestrator wants the point total over the Lean
+  engine's inputs too, the same two string tests in `CabsImport.jsonToAttribute` would give it; I do not ask for
+  that, it is a choice.
+- **S3. The three Lean comments** (`CerbDecode.lean:43`, `CerbMem.lean:2319-2322`, `:2457-2460`) say those arms are
+  reachable "only through the `cerb::with_address` attribute". As an upper bound that is still true; what they no
+  longer say is that no C source reaches them, only a Cabs JSON the oracle did not export. They are not false and
+  they describe reachability, not a mirrored computation, so I do not read the mirror rule as requiring an edit in
+  this slice (an edit to a hand-written seam means the copy, a Lean rebuild and the battery again, for a comment).
+  They should be on `TODO.md` by line so the next change to either file corrects them; the record names them but I
+  did not find them there.
+- **S4. The diagnostic's position is the token after the attribute** (`e02.c:1:42` for an attribute that ends at
+  column 41; `wa.h:1:31` likewise): the driver reports the lexer's current position when the action raises. The file
+  and line are right and the text names the attribute. Cosmetic; the pins hold whatever it is.
+
+### The other dispositions
+
+R2 (the cited rows are now of the class that pins what they are cited for), R3 (the argument channel, the
+shape-testing readers, the unbuilt `backend/rustic`, the downstream end and the synthesis of `cerb::magic` are in
+§11; I repeated the magic-comment probe and it agrees), R4 and R5 are as the worker states them. `[[gnu::packed]]`
+is carried and answers the unpacked size (`Specified(8)` on both engines and pristine), and D19, SUPPORTED and the
+three notes say so and say it is not refused. Tray 99 exists. `scripts/fork_drift_manifest.txt` keeps the removed
+names in its dated NOTEs as history, which is what those NOTEs are for. In the documents I read against the tree
+(record §2, §4, §5, §10 head, §11; D19; the notes' refusal tables; the wrapper's header) I found no statement the
+tree does not bear out. menhir: the delta is again one semantic action and no production.
+
+### What I did not run
+
+Any ladder tier, any build, `leanchecker`, `scripts/release.py`. The engines' binaries are dated an hour before the
+two commits (18:36 and 18:38 against 19:36); they print the tip's refusal text and pass the tip's 419 pins, and I
+took the coordinator's word for the rest. Scratch (`.tmp/review4/`) is deleted.
