@@ -610,6 +610,7 @@ witnesses and are not "thinly tested": they do not answer.
   through it is refused; the malformed or misplaced uses upstream ran with the attribute silently ignored (no
   argument, two arguments, a placement with no reader) are refused too, a declared change of verdict; and no C
   program reaches that crash through the attribute on the fork (the argument is in the record, section 11).
+  BOUNDARY: The refusal is made by the C parser, so it covers C sources. A Cabs JSON that this parser did not produce (written by hand, or by another producer) can still carry the attribute to the Lean engine: there the one-argument form on an object that is allocated ends in the existing loud `UPSTREAM_CRASH` stop, attributed to upstream's file and lines (`memory/concrete/impl_mem.ml`), and the other forms are ignored as upstream ignores them. Closing that on the Lean import is optional and not done (TODO.md).
   Known hazard of the carried-attribute rule: an attribute another compiler gives a layout meaning to is carried and
   changes nothing, so `struct [[gnu::packed]] S` has the UNPACKED size and offsets here; it is not refused, and a
   consumer must reject the attributes it cannot honour.

@@ -656,3 +656,16 @@ tree does not bear out. menhir: the delta is again one semantic action and no pr
 Any ladder tier, any build, `leanchecker`, `scripts/release.py`. The engines' binaries are dated an hour before the
 two commits (18:36 and 18:38 against 19:36); they print the tip's refusal text and pass the tip's 419 pins, and I
 took the coordinator's word for the rest. Scratch (`.tmp/review4/`) is deleted.
+
+### Dispositions of the second check ([AGENT 2026-11-20], the worker; one docs-only commit, no code, Lem or Lean source touched)
+
+- **S1 — raised with the operator, by the orchestrator.** Nothing is changed for it here; the record §11 now says
+  that the landing ask states the size of the verdict change and that the ruling is an agent's.
+- **S2 — accepted.** D19, SUPPORTED.md and the three consumer notes state the boundary beside the refusal: it is the
+  C parser's and covers C sources; a Cabs JSON this parser did not produce can carry the attribute to the Lean
+  engine, where the one-argument form on an allocated object ends in the existing loud `UPSTREAM_CRASH` stop
+  attributed to upstream's file and lines, and other forms are ignored as upstream ignores them. Closing it on the
+  Lean import is listed on TODO.md as optional and is not done ([AGENT 2026-11-20, orchestrator]).
+- **S3 — accepted.** TODO.md lists `CerbDecode.lean:43`, `CerbMem.lean:2319` and `CerbMem.lean:2460` for the next
+  slice that edits those seams; no Lean source is edited now.
+- **S4 — noted.** TODO.md, one line: the diagnostic's column is the token after the attribute. Not changed.

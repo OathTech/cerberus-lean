@@ -78,7 +78,7 @@ function definition or with a pointer/array declarator at block scope or in a
 parameter (write `_Atomic(T)`), qualifiers inside an array parameter's brackets in a
 function declaration, `#pragma pack` in every form, and the attribute
 `cerb::with_address` wherever it is written (an unimplemented upstream extension). Every
-other `#pragma` line is ignored. A layout attribute of another compiler is carried
+other `#pragma` line is ignored. The `cerb::with_address` refusal is the C parser's: A Cabs JSON that this parser did not produce (written by hand, or by another producer) can still carry the attribute to the Lean engine: there the one-argument form on an object that is allocated ends in the existing loud `UPSTREAM_CRASH` stop, attributed to upstream's file and lines (`memory/concrete/impl_mem.ml`), and the other forms are ignored as upstream ignores them. Closing that on the Lean import is optional and not done (TODO.md). A layout attribute of another compiler is carried
 like any other and changes nothing: `struct [[gnu::packed]] S` has the unpacked layout.
 
 | Conversion / form | State |

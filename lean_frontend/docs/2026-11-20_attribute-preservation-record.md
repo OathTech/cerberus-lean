@@ -598,3 +598,9 @@ position; pristine on them: 163 `Specified(0)`, 9 the TODO crash, 12 a constrain
 No proof moved in this round (no measure-sufficiency carrier, `*_lemMeasureProofs.lean` or Props-only seam), so the
 kernel-replay gate has no module to name; row 1's axiom censuses ran inside the first job. Not re-run by the worker:
 the other Tier A and Tier B rows of §6; the orchestrator gates the tip.
+
+**After the reviewer's check of this round** (`0cda0ff17`: no blocking finding; notes S1-S4, dispositions in that
+file). The size of the verdict change (163 of the 184 witness programs ran on pristine and now stop, by an agent
+ruling) is for the operator to see: the orchestrator's landing ask states it (S1). The boundary above is now also in
+D19, SUPPORTED.md and the three consumer notes (S2); the three Lean comments and the diagnostic's column are on
+TODO.md (S3, S4).

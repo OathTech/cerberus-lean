@@ -114,6 +114,7 @@ pointer declarator (a misattributed error before), and a declaration list after 
 - `cerb::with_address` never reaches you: the parser refuses an attribute of that name wherever it is written and
   whatever its arguments (it is an unimplemented upstream extension; upstream-tray report 99). Another namespace's
   `with_address`, and the bare name, are ordinary carried attributes.
+  BOUNDARY, if you ever give the Lean engine a Cabs JSON of your own: The refusal is made by the C parser, so it covers C sources. A Cabs JSON that this parser did not produce (written by hand, or by another producer) can still carry the attribute to the Lean engine: there the one-argument form on an object that is allocated ends in the existing loud `UPSTREAM_CRASH` stop, attributed to upstream's file and lines (`memory/concrete/impl_mem.ml`), and the other forms are ignored as upstream ignores them. Closing that on the Lean import is optional and not done (TODO.md).
 - A KNOWN HAZARD of carriage without meaning: an attribute that another compiler gives a layout meaning to is
   carried like any other and changes nothing here. `struct [[gnu::packed]] S { char c; int i; }` has the UNPACKED
   size and offsets (`sizeof` 8 where gcc gives 5), the same wrong layout that `#pragma pack` is refused for. The
