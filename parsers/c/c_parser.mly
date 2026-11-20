@@ -1671,7 +1671,28 @@ attribute_list: (* NOTE: the list is in reverse *)
 
 attribute:
 | attr= attribute_token args_opt= attribute_argument_clause?
-    { (attr, args_opt) }
+    { (* FORK REFUSAL (2026-11-20, contract D19; the check of the second look, R1, and the orchestrator's ruling
+         [AGENT 2026-11-20]; record lean_frontend/docs/2026-11-20_attribute-preservation-record.md section 11):
+         `cerb::with_address` is refused HERE, at the one production every attribute written in a C source is
+         derived by (attribute_specifier -> attribute_list -> attribute; nothing else in the grammar builds an
+         attribute from source tokens, and the two functions that turn these pairs into Annot.attribute values,
+         to_attrs above and Lexer_feedback.create_function_definition, only consume this production's results;
+         the one other maker of attributes, magic_to_attr above, builds cerb::magic from a magic comment and
+         nothing else). So the refusal is independent of where the attribute is written, of the shape of its
+         arguments and of redeclarations, and no C program reaches upstream's
+         `TODO: cerb::with_address() is yet implemented` crash through this attribute: the elaboration's reader
+         (translation.lem decode_with_address) is never given one. The parse stops, so both engines stop alike
+         (no Cabs JSON is produced). Upstream silently ignored the attribute in the forms and placements its
+         reader does not act on (no argument, two arguments, on a function, a typedef, a parameter, ...): those
+         are refused too, a declared change of verdict for an unimplemented extension attribute. It replaces
+         three per-path guards, each of which missed a path or a channel (the record has the history). *)
+      begin match attr with
+        | (Some (Symbol.Identifier (_, "cerb")), Symbol.Identifier (_, "with_address")) ->
+            raise (C_lexer.Error (Errors.Cparser_unimplemented_keyword
+              "[[cerb::with_address]] (refused, contract D19: the attribute is an unimplemented upstream extension -- the elaboration reads it and the run dies in upstream's 'TODO: cerb::with_address() is yet implemented' (upstream-tray report 99) -- so the fork refuses it wherever it is written, with any arguments; remove the attribute)"))
+        | _ -> ()
+      end;
+      (attr, args_opt) }
 ;
 
 (* C keywords are allowed to appear as attribute identifiers *)

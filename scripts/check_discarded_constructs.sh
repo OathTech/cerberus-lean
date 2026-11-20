@@ -46,7 +46,7 @@ forced_header_ok() { [[ -f "$1" && "$(wc -l < "$1")" -eq "$FORCED_HEADER_LINES" 
 args=()
 for a in "$@"; do
     case "$a" in
-        --selftest) args+=(--selftest --require-plants=pristine,lean-fixed,refusal-truncated)
+        --selftest) args+=(--selftest --require-plants=pristine,lean-fixed,refusal-truncated,parse-accepted)
             mkdir -p "$ROOT/.tmp"; plant="$(mktemp "$ROOT/.tmp/forced-header-plant.XXXXXX")"
             { cat "$FORCED_HEADER"; echo "// a planted line"; } > "$plant"
             if forced_header_ok "$plant"; then

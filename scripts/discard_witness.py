@@ -114,6 +114,10 @@ class Engines:
             cut = lambda l: re.sub(r"\((\S+) [^@]*\) @", r"(\1) @", l)
             o["oracle_attrs"] = [cut(l) for l in o["oracle_attrs"]]
             o["lean_attrs"] = [cut(l) for l in o["lean_attrs"]]
+        elif p == "parse-accepted":
+            # the oracle's parser lets the program through (as pristine does for `cerb::with_address` and
+            # `#pragma pack`): a `parse` row must not hold
+            o["parse_rc"] = 0
         elif p == "refusal-truncated":
             o["oracle_line"] = o["oracle_line"][:-12]
         return o
@@ -278,6 +282,7 @@ def main():
             "args-truncated": ("all", multi),
             "lean-fixed": ("some", None),
             "refusal-truncated": ("all", [n for n in names if expected[n][1] == "refusal"]),
+            "parse-accepted": ("all", [n for n in names if expected[n][1] == "parse"]),
         }
         required = [a.split("=", 1)[1].split(",") for a in args if a.startswith("--require-plants=")]
         required = required[0] if required else list(plants)

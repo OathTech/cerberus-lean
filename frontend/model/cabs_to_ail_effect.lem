@@ -2349,17 +2349,6 @@ let get_compatible_alignment_requirements loc new_align_opt prev_align_opt =
   end
 
 (* TODO: the redeclaration check don't mix external/internal declarations *)
-let with_address_redeclaration_refusal sym =
-  "Cabs_to_ail_effect: refused - [[cerb::with_address]] on a declaration of '"
-  ^ (match sym with
-       | Symbol.Symbol _ _ (Symbol.SD_Id str) -> str
-       | Symbol.Symbol _ _ (Symbol.SD_ObjectAddress str) -> str
-       | _ -> "?"
-     end) ^ "' that a later declaration without the attribute follows (contract D19): the attributes of every "
-  ^ "declaration of an object are now kept (upstream kept the last declaration's only and the object ran unannotated), which would "
-  ^ "deliver this one to upstream's 'TODO: cerb::with_address() is yet implemented' crash; the fork neither implements nor alters "
-  ^ "cerb::with_address, so the redeclaration is refused in place of that crash. Write the object without the attribute."
-
 val register_external_object_declaration: A.ail_identifier -> (bool * Loc.t * Annot.attributes * A.storageDuration * bool * maybe Ctype.alignment * Ctype.qualifiers * Ctype.ctype) -> desugM unit
 let register_external_object_declaration sym ((isTentative, loc, attrs, new_dur, isRegister, new_align_opt, new_qs, new_ty) as new_decl) =
   return (
@@ -2410,14 +2399,8 @@ let register_external_object_declaration sym ((isTentative, loc, attrs, new_dur,
                   (* FORK (2026-11-20, contract D19; pre-merge review F2): an object declared more than once
                      keeps the attributes of EVERY declaration, earlier ones first, as the function and typedef
                      registrations do (combine_attributes). Upstream stored the last declaration's only, so
-                     `[[a]] extern int e; int e;` lost `a` without a word. cerb::with_address on an earlier
-                     declaration was dropped the same way and the object ran unannotated; combining would deliver
-                     it to upstream's 'TODO: cerb::with_address() is yet implemented' crash, so that shape is a
-                     declared refusal in its place (a later declaration that writes it reached the crash before
-                     and still does). *)
-                  if Annot.is_cerb_with_address prev_attrs && not (Annot.is_cerb_with_address attrs) then
-                    error (with_address_redeclaration_refusal sym)
-                  else
+                     `[[a]] extern int e; int e;` lost `a` without a word. (cerb::with_address cannot be among
+                     them: the parser refuses it wherever it is written, c_parser.mly `attribute`.) *)
                   let decl = (isTentative, loc, Annot.combine_attributes prev_attrs attrs, new_dur, isRegister, align_opt, new_qs, new_ty) in
                   update_inner (fun st ->
                     <| st with external_object_declarations= Map.insert sym decl st.external_object_declarations |>
@@ -2733,16 +2716,7 @@ let extract_program startup_str =
              It keeps them. (An object declared in a block only has none here: its attributes are carried.) *)
           let attrs =
             match Map.lookup ident st.external_object_declarations with
-              | Just (_, _, file_attrs, _, _, _, _, _) ->
-                  (* FORK REFUSAL (2026-11-20, contract D19; second look F1): keeping the file-scope attributes
-                     here delivers a cerb::with_address to translation.lem's decode_with_address, where this
-                     entry had none on upstream and the program ran; the sibling site
-                     (register_external_object_declaration) refuses that delivery and so does this one. The
-                     first version of this arm (61e79a887) passed it through and the run crashed. *)
-                  if Annot.is_cerb_with_address file_attrs then
-                    error (with_address_redeclaration_refusal ident)
-                  else
-                    file_attrs
+              | Just (_, _, file_attrs, _, _, _, _, _) -> file_attrs
               | Nothing -> Annot.no_attributes
             end in
           match dur with

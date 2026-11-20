@@ -3,7 +3,9 @@
 # the probe's marker attribute, for the programs whose marker was absent from pristine's `--pp=ail --ast=ail`
 # (measured 2026-11-20, census docs/2026-11-20_discarded-constructs-census.md section 1; for a row pristine
 # rejected, the lines of an Ail it never built are likewise `-`). The three verdict rows are pristine's
-# measured `--exec --batch --nolibc` lines. Tab-separated.
+# measured `--exec --batch --nolibc` lines, and so is every `cerb::with_address` row (u_addr_*, v19, v20, w01-w06,
+# x01-x09, y_*): pristine's verdict line, or the exception line of its uncaught `Failure` (measured 2026-11-20).
+# Tab-separated.
 a04_decl_block_object	-
 a05_decl_block_static	-
 a09_decl_for_init	-
@@ -104,9 +106,13 @@ t07_on_parameter	function sample: rc::returns("{0} @ int<i32>") @ t07_on_paramet
 t08_after_local_type	function sample: rc::returns("{0} @ int<i32>") @ t08_after_local_type.c:1:32-39 ;; function sample: rc::args("int<i32>") @ t08_after_local_type.c:1:7-11 ;; definition sample: rc::returns("{0} @ int<i32>") @ t08_after_local_type.c:1:32-39 ;; definition sample: rc::args("int<i32>") @ t08_after_local_type.c:1:7-11
 t09_after_local_name	function sample: rc::returns("{0} @ int<i32>") @ t09_after_local_name.c:1:32-39 ;; function sample: rc::args("int<i32>") @ t09_after_local_name.c:1:7-11 ;; definition sample: rc::returns("{0} @ int<i32>") @ t09_after_local_name.c:1:32-39 ;; definition sample: rc::args("int<i32>") @ t09_after_local_name.c:1:7-11
 t10_on_local_declaration	function sample: rc::returns("{0} @ int<i32>") @ t10_on_local_declaration.c:1:32-39 ;; function sample: rc::args("int<i32>") @ t10_on_local_declaration.c:1:7-11 ;; definition sample: rc::returns("{0} @ int<i32>") @ t10_on_local_declaration.c:1:32-39 ;; definition sample: rc::args("int<i32>") @ t10_on_local_declaration.c:1:7-11
-u_addr_block_static_after_name	-
-u_addr_block_static_lead	-
-u_addr_file_after_type	-
+u_addr_block_extern_after_name	Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+u_addr_block_extern_lead	Failure("TODO: cerb::with_address() is yet implemented")
+u_addr_block_static_after_name	Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+u_addr_block_static_lead	Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+u_addr_file_after_name	Failure("TODO: cerb::with_address() is yet implemented")
+u_addr_file_after_type	Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+u_addr_file_lead	Failure("TODO: cerb::with_address() is yet implemented")
 u_byte_after_name_bad	Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
 u_gen_after_name	Defined {value: "Specified(1)", stdout: "", stderr: "", blocked: "false"}
 u_gen_block_after_name	Defined {value: "Specified(1)", stdout: "", stderr: "", blocked: "false"}
@@ -126,7 +132,7 @@ v16_proto_then_def_params	-
 v17_enum_def_then_ref	-
 v18_union_forward_then_def	union U: m::b("t") @ v18_union_forward_then_def.c:1:35-36
 v19_wa_extern_then_def	Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
-v20_wa_def_after	object g: cerb::with_address("0x1000") @ v20_wa_def_after.c:1:37-49
+v20_wa_def_after	Failure("TODO: cerb::with_address() is yet implemented")
 v21_arg_multiline	object h: m::mk() @ v21_arg_multiline.c:1:12-14
 v22_arg_comment	object h: m::mk() @ v22_arg_comment.c:1:12-14
 v23_arg_macro	object h: m::mk() @ v23_arg_macro.c:3:12-14
@@ -136,13 +142,180 @@ w01_wa_static_block_extern	Defined {value: "Specified(0)", stdout: "", stderr: "
 w02_wa_thread_static_block_extern	Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
 w03_wa_static_static	Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
 w04_wa_block_extern_lead_then_file	Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
-w05_wa_two_args_redecl	-
-w06_wa_two_args_static_block	-
+w05_wa_two_args_redecl	Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+w06_wa_two_args_static_block	Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
 w07_tk_group_then_string	object h: m::mk("b") @ w07_tk_group_then_string.c:1:12-14
 w08_tk_mixed	object h: m::mk("b" "c", "d") @ w08_tk_mixed.c:1:12-14
 w10_pp_in_attr_arg	object h: m::mk() @ w10_pp_in_attr_arg.c:1:12-14
+x01_wa_fn_after_name	Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+x02_wa_fn_redecl	Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+x03_wa_typedef_after_name	Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+x04_wa_block_auto_after_name	Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+x05_wa_param	Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+x06_wa_member	Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+x07_wa_tag	Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
 x08_wa_stmt	unknown location  error: constraint violation: at least one type specifier should be given in the declaration
 x09_wa_file_attrdecl	unknown location  error: constraint violation: at least one type specifier should be given in the declaration
 x13_byte_stmt	unknown location  error: constraint violation: at least one type specifier should be given in the declaration
 x14_byte_typedef_shadow	Defined {value: "Specified(1)", stdout: "", stderr: "", blocked: "false"}
 x17_magic_stmt	unknown location  error: constraint violation: at least one type specifier should be given in the declaration
+y_after_array_group	Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+y_after_array_none	Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+y_after_array_one	Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+y_after_array_prefixed	Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+y_after_array_two	Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+y_after_name_file_object_group	Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+y_after_name_file_object_none	Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+y_after_name_file_object_one	Failure("TODO: cerb::with_address() is yet implemented")
+y_after_name_file_object_prefixed	Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+y_after_name_file_object_two	Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+y_after_name_function_def_group	Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+y_after_name_function_def_none	Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+y_after_name_function_def_one	Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+y_after_name_function_def_prefixed	Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+y_after_name_function_def_two	Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+y_after_name_param_group	Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+y_after_name_param_none	Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+y_after_name_param_one	Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+y_after_name_param_prefixed	Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+y_after_name_param_two	Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+y_after_name_typedef_group	Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+y_after_name_typedef_none	Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+y_after_name_typedef_one	Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+y_after_name_typedef_prefixed	Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+y_after_name_typedef_two	Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+y_after_params_group	Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+y_after_params_none	Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+y_after_params_one	Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+y_after_params_prefixed	Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+y_after_params_two	Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+y_after_specifier_group	Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+y_after_specifier_none	Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+y_after_specifier_one	Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+y_after_specifier_prefixed	Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+y_after_specifier_two	Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+y_after_star_group	Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+y_after_star_none	Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+y_after_star_one	Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+y_after_star_prefixed	Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+y_after_star_two	Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+y_after_type_group	Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+y_after_type_none	Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+y_after_type_one	Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+y_after_type_prefixed	Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+y_after_type_two	Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+y_attrdecl_block_group	unknown location  error: constraint violation: at least one type specifier should be given in the declaration
+y_attrdecl_block_none	unknown location  error: constraint violation: at least one type specifier should be given in the declaration
+y_attrdecl_block_one	unknown location  error: constraint violation: at least one type specifier should be given in the declaration
+y_attrdecl_block_prefixed	unknown location  error: constraint violation: at least one type specifier should be given in the declaration
+y_attrdecl_block_two	unknown location  error: constraint violation: at least one type specifier should be given in the declaration
+y_attrdecl_file_group	unknown location  error: constraint violation: at least one type specifier should be given in the declaration
+y_attrdecl_file_none	unknown location  error: constraint violation: at least one type specifier should be given in the declaration
+y_attrdecl_file_one	unknown location  error: constraint violation: at least one type specifier should be given in the declaration
+y_attrdecl_file_prefixed	unknown location  error: constraint violation: at least one type specifier should be given in the declaration
+y_attrdecl_file_two	unknown location  error: constraint violation: at least one type specifier should be given in the declaration
+y_decl_block_extern_group	Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+y_decl_block_extern_none	Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+y_decl_block_extern_one	Failure("TODO: cerb::with_address() is yet implemented")
+y_decl_block_extern_prefixed	Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+y_decl_block_extern_two	Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+y_decl_block_object_group	Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+y_decl_block_object_none	Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+y_decl_block_object_one	Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+y_decl_block_object_prefixed	Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+y_decl_block_object_two	Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+y_decl_file_function_group	Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+y_decl_file_function_none	Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+y_decl_file_function_one	Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+y_decl_file_function_prefixed	Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+y_decl_file_function_two	Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+y_decl_file_object_group	Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+y_decl_file_object_none	Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+y_decl_file_object_one	Failure("TODO: cerb::with_address() is yet implemented")
+y_decl_file_object_prefixed	Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+y_decl_file_object_two	Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+y_decl_file_typedef_group	Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+y_decl_file_typedef_none	Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+y_decl_file_typedef_one	Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+y_decl_file_typedef_prefixed	Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+y_decl_file_typedef_two	Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+y_decl_for_init_group	Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+y_decl_for_init_none	Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+y_decl_for_init_one	Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+y_decl_for_init_prefixed	Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+y_decl_for_init_two	Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+y_enum_def_group	Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+y_enum_def_none	Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+y_enum_def_one	Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+y_enum_def_prefixed	Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+y_enum_def_two	Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+y_enumerator_group	Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+y_enumerator_none	Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+y_enumerator_one	Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+y_enumerator_prefixed	Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+y_enumerator_two	Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+y_fundef_leading_group	Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+y_fundef_leading_none	Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+y_fundef_leading_one	Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+y_fundef_leading_prefixed	Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+y_fundef_leading_two	Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+y_label_group	Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+y_label_none	Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+y_label_one	Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+y_label_prefixed	Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+y_label_two	Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+y_list_second_group	Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+y_list_second_none	Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+y_list_second_one	Failure("TODO: cerb::with_address() is yet implemented")
+y_list_second_prefixed	Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+y_list_second_two	Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+y_macro_group	Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+y_macro_none	Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+y_macro_one	Failure("TODO: cerb::with_address() is yet implemented")
+y_macro_prefixed	Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+y_macro_two	Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+y_member_after_type_group	Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+y_member_after_type_none	Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+y_member_after_type_one	Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+y_member_after_type_prefixed	Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+y_member_after_type_two	Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+y_member_leading_group	Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+y_member_leading_none	Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+y_member_leading_one	Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+y_member_leading_prefixed	Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+y_member_leading_two	Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+y_param_leading_group	Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+y_param_leading_none	Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+y_param_leading_one	Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+y_param_leading_prefixed	Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+y_param_leading_two	Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+y_redecl_extern_then_def_group	Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+y_redecl_extern_then_def_none	Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+y_redecl_extern_then_def_one	Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+y_redecl_extern_then_def_prefixed	Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+y_redecl_extern_then_def_two	Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+y_redecl_static_block_extern_group	Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+y_redecl_static_block_extern_none	Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+y_redecl_static_block_extern_one	Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+y_redecl_static_block_extern_prefixed	Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+y_redecl_static_block_extern_two	Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+y_stmt_return_group	Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+y_stmt_return_none	Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+y_stmt_return_one	Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+y_stmt_return_prefixed	Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+y_stmt_return_two	Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+y_struct_def_group	Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+y_struct_def_none	Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+y_struct_def_one	Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+y_struct_def_prefixed	Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+y_struct_def_two	Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+y_struct_forward_group	Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+y_struct_forward_none	Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+y_struct_forward_one	Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+y_struct_forward_prefixed	Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+y_struct_forward_two	Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+y_typename_sizeof_group	Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+y_typename_sizeof_none	Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+y_typename_sizeof_one	Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+y_typename_sizeof_prefixed	Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+y_typename_sizeof_two	Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}

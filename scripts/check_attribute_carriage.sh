@@ -8,30 +8,34 @@
 # written there. Since 2026-11-20 each attribute reaches the Ail slot of the entity it appertains to, or the
 # sigma's carried_attributes table with its placement and declared identifier; no attribute is given a meaning.
 #
-# Witnesses: tests/attribute_carriage/*.c (256 programs), pinned in expected.txt:
+# Witnesses: tests/attribute_carriage/*.c (419 programs), pinned in expected.txt:
 #   t01-t10   the consumer's ten placements of [[rc::ensures("{False}")]] (refinedc-lean's
 #             scripts/probes/discarded-contracts.py): the attribute reaches Ail at every one;
 #   a*-s*     the census matrix: one program per grammar site and declared entity, the attribute's own syntax
 #             (lists, repeated specifiers, namespaces, argument forms), the standard attributes, GNU syntax;
-#   u_*       cerb::byte applies at both typedef placements (equal verdicts); cerb::with_address is delivered
-#             where it was (upstream's TODO stop) and REFUSED where carriage would newly deliver it; the
-#             attribute declaration in a for-init clause is refused;
+#   u_*       cerb::byte applies at both typedef placements (equal verdicts); the attribute declaration in a
+#             for-init clause is refused; the u_addr_* rows are cerb::with_address rows (see y_*);
 #   v01-v26   an object, function, typedef or tag declared more than once keeps the attributes of every
-#             declaration (cerb::with_address on an earlier declaration is REFUSED); an attribute argument that
+#             declaration; an attribute argument that
 #             is not a plain string literal arrives as its tokens joined by single spaces, whatever its layout
 #             (multi-line, with a comment, through a macro, with a prefix, with digraph brackets);
-#   w01-w10   cerb::with_address on a declaration that a later declaration without it follows is REFUSED at
-#             every site (a file-scope object redeclared, a static redeclared `extern` in a block, the
-#             _Thread_local form); a clause with a bracket group is one argument, the tokens the source has;
-#   x01-x17   every attribute the model interprets (cerb::with_address, cerb::byte, cerb::hidden, cerb::magic) on
-#             every path the slice newly delivers attributes on: the verdict equals pristine's, except the
-#             declared cerb::byte typedef placement and the forms pristine rejected.
+#   w07-w10   a clause with a bracket group is one argument, the tokens the source has;
+#   x10-x17   the other attributes the model interprets (cerb::byte, cerb::hidden, cerb::magic) on every path
+#             the slice newly delivers attributes on: the verdict equals pristine's, except the declared
+#             cerb::byte typedef placement and the forms pristine rejected;
+#   y_*       cerb::with_address is REFUSED at ONE point, the parser's `attribute` production (c_parser.mly),
+#             wherever it is written and whatever its arguments: 32 placements x 5 argument shapes (none, one,
+#             two, a bracket group, a prefixed literal), every one pinned to the same refusal text (a `parse`
+#             row: the oracle parser's stop; no Cabs JSON exists for the Lean engine to read), with pristine's
+#             verdict (it ran, or crashed in upstream's TODO) in the control; the earlier with_address rows
+#             (u_addr_*, v19, v20, w01-w06, x01-x09) are pinned to the same text. Three controls must NOT be
+#             refused: another namespace's with_address, the bare name, cerb::hidden.
 # Both engines must print the same pinned `attribute:` lines (the Lem definition show_attribute_carriage: the
 # oracle under --pp=ail --ast=ail, the Lean engine in its staged output), the pinned diagnostic for a stop,
 # and the WHOLE refusal text for a refusal. Negative control: pristine.txt (what pristine upstream carried);
 # every row it lists must differ from the pin, and the `pristine` plant must fail exactly those rows.
 #
-# Usage: check_attribute_carriage.sh              the row-1 cut (core.txt: 104 programs)
+# Usage: check_attribute_carriage.sh              the row-1 cut (core.txt: 147 programs)
 #        check_attribute_carriage.sh --selftest   plants, then the row-1 cut
 #        check_attribute_carriage.sh --full       the whole matrix (Tier B)
 set -uo pipefail
@@ -39,7 +43,7 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 args=(--core)
 for a in "$@"; do
     case "$a" in
-        --selftest) args+=(--selftest --require-plants=pristine,lean-drops-carried,oracle-drops-carried,args-truncated,lean-fixed,refusal-truncated) ;;
+        --selftest) args+=(--selftest --require-plants=pristine,lean-drops-carried,oracle-drops-carried,args-truncated,lean-fixed,refusal-truncated,parse-accepted) ;;
         --full) args=("${args[@]/--core}") ;;
         *) echo "check_attribute_carriage: unknown argument $a" >&2; exit 2 ;;
     esac

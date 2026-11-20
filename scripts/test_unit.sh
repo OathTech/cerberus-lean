@@ -642,9 +642,10 @@ fi
 
 # No parsed construct is silently discarded (fix/attribute-preservation, 2026-11-20, contract D19; census
 # lean_frontend/docs/2026-11-20_discarded-constructs-census.md): (1) every attribute the grammar accepts reaches
-# Ail -- the row-1 CORE, 104 of the 256 programs under tests/attribute_carriage/ (the consumer's ten placements, the
+# Ail -- the row-1 CORE, 147 of the 419 programs under tests/attribute_carriage/ (the consumer's ten placements, the
 # cerb:: rows, one program per placement class, the redeclaration and argument-token rows, every interpreted
-# attribute on every newly delivered path; the whole matrix is
+# attribute on every newly delivered path, and cerb::with_address REFUSED by the parser at every placement class
+# and argument shape with one text; the whole matrix is
 # Tier B row 17, `--full`): both engines print the same pinned `attribute:` lines, the pinned stop, the whole
 # refusal text; (2) the wider category, 56 programs under tests/discarded_constructs/: the for-init alignment, the
 # _Noreturn return operand and __builtin_expect FIXED, the type-name alignment a constraint violation, the
@@ -652,7 +653,8 @@ fi
 # texts, the forced header's line count pinned, the old-style
 # lists stopped, each with its controls. Negative control: pristine's answers (pristine.txt); --selftest: a
 # pristine-replaying pair must fail exactly the moved rows, an engine that drops the carried table, argument lists
-# cut after their first token, a fixed-line Lean stub and a truncated refusal text must fail; a plant with no row
+# cut after their first token, a fixed-line Lean stub, a truncated refusal text and a parser that accepts a refused
+# program must fail; a plant with no row
 # to touch is reported SKIPPED and a required plant that is skipped fails. Record
 # lean_frontend/docs/2026-11-20_attribute-preservation-record.md.
 ATTRIBUTE_CARRIAGE_SH="$(dirname "$PURITY_SH")/check_attribute_carriage.sh"

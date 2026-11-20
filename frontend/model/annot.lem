@@ -243,22 +243,6 @@ let is_cerb_byte (Attrs attributes) =
          end
        ) attributes
 
-(* FORK (2026-11-20, contract D19): does the sequence hold a `cerb::with_address` in the form the elaboration
-   acts on -- exactly one argument, the arm of Cerb_attributes.decode_with_address (translation.lem) that
-   annotates the object's creation and ends in upstream's `TODO: cerb::with_address() is yet implemented`? An
-   instance with another argument count is carried like any attribute and annotates nothing. *)
-let is_cerb_with_address (Attrs attributes) =
-     List.any (fun attr ->
-         match (attr.attr_ns, attr.attr_id) with
-         | (Just (Symbol.Identifier _loc1 "cerb"), Symbol.Identifier _loc2 "with_address") ->
-            match attr.attr_args with
-              | [_] -> true
-              | _ -> false
-            end
-         | _ ->
-            false
-         end
-       ) attributes
 
        
 
