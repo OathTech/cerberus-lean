@@ -40,7 +40,7 @@ _Atomic int a[3]; int main(void) { a[1] = 2; return sizeof a + a[1]; }
 
 Upstream: `error: constraint violation: invalid use of _Atomic`. gcc: 14.
 
-(Measured 2026-11-20 with `cerberus --nolibc --exec --batch` on the un-forked upstream binary and runtime @ `c3ff8c53f`; gcc 13 `-std=gnu2x`. Found by the discarded-constructs census, `../2026-11-20_discarded-constructs-census.md`, row §2.1 W12; §2.2 M1; §2.3 C3, C4; fork record `../2026-11-20_attribute-preservation-record.md`.)
+(Measured 2026-11-20 with `cerberus --exec --batch` (`--nolibc` unless a reproducer includes a library header) on the un-forked upstream binary and runtime @ `c3ff8c53f`; gcc 13 `-std=gnu2x`. Found by the discarded-constructs census, `../2026-11-20_discarded-constructs-census.md`, row §2.1 W12; §2.2 M1; §2.3 C3, C4; fork record `../2026-11-20_attribute-preservation-record.md`.)
 
 ## Fork status
 

@@ -20,22 +20,31 @@ not mix:
 - `TSpec_enum`, `ADecl`, `PDecl`, `Params`, `PDeclaration_decl`, `PDeclaration_abs_decl`: `attrs`;
 - an enumerator is `[id, attrs, value]` (was `[id, value]`);
 - a new declaration tag `Declaration_attribute` with `attrs` (`[[a]];` at file scope);
-- an attribute argument that is not a plain string literal is `[loc, source text, []]`: no pieces.
+- an attribute argument that is not a plain string literal is `[loc, tokens, []]`: its tokens joined by single
+  spaces, no pieces.
 
 Regenerate any stored Cabs JSON at the re-pin. The ten fixtures `tests/fixtures/*/cabs.json` were regenerated.
 
 ## What now stops
 
-Declared refusals (one text on both engines; whole texts in the record §4): an alignment specifier in a compound
-literal's type name; the `_Atomic` QUALIFIER on a parameter of a function definition; the `_Atomic` qualifier in the
-specifiers of a block-scope or parameter declaration whose declarator is not a plain identifier (`_Atomic int *p`
-inside a function); type qualifiers inside the brackets of an array parameter of a function declaration
-(`int f(int a[const 1]);`); `cerb::with_address` after the name of a block-scope `extern`; an attribute declaration
-in a `for`-init clause. Each replaced a silently wrong answer or a crash. The specifier form `_Atomic(T)`, the plain
-`_Atomic int x;` object and `int * const a` are unchanged. Diagnosed: an alignment specifier in a `sizeof`,
-`_Alignof`, cast or `_Atomic( )` type name (a constraint violation, C17 6.7.5#2); an attribute on a union or enum tag
-reference. Parser stops: an old-style definition with a pointer declarator, and a declaration list after a prototype
-(`found K&R-style declaration (unsupported)`).
+Declared refusals (one text on both engines; whole texts in the record §4), with what each replaced on pristine
+upstream, measured:
+
+| refused form | before |
+|---|---|
+| an alignment specifier in a compound literal's type name | a silently wrong answer (the object was not aligned) |
+| the `_Atomic` QUALIFIER on a parameter of a function definition | a wrong answer when the body inspects the parameter's type (`typeof`, `sizeof`, `&`); **a CORRECT answer otherwise**: `int f(_Atomic int x) { return x + 1; }` ran correctly and is now refused, because the arm cannot see the body. Write `_Atomic(int) x` |
+| the `_Atomic` qualifier with a pointer or array declarator at block scope or on a parameter (`_Atomic int *p` in a function) | a wrong type for a pointer; a crash for an array |
+| type qualifiers inside the brackets of an array parameter of a function declaration | a wrong function type for `const`; **already a loud stop** for `restrict` and for `volatile` against a pointer definition (a constraint diagnostic that blamed something else) |
+| `cerb::with_address` after the name of a block-scope `extern`, or on a declaration that a later one without it follows | the attribute was silently ignored |
+| an attribute declaration in a `for`-init clause | **already a loud stop** (an unlocated constraint violation) |
+
+The specifier form `_Atomic(T)`, the plain `_Atomic int x;` object and `int * const a` are unchanged. Diagnosed: an
+alignment specifier in a `sizeof`, `_Alignof`, cast or `_Atomic( )` type name (a constraint violation, C17 6.7.5#2,
+accepted before); an attribute on a union or enum tag reference (accepted before); qualifiers in a non-outermost
+bracket of an array parameter (`int a[2][const 3]`, accepted before). Parser stops: an old-style definition with a
+pointer declarator (a misattributed error before), and a declaration list after a prototype (accepted before), both
+`found K&R-style declaration (unsupported)`.
 
 ## What now answers differently (fixes)
 

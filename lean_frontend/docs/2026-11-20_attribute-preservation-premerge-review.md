@@ -296,3 +296,110 @@ differ from pristine` in 36 s wall (LADDER row 17 says 32 s; consistent).
 No rebuild from re-derived trees (the worker's binaries were used; `check_driver_fresh: oracle OK` was printed by
 row 10's harness); no Tier A battery (the orchestrator's); no kernel replay (none owed); the consumers' own
 pipelines were not run; the standard's text was not consulted on the box.
+
+## Dispositions
+
+Worker [AGENT 2026-11-20], on the orchestrator's rulings [AGENT 2026-11-20, orchestrator] where one is named. Code
+and witnesses: commit `61e79a887` and the baseline row of the commit that carries this section; documents: that
+commit. Each finding is fixed, or answered with a reason that can be checked; none is argued away.
+
+**F1 (P1) — accepted, fixed. It was the worker's failure:** a test file was added to a corpus without checking every
+lane that walks it, and the record then said no baselined row moved. `scripts/upstream_oracle_differences.json` has
+the row for `libc_exec/044-noreturn-return-operand-exits.c` (class `shared-model-fix`, C17 6.7.4#8, tray 80, pristine's
+line verbatim). Tier B row 10's default selection, run by the worker: `Independent oracle scope: tier-b; 1002 rows in
+187.3s; source unchanged: True` / `Independent oracle: passed; {'semantic_agreement': 932, 'reviewed_difference': 43,
+'matching_failure': 25, 'interface_agreement': 2}`. The record (§4, §6, §7) and D19 now say what the register and the
+libc baseline gained. **The same mistake had a second instance the review did not reach:** Tier A row 15's baseline
+`tests/inner_arg_temps/baseline.json` enumerates the libc lane's files too and lacked the row; found when the worker
+listed every file that names a neighbouring libc row, confirmed red (`inner_arg_temps: FAIL — baseline row set differs:
+missing=[]; new=['libc/044-noreturn-return-operand-exits']`), fixed by one inserted row after a whole-lane recording
+to a scratch file differed from the committed baseline in that row only. Every other row the new files or changed
+outputs can reach was then run by hand: the record §6 lists each with its line, and the rows not run with the reason.
+
+**F2 (P1) — accepted, fixed (ruling: combine).** `register_external_object_declaration` combines the attributes of
+every declaration, earlier first, as the function and typedef registrations do; the block-scope `extern` shapes are
+covered. `cerb::with_address` on a declaration that a later declaration without it follows is a declared refusal (the
+record §4, text 7) in place of the crash the combination would deliver it to; a later declaration that writes it
+reaches upstream's TODO as before. The census has the rows (A58, A59) and says its first version missed them; the
+record's count is re-derived: DISCARDED-SILENTLY was 35, not 33, and was 2, not 0, at `98648dbdd`. Tray 78 and its
+INDEX row count 33 sites. Witnesses on both engines: `v01`-`v09`, `v19`, `v20` (file-scope and block-scope
+redeclarations, three declarations, the after-name placement, the `with_address` pair), pinned against pristine's
+measured Ail. **The re-audit the ruling asked for**, every `register_*`/`update_*` path of
+`cabs_to_ail_effect.lem` and the extraction of `sigma.declarations`, probed on both engines and pristine:
+
+| path | shape | finding |
+|---|---|---|
+| `register_external_object_declaration` | `[[a]] extern int e; int e;`, tentative twice, block `extern` of an external object, three declarations | OVERWROTE (F2); fixed |
+| extraction, "internals with static or thread storage duration" | `[[a]] static int e; … { extern int e; }` | OVERWROTE: the block-scope redeclaration replaced the file-scope entry with no attributes (pristine alike); a second site, fixed: the entry keeps the file-scope attributes (the block declaration's own are in the table) |
+| `register_function_declaration` | declaration, declaration, definition; block redeclaration; definition then declaration | combines (upstream's); nothing lost |
+| `register_function_definition` | the definition's entry | holds the definition's own attributes; the declaration entry holds every declaration's; nothing lost |
+| `register_typedef` | `[[a]] typedef int T; [[b]] typedef int T;` | combines (upstream's, later first); nothing lost |
+| `register_tag` / `register_tag_definition` | forward declaration then definition, definition then forward declaration, struct and union | the definition keeps its own; the forward declaration's are carried (census A19, fixed at M1); a second definition is upstream's constraint; nothing lost |
+| enum | definition then reference | no redeclaration form; the definition's are carried |
+| `update_external_object_type` | an array completed by its initializer | keeps the entry's attributes |
+| `register_internal_object_declaration` | block-scope objects | no attributes in the entry by design; carried in the table |
+| parameters | prototype then definition | each declaration carries its own (two table entries) |
+
+**F3 (P2) — accepted, fixed.** An argument that is not a plain string literal is carried as its tokens joined by
+single spaces (`Lexer_feedback.argument_tokens`): cpp line markers, comments and layout are dropped, string literals
+are exact, digraph brackets are kept as spelled. D19, the record §2 and the notes say the tokens are those after
+macro expansion and state the argument grammar's limits. The Ail tree prints such an argument (it printed `m::mk()`).
+Witness rows `v21` (multi-line), `v22` (comment), `v23` (macro), `v25` (prefixed strings, an escaped quote), `v26`
+(digraphs); the plant `args-truncated` cuts every argument list after its first token and must fail all four rows it
+touches. Not done: refusing a group that spans a line break (the normalisation makes it unnecessary).
+
+**F4 (P2) — accepted, fixed.** The three notes carry a table of each refused form against what pristine did: a wrong
+answer, a crash, a silent ignore, an already loud stop (`restrict` and `volatile` in array brackets, the `for`-init
+attribute declaration), or a correct answer (`int f(_Atomic int x) { return x + 1; }`), the last two classes in bold.
+The record §4 has the same list. The refinedc-lean note carries F2 and F3. Both loud-before forms and the
+correct-before form are witness rows (`array_param_restrict_decl`, `array_param_volatile_decl`,
+`atomic_param_def_plain_use`) with pristine's lines in the control.
+
+**P3 notes, each:**
+
+- *F5, the incomplete negative control* — fixed: the ten rows are added (`-`), the new rows are measured from
+  pristine's Ail; the core cut has 53 control rows, the matrix 128.
+- *A `carried` row checks neither engine's status* — fixed for the gap named: a `carried` row requires the oracle to
+  reach the Ail dump and the Lean engine to reach the typed Ail (`typechecking succeeded` in its staged output), so
+  `r09`'s `-` no longer passes on an engine that printed nothing. The execution verdict is deliberately not part of a
+  `carried` row (ten of them have no `main`); verdict rows are the `exec`/`ub`/`stop` classes.
+- *Skipped plants counted as caught* — fixed: `SELFTEST OK (3 plants ran and were caught; 3 skipped: …)`; each
+  wrapper names its required plants and a required plant with no row fails the selftest.
+- *Stale numbers* — fixed in `scripts/test_unit.sh`, the wrappers, LADDER row 17, VALIDATION, D19 (77 / 229 / 48).
+- *Census gaps that are loud* — added as S10 and S11; the record §2 and the refinedc-lean note say where `[[a]];` is
+  not accepted.
+- *Clause numbers* — one draft, N3096, named in the census, the record, D19, tray 78, the code comments and the two
+  pinned refusal texts; the tag cite is 6.7.2.3, the declaration-specifier cite 6.7, `noreturn` 6.7.12.6. Stated as
+  unchecked against a copy of the standard, which the worker does not have on this box either.
+- *Tray 94-96's closing sentence, the `--nolibc` footers, 83's "syntax error"* — fixed (94-96: valid C on which the
+  fork stops as upstream does; the footer says libc mode where a reproducer includes a library header; 83 and census
+  W6 say gcc rejects the form and that no constraint was found).
+- *Tray 78 should ask about `cerb::byte` after the name* — done: the report puts it as a question.
+- *`int f(int a[2][const 3]);`* — fixed: upstream's `ArrayDeclarationQsAndStaticOnlyOutmost` constraint, a witness
+  row (`array_param_nested_const_decl`; pristine accepted it silently). Noted while fixing, not changed: upstream's
+  under-array test rejects the VALID `int f(int a[const 2][3]);` with the same constraint on pristine and on the fork.
+- *The comment "its two callers"* — fixed (one caller).
+- *Design notes (the key is an identifier with its location; no entity for an abstract or nested parameter; "in
+  source order" is not true in general)* — answered, NOT fixed: the record §2 states the key and the `Nothing`
+  cases and §8 says the order is the desugarer's recording order, not source order. The comment on the field
+  (`ail/ailSyntax.lem:325`, "in source order") is still wrong as written: correcting a comment in a Lem source moves a
+  generated file and its manifest hash and re-opens every gate above, so it is left for the next change to that
+  file and listed in the record §8 and `TODO.md`. Each attribute carries its own location.
+- *§4.8, `#pragma pack`* — unchanged, as ruled: it waits for the operator. The reviewer's case for a declared
+  refusal of `pack` alone and its measured cost are in §4.8 above; the worker's reason for leaving it is census §4.
+- *§4.9, `posix/sys/ioctl.h` `_IOC`* — added to tray 84 beside `atomic_init`; neither is forced, neither is changed.
+
+**Found by the worker while running the remaining rows, beyond the review's findings — a third red gate.** Tier B row
+13 (`./scripts/test_unit.sh --core-quote-libc`) was red on `98648dbdd` and on `61e79a887`: `RuntimeError: libc literal
+SHA-256 drift: c5b66c2f…, pinned 0a845b19…` (and the `inner_arg_temps` literal likewise). Cause: `ed7925183` added three
+comment lines to the force-included `runtime/libc/include/builtins.h`, moving the lexing line of every position in
+every translation unit by three; the quotation literals embed positions. That commit's message and the record's §7 said
+the libc pins did not move, checked against `scripts/libc_prep.sh` only. Fixed without touching a pin: the header is
+back to its 14 lines (the fix's comment is one line); `Total: 2 passed, 0 failed`, the three `leanchecker` replays exit
+0, and the committed fixtures equal a fresh export. The record §9 lists it with F1 and F2 as the slice's failures.
+
+**Rows run by hand** (the orchestrator's instruction under F1): every Tier A row and every Tier B row except Tier A
+12-14 and Tier B 6 and 8, with each row's result line in the record §6 and the reason the five cannot be affected.
+The sequential run took about 105 minutes, past the one-hour tripwire for one pass; it should have been split and
+reported at the hour, and the record says so.
+

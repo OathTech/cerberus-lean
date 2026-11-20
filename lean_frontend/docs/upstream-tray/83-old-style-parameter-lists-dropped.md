@@ -4,7 +4,7 @@
 
 ## Description
 
-An old-style definition whose declarator is a pointer is valid C17 (6.9.1); it is rejected with a diagnostic that blames the body. A declaration list after a prototype is a syntax error and is accepted. An identifier list in a declarator that is not a definition is a constraint violation (6.7.6.3#3) and is accepted; nested in a parameter it crashes.
+An old-style definition whose declarator is a pointer is valid C17 (6.9.1); it is rejected with a diagnostic that blames the body. A declaration list after a prototype is accepted and discarded (gcc rejects it). An identifier list in a declarator that is not a definition is a constraint violation (6.7.6.3#3) and is accepted; nested in a parameter it crashes.
 
 ## Reproducers
 
@@ -40,7 +40,7 @@ void g(int h(x)); int main(void) { return 0; }
 
 Upstream: `internal error: AilTypesAux.adjust ==> FunctionNoParams`. gcc: 0.
 
-(Measured 2026-11-20 with `cerberus --nolibc --exec --batch` on the un-forked upstream binary and runtime @ `c3ff8c53f`; gcc 13 `-std=gnu2x`. Found by the discarded-constructs census, `../2026-11-20_discarded-constructs-census.md`, row §2.1 W4, W5, W6; §2.3 C5; fork record `../2026-11-20_attribute-preservation-record.md`.)
+(Measured 2026-11-20 with `cerberus --exec --batch` (`--nolibc` unless a reproducer includes a library header) on the un-forked upstream binary and runtime @ `c3ff8c53f`; gcc 13 `-std=gnu2x`. Found by the discarded-constructs census, `../2026-11-20_discarded-constructs-census.md`, row §2.1 W4, W5, W6; §2.3 C5; fork record `../2026-11-20_attribute-preservation-record.md`.)
 
 ## Fork status
 

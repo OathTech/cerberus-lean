@@ -14,7 +14,7 @@ int main(void) { typedef int T = 3; typedef _Alignas(8) char U; T x = 0; return 
 
 Upstream: `Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}`. gcc: rejects.
 
-(Measured 2026-11-20 with `cerberus --nolibc --exec --batch` on the un-forked upstream binary and runtime @ `c3ff8c53f`; gcc 13 `-std=gnu2x`. Found by the discarded-constructs census, `../2026-11-20_discarded-constructs-census.md`, row §2.1 W9; fork record `../2026-11-20_attribute-preservation-record.md`.)
+(Measured 2026-11-20 with `cerberus --exec --batch` (`--nolibc` unless a reproducer includes a library header) on the un-forked upstream binary and runtime @ `c3ff8c53f`; gcc 13 `-std=gnu2x`. Found by the discarded-constructs census, `../2026-11-20_discarded-constructs-census.md`, row §2.1 W9; fork record `../2026-11-20_attribute-preservation-record.md`.)
 
 ## Fork status
 

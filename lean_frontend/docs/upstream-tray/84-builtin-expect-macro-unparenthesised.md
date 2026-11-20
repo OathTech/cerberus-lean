@@ -24,11 +24,11 @@ int main(void) { double d = 0.75; return __builtin_expect(d < 0.5, 0); }
 
 Upstream: `Defined {value: "Specified(1)", stdout: "", stderr: "", blocked: "false"}`. gcc: 0.
 
-(Measured 2026-11-20 with `cerberus --nolibc --exec --batch` on the un-forked upstream binary and runtime @ `c3ff8c53f`; gcc 13 `-std=gnu2x`. Found by the discarded-constructs census, `../2026-11-20_discarded-constructs-census.md`, row §2.4 X1; fork record `../2026-11-20_attribute-preservation-record.md`.)
+(Measured 2026-11-20 with `cerberus --exec --batch` (`--nolibc` unless a reproducer includes a library header) on the un-forked upstream binary and runtime @ `c3ff8c53f`; gcc 13 `-std=gnu2x`. Found by the discarded-constructs census, `../2026-11-20_discarded-constructs-census.md`, row §2.4 X1; fork record `../2026-11-20_attribute-preservation-record.md`.)
 
 ## Fork status
 
-FIXED (commit `ed7925183`): the parameter is parenthesised; the libc dump does not move. `<stdatomic.h>`'s `atomic_init(obj,value) (*obj = value)` has the same slip and is unchanged.
+FIXED (commit `ed7925183`): the parameter is parenthesised; the libc dump does not move. `<stdatomic.h>`'s `atomic_init(obj,value) (*obj = value)` and `posix/sys/ioctl.h`'s `_IOC(inout,group,num,len)` (`inout` and `len` bare) have the same slip and are unchanged; neither header is force-included.
 
 ## Patch
 

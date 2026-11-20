@@ -123,7 +123,19 @@ Worker [AGENT], slice `fix/attribute-preservation` (charter
 | A56 | :1388 expression statement | `A x = 0;` | the statement | kept | `:4128` | 1 / 1 | CARRIED |
 | A57 | :1583 function definition, leading | `A int f(void) { return 0; }` | the function | kept (`FunDef`) | `:5163` and `:5189` (declaration and definition) | 1 / 2 | CARRIED |
 
-(A9's site :852 is where `attribute_declaration` (:1611) is used; the two are one row.)
+| A58 | (added 2026-11-20 on the pre-merge review's F2; not a grammar site) an object with linkage declared more than once | `A extern int e; int e;`, `A int e; A2 int e;`, `int e A = 1; int e;` | each declaration's attributes appertain to the object | kept | `register_external_object_declaration` (`cabs_to_ail_effect.lem:2353-2412`) stores the LAST declaration's attributes over the earlier ones (the function and typedef registrations combine) | 1 / 0 for the earlier declaration's | DISCARDED-SILENTLY |
+| A59 | (added with A58, found by the re-audit the review asked for) a file-scope object with internal linkage redeclared `extern` in a block | `A static int e; int main(void) { extern int e; return e; }` | the object | kept | the block-scope redeclaration is registered as an internal object under the same symbol and replaces the file-scope entry, with `Annot.no_attributes`, in the union that builds `sigma.declarations` (`cabs_to_ail_effect.lem`, "Adding internals object with static or thread storage duration") | 1 / 0 | DISCARDED-SILENTLY |
+
+(A9's site :852 is where `attribute_declaration` (:1611) is used; the two are one row. Clause numbers for C23 in this
+document and in the code are those of ONE draft, N3096, where attributes are 6.7.12 and tags 6.7.2.3; they were not
+checked against a copy of the standard on this box.)
+
+**The first version of this table missed A58 and A59** (it was built from the grammar's use sites and the desugarer's
+arms; these two are in the registration functions of the effect module). The pre-merge review found A58; the re-audit
+of every `register_*`/`update_*` path that followed found A59 and nothing else: function declarations and typedef
+redefinitions combine (`:2264-2288`, `:955`), a tag definition after a forward declaration keeps its own attributes
+(the forward declaration's are row A19), an enum cannot be redeclared, a prototype and its definition each carry their
+own parameter attributes, `update_external_object_type` keeps the entry's.
 
 ### 1.3 The attribute's own syntax (:1615-1797)
 
@@ -137,6 +149,8 @@ Worker [AGENT], slice `fix/attribute-preservation` (charter
 | S6 | a nested balanced-token group in the arguments (:1790-1793 return `[]`) | `m::mk(("inner"))`, `m::mk(["inner"])`, `m::mk({"inner"})`, `m::mk("s" ("inner"))` | arrives as `m::mk()`, `m::mk()`, `m::mk()`, `m::mk("s")` | DISCARDED-SILENTLY |
 | S7 | an argument token that is not a string or a bracket | `m::mk(1)`, `m::mk(inner)`, `m::mk("s", ("inner"), "t")` | `error: unexpected token after '(' …` | PARSE-ERROR |
 | S8 | an empty argument clause, an empty list, an empty list element (all C23) | `m::mk()`, `[[]]`, `[[m::mk("s"),]]` | `error: unexpected token …` | PARSE-ERROR |
+| S10 | (added on the review) an attribute declaration directly after a label (C23 permits it) | `case 0: [[fallthrough]]; case 1: …`, `lbl: [[a]];` | `error: unexpected token after ']' and before ';'` (only the form after another statement or at the start of a block is accepted) | PARSE-ERROR |
+| S11 | (added on the review) an attribute after an EMPTY parameter list of a definition | `int f() [[a]] { return 0; }` | `error: unexpected token after ')' and before '[['` | PARSE-ERROR |
 | S9 | GNU `__attribute__((…))` in any position | `__attribute__((unused)) int g;` | the lexer has no such keyword: `error: unexpected token after '__attribute__' …` | PARSE-ERROR |
 
 ### 1.4 The standard attributes
@@ -146,7 +160,7 @@ None is given a meaning; each is carried exactly where its placement is carried 
 | # | attribute | probe | observed | class |
 |---|-----------|-------|----------|-------|
 | T1 | `deprecated`, `deprecated("…")`, `__deprecated__`, `maybe_unused`, `nodiscard` at carried placements | `[[deprecated]] int g;`, `[[nodiscard]] int f(void) {…}` | in Cabs and Ail (block-scope `[[maybe_unused]] int y` is row A3) | CARRIED |
-| T2 | `noreturn`, `_Noreturn` | `[[noreturn]] void f(void) { } int main(void) { f(); return 0; }` | carried; `Specified(0)` where the keyword `_Noreturn` gives `UB071_noreturn`: the undefined behaviour of 6.7.12.7 is not detected (an invalid program accepted) | CARRIED |
+| T2 | `noreturn`, `_Noreturn` | `[[noreturn]] void f(void) { } int main(void) { f(); return 0; }` | carried; `Specified(0)` where the keyword `_Noreturn` gives `UB071_noreturn`: the undefined behaviour of 6.7.12.6 is not detected (an invalid program accepted) | CARRIED |
 | T3 | `unsequenced`, `reproducible` (their standard placement is after the function declarator) | `int f(int x) [[unsequenced]] { return x; }` | row A42 | DISCARDED-SILENTLY |
 | T4 | `fallthrough` | `case 0: x = 1; [[fallthrough]]; case 1: …` | row A9 | REFUSED (*valid C*, *misattributed*) |
 | T5 | an attribute another compiler gives meaning to | `struct [[gnu::packed]] S { char c; int i; };` then `sizeof(struct S) == 5` | carried; no meaning (answers 0; gcc 1). Ignoring an unrecognised attribute is the standard's rule (6.7.12.1) | CARRIED |
@@ -163,9 +177,10 @@ type; on a block-scope static object) the run proceeds unannotated.
 
 ### 1.6 Counts (derived from the tables above)
 
-§1.2, 57 rows: CARRIED 18 (A1, A2, A5, A8, A16, A22, A32, A39, A48-A57), REFUSED 6 (A9, A17, A20, A21, A23, A40),
-DISCARDED-SILENTLY 33: in the parser 21 (A10-A15, A24-A31, A41-A47), in the desugarer 12 (A3, A4, A6, A7, A18, A19,
-A33-A38). §1.3, 9 rows: CARRIED 4, DISCARDED-SILENTLY 2, PARSE-ERROR 3. §1.4, 5 rows: CARRIED 3, DISCARDED-SILENTLY 1,
+§1.2, 59 rows (57 in the first version; A58 and A59 added on the review): CARRIED 18 (A1, A2, A5, A8, A16, A22, A32,
+A39, A48-A57), REFUSED 6 (A9, A17, A20, A21, A23, A40), DISCARDED-SILENTLY 35 (33 in the first version): in the parser
+21 (A10-A15, A24-A31, A41-A47), in the desugarer 14 (A3, A4, A6, A7, A18, A19, A33-A38, A58, A59). §1.3, 11 rows:
+CARRIED 4, DISCARDED-SILENTLY 2, PARSE-ERROR 5 (S7-S11). §1.4, 5 rows: CARRIED 3, DISCARDED-SILENTLY 1,
 REFUSED 1 (T3 and T4 restate A42 and A9). Of the 37 use sites, 19 productions drop the value in their action (:859, :861, :863, :865, :942, :966, :1039,
 :1043, :1056, :1058, :1082, :1103, :1121, :1122, :1166, :1194, :1197, :1219, :1220); they make 21 rows because :942 and
 :966 are reached again through the specifier-qualifier list (A24, A25).
@@ -190,7 +205,7 @@ engine and pristine. `gcc` is the exit status of the compiled program, or `rejec
 | W3 | the second operand of `__builtin_expect` | `runtime/libc/include/builtins.h:14`, a macro in the header every run force-includes | `int i = 0; (void)__builtin_expect(1, i++); return i;` | `Specified(0)` / 0 | nothing (gcc does not evaluate the hint either). The macro's own defect is row X1 | DISCARDED-SILENTLY |
 | W4 | the identifier list of a function declarator that is not a definition | `lexer_feedback.ml:117-120`, `cabs_of_declarator` (:83-86) | `int f(a, b);` | `Specified(0)` / 0 | a constraint violation (C17 6.7.6.3#3) is accepted; the nested form `void g(int h(x));` is row C5 | DISCARDED-SILENTLY |
 | W5 | the identifier list AND the declaration list of an old-style definition whose declarator is a pointer, array or parenthesised form | `lexer_feedback.ml:92-110` overwrite the declarator's sort, so `create_function_definition` takes its catch-all (:166-167) | `int g; int *f(a) int a; { g = a; return &g; } int main(void) { return *f(1); }` | `error: use of undeclared identifier 'a'` / 1 | a valid C17 program is rejected with a text that blames the body (the plain form `int f(a, b) int a; int b; {…}` gets the attributed `found K&R-style declaration (unsupported)`) | DISCARDED-SILENTLY |
-| W6 | a declaration list after a prototype-style definition | `c_parser.mly:1591`, `lexer_feedback.ml:166-167` | `int f(void) int x; { return 0; } int main(void) { return f(); }` | `Specified(0)` / rejects | a syntax error is accepted | DISCARDED-SILENTLY |
+| W6 | a declaration list after a prototype-style definition | `c_parser.mly:1591`, `lexer_feedback.ml:166-167` | `int f(void) int x; { return 0; } int main(void) { return f(); }` | `Specified(0)` / rejects | a form gcc rejects is accepted (the C17 function-definition syntax derives a declaration list after any declarator; the review could not name the constraint and neither can the worker) | DISCARDED-SILENTLY |
 | W7 | an alignment specifier in a type name | `cabs_to_ail.lem:3320-3321` (upstream: `TODO: align_specs is ignored here`) | `char pad = 0; char *p = &(_Alignas(64) char){0}; char pad2 = 0; char *q = &(_Alignas(64) char){0}; return ((unsigned long)p % 64 != 0) + ((unsigned long)q % 64 != 0) + pad + pad2;` | `Specified(2)` / 0 | **a valid program's answer** (C17 6.7.5#2 permits the specifier in a compound literal's type name); in `sizeof`, `_Alignof`, a cast and `_Atomic( )` it is a constraint violation that is accepted (`_Alignof(_Alignas(16) int)` answers 4; gcc rejects) | DISCARDED-SILENTLY |
 | W8 | an alignment specifier on a `for`-init declaration | `cabs_to_ail.lem:4301` (a boolean only), `:4339-4351` register `Nothing` | `char pad = 0; for (_Alignas(64) char c = 0; ; ) return ((unsigned long)&c % 64) != 0; return pad;` | `Specified(1)` / 0 | **a valid program's answer** (the block-scope, file-scope and member forms are honoured: `Specified(0)`) | DISCARDED-SILENTLY |
 | W9 | an alignment specifier or an initializer on a block-scope typedef | `cabs_to_ail.lem:3972-3975` | `typedef int T = 3; T x = 0; return x;`, `typedef _Alignas(8) char U;` | `Specified(0)` / rejects | constraint violations accepted (the file-scope forms are diagnosed: `:3048`, `:3064`) | DISCARDED-SILENTLY |

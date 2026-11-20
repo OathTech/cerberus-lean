@@ -24,8 +24,13 @@ void f(int a[const 1]); void f(int a[const 1]) { a[0] = 1; } int main(void) { in
 
 Upstream: `error: constraint violation: type qualifiers or 'static' used in array declarator outside of function prototype`. gcc: 1.
 
-(Measured 2026-11-20 with `cerberus --nolibc --exec --batch` on the un-forked upstream binary and runtime @ `c3ff8c53f`; gcc 13 `-std=gnu2x`. Found by the discarded-constructs census, `../2026-11-20_discarded-constructs-census.md`, row §2.2 M2; §2.3 G8, G9; fork record `../2026-11-20_attribute-preservation-record.md`.)
+(Measured 2026-11-20 with `cerberus --exec --batch` (`--nolibc` unless a reproducer includes a library header) on the un-forked upstream binary and runtime @ `c3ff8c53f`; gcc 13 `-std=gnu2x`. Found by the discarded-constructs census, `../2026-11-20_discarded-constructs-census.md`, row §2.2 M2; §2.3 G8, G9; fork record `../2026-11-20_attribute-preservation-record.md`.)
+
+The test that keeps qualifiers to the outermost derivation is inverted for nested arrays: the valid
+`int f(int a[const 2][3]);` (gcc accepts) is rejected with `constraint violation: type qualifiers or 'static' used in
+array declarator can only used in the outmost type derivation`, and the invalid `int f(int a[2][const 3]);` (gcc
+rejects) was accepted.
 
 ## Fork status
 
-Declared REFUSAL of qualifiers in the brackets of an array parameter of a function declaration (the wrong answer). The definition's rejection and the `static` refusal (`feature not yet supported: array parameter with the static keyword`) are unchanged.
+Declared REFUSAL of qualifiers in the brackets of an array parameter of a function declaration (the wrong answer). `int f(int a[2][const 3]);` now gets upstream's outermost-derivation constraint. The valid nested form's rejection, the definition's rejection and the `static` refusal (`feature not yet supported: array parameter with the static keyword`) are unchanged.

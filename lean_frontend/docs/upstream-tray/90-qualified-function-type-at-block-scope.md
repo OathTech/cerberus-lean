@@ -14,7 +14,7 @@ typedef int F(void); int main(void) { const F g; return 0; }
 
 Upstream: Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"} (the file-scope form: `UB066_qualified_function_specification`). gcc: 0.
 
-(Measured 2026-11-20 with `cerberus --nolibc --exec --batch` on the un-forked upstream binary and runtime @ `c3ff8c53f`; gcc 13 `-std=gnu2x`. Found by the discarded-constructs census, `../2026-11-20_discarded-constructs-census.md`, row §2.1 W14; fork record `../2026-11-20_attribute-preservation-record.md`.)
+(Measured 2026-11-20 with `cerberus --exec --batch` (`--nolibc` unless a reproducer includes a library header) on the un-forked upstream binary and runtime @ `c3ff8c53f`; gcc 13 `-std=gnu2x`. Found by the discarded-constructs census, `../2026-11-20_discarded-constructs-census.md`, row §2.1 W14; fork record `../2026-11-20_attribute-preservation-record.md`.)
 
 ## Fork status
 

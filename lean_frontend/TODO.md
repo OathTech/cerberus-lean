@@ -796,7 +796,9 @@ hygiene items the audit confirmed (each re-verified by the orchestrator):
   (95), a `for`-init array of unknown size (96), `static`/qualifiers in a definition's array parameter and a
   file-scope `_Atomic` array (81, 82). Refused where upstream's placement is wrong, to be lifted when upstream repairs
   it: the `_Atomic` qualifier on parameters and derived block-scope declarators (81), array-parameter qualifiers
-  (82), the compound literal's alignment specifier (79). No attribute has a meaning; a consumer that wants
+  (82), the compound literal's alignment specifier (79). Small debts of the slice: the comment on `sigma.carried_attributes` (`ail/ailSyntax.lem`)
+  says "in source order", which is not true in general — correct it at the next change to that file; `#pragma pack`
+  waits for the operator's ruling (the pre-merge review §4.8 recommends refusing `pack` alone). No attribute has a meaning; a consumer that wants
   `[[noreturn]]` to be `_Noreturn` asks for it.
 
 - **`match_pattern`/`typecheck_pattern` fail CLOSED on tuple-arity mismatch — LANDED
