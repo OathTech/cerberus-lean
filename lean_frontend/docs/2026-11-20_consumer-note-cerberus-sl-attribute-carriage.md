@@ -44,7 +44,7 @@ upstream, measured:
 | the `_Atomic` QUALIFIER on a parameter of a function definition | a wrong answer when the body inspects the parameter's type (`typeof`, `sizeof`, `&`); **a CORRECT answer otherwise**: `int f(_Atomic int x) { return x + 1; }` ran correctly and is now refused, because the arm cannot see the body. Write `_Atomic(int) x` |
 | the `_Atomic` qualifier with a pointer or array declarator at block scope or on a parameter (`_Atomic int *p` in a function) | a wrong type for a pointer; a crash for an array |
 | type qualifiers inside the brackets of an array parameter of a function declaration | a wrong function type for `const`; **already a loud stop** for `restrict` and for `volatile` against a pointer definition (a constraint diagnostic that blamed something else) |
-| `cerb::with_address` (with its one argument) after the name of a block-scope `extern`, or on a declaration that a later one without it follows | the attribute was silently ignored and the program ran |
+| the attribute `cerb::with_address`, anywhere, with any arguments (a parse stop: `error: unimplemented keyword '[[cerb::with_address]] (refused, contract D19: …)'`) | **a crash** (upstream's `TODO: cerb::with_address() is yet implemented`) for the one-argument form on a file-scope object or a block-scope `extern`; everywhere else the attribute was silently ignored and **the program ran**: those uses now stop too, a declared change of verdict |
 | `#pragma pack`, every form | the line was silently skipped: a wrong layout |
 | an attribute declaration in a `for`-init clause | **already a loud stop** (an unlocated constraint violation) |
 
@@ -81,9 +81,13 @@ pointer declarator (a misattributed error before), and a declaration list after 
   the inner `T` is another entity in C (and a shadowing typedef of a different type is rejected as a redefinition).
   Pristine upstream does the same; it is filed (upstream-tray report 98) and unchanged here. A consumer that gives
   typedef attributes a meaning gets the inner typedef's attribute on the outer one.
-- `cerb::with_address` on a declaration that a later declaration without it follows is refused at every such site
-  (a file-scope redeclaration, a block-scope `extern` of an external or of an internal object, the `_Thread_local`
-  form); with any argument count but one it is an ordinary carried attribute.
+- `cerb::with_address` never reaches you: the parser refuses an attribute of that name wherever it is written and
+  whatever its arguments (it is an unimplemented upstream extension; upstream-tray report 99). Another namespace's
+  `with_address`, and the bare name, are ordinary carried attributes.
+- A KNOWN HAZARD of carriage without meaning: an attribute that another compiler gives a layout meaning to is
+  carried like any other and changes nothing here. `struct [[gnu::packed]] S { char c; int i; }` has the UNPACKED
+  size and offsets (`sizeof` 8 where gcc gives 5), the same wrong layout that `#pragma pack` is refused for. The
+  front end does not refuse it: reject the attributes you cannot honour.
 
 ## `#pragma pack` is refused ([USER 2026-11-20] ruling)
 

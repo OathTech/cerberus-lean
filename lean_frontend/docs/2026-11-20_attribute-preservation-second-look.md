@@ -479,3 +479,39 @@ Not run: any ladder tier, any build, `leanchecker`, `scripts/release.py`. The en
 two commits (17:26 and 17:27 against 18:24); I took the coordinator's word that they are built from this tree, and
 the refusal texts and witness pins they print are the tip's. A fix for R1 moves a Lem source or the parser and needs
 the regeneration and the battery again. Scratch (`.tmp/review3/`) is deleted.
+
+### Dispositions of the check ([AGENT 2026-11-20], the worker; code and witness `755e1baa1`, documents in the commit after it)
+
+- **R1 — accepted; a failure of the response, fixed by changing the mechanism, not by a fourth guard.** The two
+  programs crash on `2624a83cf` exactly as reported, and §10's claim was false for the argument channel. The
+  orchestrator ruled ([AGENT 2026-11-20, orchestrator]) that `cerb::with_address` is refused at one point,
+  independent of placement, argument shape and redeclaration, with the per-path refusals and the one-argument
+  narrowing removed. Done: the semantic action of the parser's one `attribute` production stops the parse on that
+  name; `Annot.is_cerb_with_address` and the three guards are gone. The reviewer's alternative (the two malformed
+  forms may crash, a document correction) was not taken. The point is the parser, not a scan at the desugarer's entry
+  ([AGENT 2026-11-20], the worker's choice within the ruling's "earliest single point both engines share"); the
+  reason and the totality argument are in the record §11, with its stated boundary (C sources; a hand-written Cabs
+  JSON does not pass the parser). The reviewer's two programs are rows `y_decl_file_object_prefixed` and
+  `y_decl_file_object_group`. Consequence the reviewer should weigh: the uses pristine ran with the attribute ignored
+  now stop (163 of the 184 witness rows), a declared change of verdict by the ruling.
+- **R2 — accepted.** `w05`, `w06` are now `parse` rows (they hold the attribute) and pin the refusal; §11 cites
+  `exec` rows for verdicts, `carried` rows for carriage and `parse` rows for stops, and says which is which.
+- **R3 — accepted, all three.** §11 states the argument list as a channel, the shape-testing readers, the unbuilt
+  `backend/rustic` reader of `rc::` (so the sentence is about the built engines), the downstream end
+  (`get_with_address`, `CerbMem.lean:2336`) and the parser's synthesis of `cerb::magic`, with a check that the clause
+  rule and carriage do not change what is synthesised or where it lands (a hand probe against pristine's Ail tree,
+  labelled as not gated).
+- **R4 — the notes.** "Both engines stop alike" is said to hold by construction, not as a second observation, in
+  §11, VALIDATION.md and `expected.txt`'s header, for the pragma rows and the new `with_address` rows alike. The
+  `unimplemented keyword` lead-in is kept (the D9 asm-label form; the new refusal uses it too): cosmetic, as the
+  reviewer says. The pragma on a last line without a newline: unchanged, loud. `[[gnu::packed]]`: not refused
+  ([AGENT 2026-11-20, orchestrator]); stated as a known hazard in D19, SUPPORTED.md, the census (T5), TODO.md and the
+  three consumer notes.
+- **R5 — no action asked.** One fact changes under R1's fix: a `cerb::with_address` clause is no longer carried in
+  any shape, so the clause rule's one bad consequence is gone; the rule itself is unchanged. menhir: again one
+  semantic action and no production; the four warning lines are identical before and after.
+- **The other dispositions** — as the reviewer left them; the sentence R1 falsified is superseded by §11 and marked
+  so at the head of §10.
+
+Gates on `755e1baa1` are quoted in the record §11. Not done by the worker: the Tier A and Tier B rows outside that
+list.

@@ -76,7 +76,10 @@ no meaning (a standard attribute changes nothing the engines compute); GNU
 specifier in a compound literal's type name, the `_Atomic` qualifier on a parameter of a
 function definition or with a pointer/array declarator at block scope or in a
 parameter (write `_Atomic(T)`), qualifiers inside an array parameter's brackets in a
-function declaration, `#pragma pack` in every form. Every other `#pragma` line is ignored.
+function declaration, `#pragma pack` in every form, and the attribute
+`cerb::with_address` wherever it is written (an unimplemented upstream extension). Every
+other `#pragma` line is ignored. A layout attribute of another compiler is carried
+like any other and changes nothing: `struct [[gnu::packed]] S` has the unpacked layout.
 
 | Conversion / form | State |
 |---|---|

@@ -602,9 +602,17 @@ witnesses and are not "thinly tested": they do not answer.
   error).
   The promise is CARRIAGE: the fork gives no attribute a meaning (`[[noreturn]]` is not `_Noreturn`), and the one
   attribute upstream's desugarer reads, `cerb::byte`, applies at both placements that appertain to the typedef name.
-  Refused: an attribute on a union or enum tag reference (the struct arm's stop), `cerb::with_address` after the name
-  of a block-scope `extern` or on a declaration of an object that a later declaration without it follows, at every
-  such site (in place of upstream's TODO crash; only in the one-argument form the elaboration acts on), an attribute declaration in a `for`-init clause.
+  Refused: an attribute on a union or enum tag reference (the struct arm's stop), an attribute declaration in a `for`-init clause, and `cerb::with_address`
+  EVERYWHERE: an attribute of that name stops the parse, wherever it is written and whatever its arguments (one
+  point, the parser's `attribute` production; [AGENT 2026-11-20, orchestrator] ruled one choke point after three
+  per-path guards each missed a path). The attribute is an unimplemented upstream extension whose elaboration ends in
+  upstream's `TODO: cerb::with_address() is yet implemented` crash (tray 99). So: every program upstream crashed on
+  through it is refused; the malformed or misplaced uses upstream ran with the attribute silently ignored (no
+  argument, two arguments, a placement with no reader) are refused too, a declared change of verdict; and no C
+  program reaches that crash through the attribute on the fork (the argument is in the record, section 11).
+  Known hazard of the carried-attribute rule: an attribute another compiler gives a layout meaning to is carried and
+  changes nothing, so `struct [[gnu::packed]] S` has the UNPACKED size and offsets here; it is not refused, and a
+  consumer must reject the attributes it cannot honour.
   **The rest of the category**: an alignment specifier on a `for`-init declaration is applied (C17 6.8.5#3) and the
   operand of `return` in a `_Noreturn` function is evaluated before the UB071 (C17 6.7.4#8) — fixes; an alignment
   specifier in a type name is the constraint violation of C17 6.7.5#2, and in a compound literal's type name a
@@ -618,7 +626,7 @@ witnesses and are not "thinly tested": they do not answer.
   pragma changes the layout the program is compiled with and the model has no packed layout). Left as upstream's,
   filed: every OTHER `#pragma` line is skipped (C17 6.10.6#1), and a list of accepted constraint violations and missed
   undefined behaviours (tray 83, 85-93). Deliberate fork-vs-pristine differences, manifested in the fork-drift gate. Witnesses:
-  `scripts/check_attribute_carriage.sh` (row 1: 104 programs; `--full`, Tier B row 17: 256) and
+  `scripts/check_attribute_carriage.sh` (row 1: 147 programs; `--full`, Tier B row 17: 419) and
   `scripts/check_discarded_constructs.sh` (row 1: 56 programs), pristine's answers the negative control; the libc
   witness `tests/libc_exec/044`, a new row of that lane's baseline and of the pristine-oracle register
   (`scripts/upstream_oracle_differences.json`, class `shared-model-fix`). No existing baselined row moved. The cost of

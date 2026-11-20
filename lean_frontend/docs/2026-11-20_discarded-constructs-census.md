@@ -52,7 +52,8 @@ Worker [AGENT], slice `fix/attribute-preservation` (charter
   the parser's action drops never reaches it.
 - Attributes the MODEL gives meaning to: `cerb::byte` on a typedef (`cabs_to_ail_effect.lem:919-930`, the typedef
   becomes the `Byte` type), `cerb::with_address` on an object declaration (`translation.lem:4462`; at run time upstream's
-  `Failure("TODO: cerb::with_address() is yet implemented")`, a crash), `cerb::hidden` (printing), `cerb::magic` (CN).
+  `Failure("TODO: cerb::with_address() is yet implemented")`, a crash; since the R1 round the fork's parser refuses the
+  attribute wherever it is written, record §11), `cerb::hidden` (printing), `cerb::magic` (CN).
   No standard attribute is given meaning.
 - What prints: the OCaml engine's `--pp=ail --ast=ail` shows an `Attributes` node under declarations, function
   definitions, tag definitions, members and statements, and `AilTypedefAttributes`; attribute locations are not printed.
@@ -163,7 +164,7 @@ None is given a meaning; each is carried exactly where its placement is carried 
 | T2 | `noreturn`, `_Noreturn` | `[[noreturn]] void f(void) { } int main(void) { f(); return 0; }` | carried; `Specified(0)` where the keyword `_Noreturn` gives `UB071_noreturn`: the undefined behaviour of 6.7.12.6 is not detected (an invalid program accepted) | CARRIED |
 | T3 | `unsequenced`, `reproducible` (their standard placement is after the function declarator) | `int f(int x) [[unsequenced]] { return x; }` | row A42 | DISCARDED-SILENTLY |
 | T4 | `fallthrough` | `case 0: x = 1; [[fallthrough]]; case 1: …` | row A9 | REFUSED (*valid C*, *misattributed*) |
-| T5 | an attribute another compiler gives meaning to | `struct [[gnu::packed]] S { char c; int i; };` then `sizeof(struct S) == 5` | carried; no meaning (answers 0; gcc 1). Ignoring an unrecognised attribute is the standard's rule (6.7.12.1) | CARRIED |
+| T5 | an attribute another compiler gives meaning to | `struct [[gnu::packed]] S { char c; int i; };` then `sizeof(struct S) == 5` | carried; no meaning (answers 0; gcc 1). Ignoring an unrecognised attribute is the standard's rule (6.7.12.1). A KNOWN HAZARD, stated in D19 and the consumer notes: the struct has the unpacked layout, as with the `#pragma pack` spelling that is refused; not refused ([AGENT 2026-11-20, orchestrator]), the consumer must reject what it cannot honour | CARRIED |
 
 ### 1.5 The loss that changes a program's answer (reported to the orchestrator before this commit)
 
@@ -173,7 +174,8 @@ answers `Specified(1)`, on the fork's OCaml engine, the Lean engine and pristine
 same, and `byte y = 1;` is a constraint violation at the first placement and accepted at the second. Both placements
 appertain to the typedef name. `cerb::with_address` has no working semantics to be wrong against: where it is kept
 (leading, or after the name of a file-scope object) the run crashes with upstream's TODO; where it is dropped (after the
-type; on a block-scope static object) the run proceeds unannotated.
+type; on a block-scope static object) the run proceeds unannotated. (That is pristine's behaviour, measured. On the
+fork, since the R1 round, the attribute is a parse stop at every placement and with any arguments: record §11.)
 
 ### 1.6 Counts (derived from the tables above)
 
@@ -324,7 +326,10 @@ that READS attributes, every attribute row is observable: a written contract tha
 
 - §1.5: the attributes after the declarator-id join the typedef registration at both sites (file and block scope),
   so `cerb::byte` applies at both placements; `cerb::with_address` is not implemented or altered, and where carriage
-  newly delivers it to upstream's TODO crash the result is a declared refusal instead of a crash.
+  newly delivers it to upstream's TODO crash the result is a declared refusal instead of a crash. SUPERSEDED
+  ([AGENT 2026-11-20, orchestrator], after the reviewer's R1): the attribute is refused at one point, the parser's
+  `attribute` production, wherever it is written and whatever its arguments; the per-path refusals are removed. The
+  uses upstream ran with the attribute ignored now stop too, a declared change of verdict (record §11).
 - A9: the attribute declaration is accepted and carried if the grammar change is small and conflict-neutral;
   otherwise the rejection is kept with a correct, located diagnostic and filed. A18 aligns with the struct form.
   S6: nested balanced tokens are carried whole.

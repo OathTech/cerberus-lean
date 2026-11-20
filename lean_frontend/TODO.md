@@ -797,7 +797,7 @@ hygiene items the audit confirmed (each re-verified by the orchestrator):
   file-scope `_Atomic` array (81, 82). Refused where upstream's placement is wrong, to be lifted when upstream repairs
   it: the `_Atomic` qualifier on parameters and derived block-scope declarators (81), array-parameter qualifiers
   (82), the compound literal's alignment specifier (79). Also filed from the second look: a false UB015 on two block-scope `extern`
-  redeclarations of one internal object (tray 97) and the shadowing typedef merged with the outer one (tray 98). No attribute has a meaning; a consumer that wants
+  redeclarations of one internal object (tray 97) and the shadowing typedef merged with the outer one (tray 98). `cerb::with_address` is refused by the parser everywhere (tray 99), to be lifted if upstream implements it. `[[gnu::packed]]` is carried with no meaning and the struct has the unpacked layout (a known hazard, D19; not refused). No attribute has a meaning; a consumer that wants
   `[[noreturn]]` to be `_Noreturn` asks for it.
 
 - **`match_pattern`/`typecheck_pattern` fail CLOSED on tuple-arity mismatch — LANDED
