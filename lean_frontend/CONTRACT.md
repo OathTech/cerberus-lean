@@ -638,3 +638,30 @@ witnesses and are not "thinly tested": they do not answer.
   `docs/2026-11-20_attribute-preservation-second-look.md`, each with its dispositions). Where the claim stops: a
   block-scope typedef that shadows a file-scope one is merged with it by upstream's `register_typedef`, attributes
   included (tray 98, unchanged).
+
+- **D20 — the implementation profile is a parameter: plain `char` signedness is selectable on both engines**
+  ([USER 2026-11-22] rulings; record `docs/2026-11-22_impl-profile-record.md`; upstream-tray report 100). The
+  implementation-defined choices of the semantics are one value, selected once at the entry point of each engine and
+  read by every phase: on the Lean side an instance-implicit class, `CerberusImpl.ImplProfile` (one field today,
+  `char_is_signed`; every definition that reads it binds `[CerberusImpl.ImplProfile]`, and no instance is declared in
+  the repository), on the OCaml side upstream's `Ocaml_implementation` record. Two profiles, by upstream's names:
+  `default` (`DefaultImpl`, plain `char` signed; the profile of every lane, baseline, libc pin and quotation digest,
+  all unchanged) and `hafnium` (`HafniumImpl`, plain `char` unsigned, the profile RefinedC's frontend selects; D6's
+  LP64 holds for both). Selection: `--impl-profile=default|hafnium` on both drivers; in process,
+  `letI : CerberusImpl.ImplProfile := CerberusImpl.hafniumImpl` (Lean) and `Ocaml_implementation.(set
+  (HafniumImpl.impl))` before any phase (OCaml). An unknown name is refused (exit 2).
+  **No mixed configuration.** (i) The fork fixes the one binding of upstream's model that read the profile at module
+  initialisation (`AilTypesAux.is_signed_ity`): on un-patched upstream, after `set HafniumImpl.impl`, the
+  elaboration, Core's signedness tests and the concrete store and load stayed on the default while the constant
+  decoder and the ranges followed the selection: a store crash or a silently mixed answer. A registered fork-ahead
+  delta. (ii) A Cabs JSON document records the profile it was exported under (`impl_profile`, upstream's profile
+  name); the importer refuses a document whose profile is not the run's, one without the field, and one naming a
+  profile this port does not support. (iii) Core quotation is refused under a non-default profile (the quoted module
+  does not record it).
+  **Status of the second profile: consumer-configured.** It is validated by one witness lane and nothing else:
+  `scripts/check_impl_profile.sh` (row 1), 22 programs under both profiles with both engines equal to gcc's answer
+  under `-funsigned-char` / `-fsigned-char`, the refusals above, and un-patched upstream's recorded answers as the
+  negative control. No execution, libc, csmith or pristine-oracle row runs under `hafnium`; the libc is built under
+  the default and stands for both on the measurement that its sources elaborate to identical Core. Where the claim
+  stops: programs outside the witness set under `hafnium`; the VIP, symbolic and CHERI memory models; Morello's
+  profile and the other fields of the implementation record, which stay constants shared by the two profiles.
