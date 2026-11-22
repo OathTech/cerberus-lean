@@ -40,9 +40,16 @@ def intTy : ctype := Ctype [] (.Basic (.Integer (.Signed .Int_)))
 -- KILL below is the same at every positive top.
 def probeAddressSpaceTop : Int := 0x10000
 
+-- implementation-profile slice (2026-11-22, contract D20): storeM reads the
+-- implementation profile (`[CerberusImpl.ImplProfile]`: the signedness of plain
+-- `char` in the integer byte encoding). The probe supplies upstream's default
+-- profile EXPLICITLY at its entry, as the test executables do; no instance is
+-- declared. The value is irrelevant to the verdict: the ill-typed-store guard
+-- fires before any byte is encoded, and the control stores an `int`.
 def runStore [LemFuel] (mv : MemValue) :
     nd_action Footprint String mem_error
       (mem_constraint IntegerValue) MemState :=
+  letI : CerberusImpl.ImplProfile := CerberusImpl.defaultImpl
   -- effect-retirement C1: storeM takes the tag table by value
   -- (reader_consumer); this probe stores a scalar with no tag in
   -- scope — the empty map is the pre-C1 (unset-global) state.

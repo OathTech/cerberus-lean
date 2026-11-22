@@ -17,12 +17,14 @@ def run (fuel : Nat) (top : Int) (mode : String) : IO Unit := do
   let implPath := runtime ++ "/libcore/impls/gcc_4.9.0_x86_64-apple-darwin10.8.0.impl"
   let implFile ← unwrap (CoreParser.parseLibraryFile implPath (← IO.FS.readFile implPath))
   let impl := loadCoreImpl implFile
+  -- the default implementation profile is supplied explicitly (contract D20, 2026-11-22):
+  -- `frontendTU` and `loadLibc` bind `[CerberusImpl.ImplProfile]` between the fuel and the switch set
   let (f, provenance, output) ← match mode with
     | "fixture" => do
       let (digest, tu, _) ← unwrap (CabsImport.parseJsonWithFiles
         (← IO.FS.readFile "tests/fixtures/001-return-literal/cabs.json"))
       let _ ← (CerberusFresh.setDigestIO digest : BaseIO Unit)
-      let .ok (f, _) ← @frontendTU ⟨fuel⟩ ⟨[]⟩ true 0 top (names, stdFuns, impl) names stdFuns impl tu
+      let .ok (f, _) ← @frontendTU ⟨fuel⟩ CerberusImpl.defaultImpl ⟨[]⟩ true 0 top (names, stdFuns, impl) names stdFuns impl tu
         | throw (IO.userError "frontendTU failed")
       let .Result linked := link [f] | throw (IO.userError "link failed")
       let provenance ← match CerbQuote.linkedProvenance [CerbQuote.translatedProvenance f] linked with
@@ -32,7 +34,7 @@ def run (fuel : Nat) (top : Int) (mode : String) : IO Unit := do
     | "libc" => do
       let paths := ((← IO.FS.readFile ".tmp/core-quote-d1/libc-json-paths.txt").splitOn "\n").filter (· != "")
       unless paths.length == 12 do throw (IO.userError "expected twelve metadata TUs")
-      let .ok (libc, _) ← @loadLibc ⟨fuel⟩ ⟨[]⟩ runtime false 0 top
+      let .ok (libc, _) ← @loadLibc ⟨fuel⟩ CerberusImpl.defaultImpl ⟨[]⟩ runtime false 0 top
           (names, stdFuns, impl) names stdFuns impl "tests/libc/libc.core" paths
         | throw (IO.userError "loadLibc failed")
       pure (libc, CerbQuote.libcProvenance libc, "LibcQuoted.lean")
