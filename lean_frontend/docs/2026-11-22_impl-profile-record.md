@@ -5,7 +5,7 @@ Branch `arc/impl-profile`, base mainline `77229f846`. Charter `2026-11-22_worker
 no ruling covers are marked [AGENT]. Quoted machine output is verbatim; counts marked "derived" are mine. Commits:
 S1 `0c3817aef`, S2 `1c1ac30c4`, S3 `44a206e0b`; the pre-merge review `987c2c51c`
 (`2026-11-22_impl-profile-premerge-review.md`, with its dispositions); the dispositions' code and witnesses
-`901ec9c03` and their documents in the commit after it. **Section 7 records what changed after the review; where
+`901ec9c03` and their documents `1eb8e7638`; the probes outside the Lake graph `59b48520c` (section 8). **Section 7 records what changed after the review; where
 sections 1 to 6 said something the review showed to be wrong they are corrected in place and say so.**
 
 ## 0. Rulings
@@ -286,3 +286,78 @@ Not done, as it stands: no lane under `hafnium` besides the 28 witnesses (by rul
 profile (with the operator); the preprocessor does not follow the profile (by ruling); every memory model but the
 concrete one refuses `hafnium`; Morello and the other fields of the record are untouched (by ruling); the libc-mode
 witnesses were not run on pristine; the capture search did not execute the VIP, symbolic or CHERI models.
+
+## 8. The Tier B reds on `1eb8e7638`, and the probes outside the Lake graph (2026-11-22)
+
+The orchestrator's full battery on `1eb8e7638` reported `full: failed; 46/48 selected commands completed
+successfully.`: red on Tier B row 5 (`./scripts/test_immaculate.sh`) and Tier B row 9
+(`python3 scripts/test_observation_lanes.py`). Fixed in `59b48520c`.
+
+**The defect.** `tests/immaculate/illtyped-store.lean` is a Lean probe the immaculate lane compiles at lane time
+(`lake env lean --run`). It is not a Lake root. It calls `CerbMem.storeM`, which binds `[CerberusImpl.ImplProfile]`
+since S1, and had no instance in scope:
+
+```
+FAIL: illtyped-store probe produced no ILLTYPED_STATUS line (output: …/tests/immaculate/illtyped-store.lean:49:8: error(lean.synthInstanceFailed): failed to synthesize instance of ty…
+```
+
+(the orchestrator's line, as relayed). The probe now supplies `CerberusImpl.defaultImpl` explicitly at its entry
+(`letI` in `runStore`, as the test executables do; no instance is declared). The value does not affect its
+verdict: the ill-typed-store guard fires before any byte is encoded.
+
+**Why the worker's gates missed it.** The S1 threading was driven by compile errors of `lake build` over the
+roots and executables of the two packages, and the worker's gates were row 1 and a few Tier A rows plus, after the
+review, `test_verify`, the libc quotation row and the pristine lane. No Tier B row that compiles a Lean source
+outside the Lake graph was run at any stage: row 5 and row 9 were never run by the worker before this. The record's
+earlier sections say which rows were not run; they did not say, and the worker did not see, that those rows
+compile Lean the build never touches.
+
+**Every Lean source compiled at gate time outside `lake build` of the two packages' targets.** Method, which is
+what makes the list complete: (i) every call site of `lake` or `lean` in `scripts/`, `tools/` and
+`lean_frontend/test/CoreQuote/` was listed (a grep for the two program names in the shell and Python sources) and
+each classified as a `lake build` of a target of the two packages, or a direct compile; (ii) every tracked `.lean`
+file outside the two packages' source trees was listed (`git ls-files`); (iii) every gate script that WRITES Lean
+text at run time was listed (heredocs and `write_text`). Each source in the union was then compiled against the
+tree, by the command its gate uses or by `lake env lean` from `lean_frontend/`:
+
+| Source | Compiled by | Gate | Result on this tree |
+|---|---|---|---|
+| `tests/immaculate/illtyped-store.lean` | `lake env lean --run` | Tier B 5; Tier B 9 through it | **failed; fixed** (`ILLTYPED_STATUS=KILL`) |
+| `tests/immaculate/g6-hash-collision.lean` | `lake env lean --run` | Tier B 5 | compiles (`G6_STATUS=TRIPWIRE`); calls no reader |
+| `tests/failure-probes/FailureReach.lean` | a scratch Lake package requiring `lean_frontend` | row 1 (`check_failure_reach.sh`) | compiles (row 1 green; also compiled directly) |
+| `tests/failure-probes/FailureMain.lean` | `run_failure_probes.py`: a scratch package over LemLib alone | reporting instrument | imports only its own generated `Discarded_failures`; cannot reach the class (by its imports; not run) |
+| `tests/provider-smoke/ProviderSmoke.lean` | `build_provider_smoke.py`: a scratch client package | release instrument | compiles (directly, `lake env lean`) |
+| `lean_frontend/test/CoreQuote/probes/CoreQuotePipelineProbe.lean` | nothing (unwired development probe) | none | **needed the instance; passed positionally.** Still does not compile: its `loadLibc` call lacks the `portableLabels` argument (the same call text at the mainline `77229f846`; that function has had the argument since 2026-10-26), outside this change |
+| `lean_frontend/test/CoreQuote/probes/CoreQuoteInventory.lean` | nothing (unwired) | none | compiles |
+| `lean_frontend/test/CoreQuote/probes/CoreQuoteSmoke.lean` | nothing (unwired) | none | elaborates; its `#eval` stops on a missing scratch file (an I/O error at run, not a signature) |
+| the five `.axiom-probe*.lean` texts | written and compiled by `check_theorem_axioms.sh` | row 1 | green in row 1 on `901ec9c03` |
+| the fuel-forms decoys | written and compiled by `check_fuel_forms.sh` | row 1 | green in row 1 |
+| `Location.lean` | written and compiled by `check_runtime_resolution.sh` | fixture lane | green on `901ec9c03` |
+| the stop probe | written and compiled by `test_stops.py` | fixture lane | green on `901ec9c03` |
+| the quoted literal modules and `CoreQuote{Compare,Runner,Visitor}.lean` | `CoreQuoteRoundTrip.py` | row 1; Tier B 13 | green on `901ec9c03` |
+
+The speclab lanes and `test_memory_access.py` build Lake targets, all of which the worker had built. Two sources
+needed the instance (derived from the table): one gated, one unwired.
+
+**Rows 5 and 9, by the worker, separate background jobs on a still tree, on `59b48520c`.** Last lines, verbatim:
+
+```
+immaculate rc=0
+observation lane plants: 95/95 passed
+```
+
+Row 5's verdict line, the one before it, begins `OK: lane matches the committed baseline (MATCH except the ISO-fix register pin R5 r5-hex-subnormal-double-rounding DIFF ` (cut here; it goes on to list the
+registered pins). **Row 9's cause was established, not
+assumed**: `python3 scripts/test_observation_lanes.py --lane immaculate` with the probe put back to `1eb8e7638`'s
+text gives `observation lane plants: 9/13 passed`, exit 1, the four failures (the `control` plant first) carrying
+the probe's missing-instance error; with the fix, `observation lane plants: 13/13 passed`. The stderr line the
+orchestrator saw last, `pnvi_lane: legacy, origin unattributed (coarse CRASH pin only)`, is printed by the green
+runs too and was not the failure.
+
+**Lesson.** A change to a class of signatures needs every COMPILER of Lean sources enumerated, not only the Lake
+graph: the lane scripts compile probes the build never sees, some written at run time. "The build is green and row
+1 is green" covers the Lake targets and the row-1 generators and nothing else. The enumeration above (call sites of
+`lake` and `lean`, tracked `.lean` files outside the packages, scripts that write Lean) is cheap, and the worker
+should have done it at S1, where the binder was introduced; it would also have shown that Tier B rows 5 and 9 had
+to be run before any claim that the threading was complete.
+
