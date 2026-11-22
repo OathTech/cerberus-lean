@@ -152,6 +152,9 @@ the agent-facing operating manual with all build gotchas is
 
 The quickstart is a **smoke check**: one C program passes through the parser,
 Lean pipeline and OCaml oracle. The small differential gates are separate:
+(`test_unit.sh`, ladder row 1, needs `gcc` itself on the path, not only a C toolchain: its
+implementation-profile lane compares both engines with gcc under `-funsigned-char` / `-fsigned-char`
+and fails, never skips, without it; contract D20.)
 
 ```bash
 # Repository root; provision fork drift as described in VALIDATION.md first.

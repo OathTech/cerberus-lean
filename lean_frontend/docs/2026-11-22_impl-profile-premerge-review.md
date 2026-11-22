@@ -290,3 +290,134 @@ Found by the probes; none is caused by this branch, none was checked against the
 | 5 | P2 | 8 pristine crashes and 9 agreeing, not 9 and 8: record, tray report 100, S2 commit message |
 | 6 | P2 | Rows 2, 5, 14, 15, B13 and the never-run rows are owed on the final tree before the merge |
 | 7-13 | P3 | Lane coverage and plants; VIP acceptance; W3 edges; threading notes; libc confirmation; pre-existing observations; small points |
+
+## Dispositions (2026-11-22)
+
+By the worker (Claude Fable 5.2, agent), under the orchestrator's rulings of the same day [AGENT 2026-11-22,
+orchestrator]; choices no ruling covers are marked [AGENT 2026-11-22]. Code and witnesses: `901ec9c03`; documents:
+the commit after it. Each finding is fixed, answered with a reason that can be checked, or raised; none is argued
+away.
+
+**1 (P2) — FIXED by removal; the finding is right and the charter was wrong.** The charter required the
+`impl_profile` field and the import refusal on the premise that the exported document depends on the profile. It
+does not: the reviewer's measurement stands (the lane now repeats it on every run: each of its 28 programs exports
+byte-identically under the two profiles), and the reason is the one the finding gives. The worker built the field
+on that premise without measuring it, and wrote the premise into D20, two code comments, the record and a consumer
+note. Removed: the field in `backend/driver/main.ml`; the guard and the binders in `CabsImport.lean` (the mainline's
+text again, as are `CabsImportTest.lean`, `RunDigestTest.lean`, `scripts/test_batch_diagnostics.py` and the ten
+fixtures: `git diff 77229f846` empty on all, and each fixture equals a fresh export, 10 of 10); the name tables in
+`CerberusImpl.lean`; the 11 import-test cases; the lane's four JSON refusals and its JSON plant. D20 now says the
+profile is a property of the run on each engine and that nothing ties an export to a run; the refinedc-lean note no
+longer asks for a re-export. The finding's third bullet (the oracle's own run is not bound to the export) is true
+and remains true by design: the consumer gives the same profile to both runs.
+
+**2 (P2) — FIXED in the documents, with a pinned witness; no code change, by ruling.** D20, SUPPORTED, VALIDATION,
+the record and the three notes name the phases that read the profile (the desugarer's constant evaluation, Ail
+typing, the elaboration, Core's signedness tests, the integer ranges, store and load) and say the preprocessor does
+not: `#if` arithmetic on a character constant is the host's (C17 6.10.1#4), the limit macros are identifiers there,
+and upstream RefinedC's frontend is the same. "Every phase" is gone from D20, VALIDATION, the record (which keeps the
+phrase once, to say it was wrong) and the lane's header; `Main.lean` keeps one comment, "every phase below
+`runPipeline`", which is the Lean pipeline and is accurate. The reviewer's program is `tests/impl_profile/preprocessor_if.c`, a row of a new kind
+(`host`): both engines pinned (12 under `hafnium`, 52 under `default`), gcc's lines (9, 54) recorded beside them as
+the declared difference and re-checked against gcc on every run; the row fails if gcc's line ever equals the
+engines' under `hafnium`. No signedness flag is passed to the preprocessor. The `CHAR_MIN`/`CHAR_MAX`-in-`#if`
+half is upstream's under both profiles: tray report 101.
+
+**3 (P2) — DISSOLVED by 1.** The refusal whose class the finding questions no longer exists. The remaining
+refusals of the slice (unknown and repeated selector, quotation under `hafnium`) are `cerberus-lean stop [… "REFUSAL"
+…]` records with exit 2, pinned by the lane.
+
+**4 (P2) — RAISED with the operator; no code change, the gap stated.** The finding is right in both halves:
+refusing to quote under `hafnium` closes one direction, and a default-quoted module replayed at a consumer's
+`hafniumImpl` is not stopped. The record (sections 3 and 7), D20, SUPPORTED, TODO and the cerberus-caesium note now
+say that the quotation flow is not served under the second profile at this delivery, that a default quotation must
+be replayed at `defaultImpl`, and that the durable form is to record the profile in the quoted module. The note's
+title says it. The related question (quotation under `--switches=PNVI_ae_udi`, the switch set not recorded in the
+module either) was not examined by the worker; it is carried in TODO beside the item, as an open question, not a
+finding of fact.
+
+**5 (P2) — FIXED.** 8 crashes and 9 agreeing among the first 19 programs, not 9 and 8: corrected in the record
+(section 4, with the correction stated) and in tray report 100 (which now also covers the five programs added
+since: 24 programs, 12 crashes, 1 mixed, 9 agreeing, 1 bit-field refusal, 1 preprocessor program). The S2 commit
+message keeps its wrong tally (no history rewrite); the record says so. The cause was the worker's: the lane's
+"fails 9 rows" (8 crashes plus the mixed answer) was copied as the crash count.
+
+**6 (P2) — ANSWERED; the evidence is the orchestrator's battery on the new tip.** On `901ec9c03` the worker ran, as
+separate jobs on a still tree: row 1, the lane with its selftest, the kernel replay, the fixture readers
+(`test_golden`, `check_runtime_resolution`, `test_stops`), `test_verify.sh`, the libc lane (row 5), row 15,
+`test_unit.sh --core-quote-libc` and the pristine-oracle lane; all green, lines in the record's section 7. The
+worker did NOT re-run Tier A rows 2, 3, 4, 4b, 4c, 6, 6b, 7 to 14 or the other Tier B rows on that tree; the record
+lists them and says that earlier green runs of rows 2, 6, 7 and 14 on this branch are not evidence for it.
+
+**7 (P3) — FIXED.** (a) VALIDATION and the lane's header say that the plants tamper with recorded observations and
+rebuild no engine, and that the put-the-binding-back experiment was done once by hand. One plant now RUNS the
+engines: `live-ignored` executes the oracle and the Lean driver with the selector omitted on the 22 nolibc gcc rows
+and must fail exactly the 21 whose answer depends on the profile. The two older "selector-ignored" plants do not
+run anything: they substitute an engine's own recorded `default` verdict; the header says so. (b) New gcc-pinned
+programs: `fn_arg_return`, `float_conv`, `union_char`, `atomic_char`, `libc_realloc` (the heap path, libc mode),
+each agreeing with gcc on both engines under both flags; `preprocessor_if` for the `#if` gap. NOT added: file-scope
+and `static` initialisers beyond the existing `store_load_struct`, and wide constants (tray 102 is their defect;
+a gcc-pinned row would be red under the default for a reason outside this slice) [AGENT 2026-11-22]. (c) The
+bit-field row is unchanged. (d) gcc: declared in the lane's header, the wrapper (which fails without it), LADDER
+row 1, VALIDATION's row and the README's validation prerequisites.
+
+**8 (P3) — FIXED by refusal.** `--impl-profile=hafnium` is accepted under the concrete memory model only: one test
+on `Impl_mem.name` in `backend/driver/main.ml` (the file `main_vip.ml` is copied from) replaces the CHERI-only one,
+so the VIP, symbolic and CHERI drivers refuse it, exit 2. Witness: the lane runs `main_vip.exe
+--impl-profile=hafnium` (exit 2, pinned text) with `--impl-profile=default` on the same driver as the control, and
+a plant for each. The symbolic and CHERI drivers' refusals follow from the same line and were not run. The flag's
+help text names the model.
+
+**9 (P3) — FIXED.** W3 now flags any line holding `instance` and the class name (so the priority form; the one
+legitimate line, `deriving instance DecidableEq for ImplProfile`, is allowlisted by exact content), `attribute
+[instance]` on `defaultImpl`/`hafniumImpl`, and an `instance` header followed within three lines by the class name
+before a `:=`. Three plants; the selftest is at 37. Still a speedbump: the script's header lists what passes it (an
+alias of the class, an `extends`, an untyped instance, the attribute on a value under another name).
+
+**10 (P3) — ANSWERED, one text fixed.** No disagreement with the first three bullets or the counts (now 57
+hand-written declarations in 13 modules, the four import functions having left; 261 generated in 21). The W2
+wording: `lean_frontend/CLAUDE.md` now says that "default-pinned" in W2 means the switch set and that the wrappers
+bind the implementation profile; the rule's own text in `check_no_fuel_numerals.sh` was left as it is (it describes
+the switch pinning, which is still true) [AGENT 2026-11-22]. The last bullet is finding 1's, fixed there. The
+`rfl` lemmas claim what the finding says and no more; the record does not present them as evidence of unchanged
+behaviour.
+
+**11 (P3) — ACCEPTED as the stronger measurement; the lane's wording fixed.** The lane says which recipe it
+measures (`--pp=core` per source, without `--sequentialise --rewrite`), in its header, VALIDATION and the record.
+The reviewer's byte-identical `libc.co` under the dune rule's own command is the measurement that closes the
+scoping's open item; it is the reviewer's, quoted here and not re-run by the worker. The header difference at byte
+85 was not chased by the worker either.
+
+**12 (P3) — FILED, split by where each belongs [AGENT 2026-11-22].** The ruling says the five go to the tray. The
+tray holds reports for upstream, and two of the five are differences between the fork's own two engines, so:
+tray 101 (the limit macros in `#if`; measured on un-forked upstream: 0 where gcc gives 15), tray 102 (`L'\xff' ==
+255` false; measured on un-forked upstream), tray 103 (`strncmp` compares as plain `char`; measured on un-forked
+upstream, with the one-line fix); and in `TODO.md`, as Lean-versus-oracle observations for the zero-discrepancy
+rule, the `strtol` programs (one oracle line, several Lean `EXECUTION n:` blocks with the same verdict; reproduced
+by the worker) and the `printf` location (`<717:10--717:40>` on the oracle, `<unknown location>` on Lean;
+reproduced). The sixth bullet, `'ab'`, is already tray 63. If the orchestrator wants the two engine observations in
+the tray as well, that is one more edit; they are not upstream's defects as measured.
+
+**13 (P3) — ANSWERED.** (i) The duplicate-key behaviour has no object now (no field). (ii) The lane pins the
+oracle's repeated selector too (cmdliner's exit 124, text "cannot be repeated") beside the Lean driver's exit 2;
+the two exit codes differ and the lane records both. (iii) The Lem fix's cost under the default: not measured by the
+worker either; no claim is made about it beyond the finding's own argument. (iv) The replay: the worker's on
+`901ec9c03` covers 21 modules (record, section 7); the reviewer's 132-module replay at `44a206e0b` is the wider
+one and predates the dispositions' code. (v) Noted.
+
+| # | Sev | Disposition |
+|---|---|---|
+| 1 | P2 | Fixed: field and guard removed; the charter's premise was wrong |
+| 2 | P2 | Fixed in the documents; one pinned preprocessor row; no flag to cpp (ruling) |
+| 3 | P2 | Dissolved by 1 |
+| 4 | P2 | Raised with the operator; gap stated in the record, D20, SUPPORTED, TODO and the caesium note |
+| 5 | P2 | Fixed in the record and tray 100; the S2 commit message stands |
+| 6 | P2 | Answered: the named lanes re-run on `901ec9c03`; the rest is the orchestrator's battery |
+| 7 | P3 | Fixed: five programs, the preprocessor row, a live plant, the plants' nature and gcc declared |
+| 8 | P3 | Fixed: refused outside the concrete memory model, one witness |
+| 9 | P3 | Fixed: three shapes, three plants |
+| 10 | P3 | Answered; one text fixed |
+| 11 | P3 | Accepted; wording fixed |
+| 12 | P3 | Filed: tray 101-103, two in TODO (a split of the ruling, flagged) |
+| 13 | P3 | Answered; one pin added |
+

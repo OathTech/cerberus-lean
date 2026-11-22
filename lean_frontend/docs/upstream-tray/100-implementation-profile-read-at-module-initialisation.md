@@ -78,12 +78,14 @@ int main(void) {
 Upstream, `HafniumImpl`: `Specified(12)` -- the bytes 0xff and 0x80 load as negative values (the answer for signed
 plain `char`), while `CHAR_MIN` is 0 in the same configuration. `gcc -funsigned-char`: 16.
 
-Of 19 programs run this way under `HafniumImpl` (the fork's `tests/impl_profile/`, the programs that do not need
-the C library; recorded in `tests/impl_profile/pristine_hafnium.tsv`): 9 end in the `bytes_of_int(signed)` assertion
-(each stores a plain `char` above 127), 1 gives the mixed answer above, 8 answer as `gcc -funsigned-char` does
+Of 24 programs run this way under `HafniumImpl` (the fork's `tests/impl_profile/`, the programs that do not need
+the C library; recorded in `tests/impl_profile/pristine_hafnium.tsv`): 12 end in the `bytes_of_int(signed)` assertion
+(each stores a plain `char` above 127), 1 gives the mixed answer above, 9 answer as `gcc -funsigned-char` does
 (switch labels, array sizes, enumerators, `CHAR_MIN`/`CHAR_MAX`, character constants, `_Generic`: front-end and
-range results), 1 is a bit-field program upstream does not support. Under the default record all 18 supported
-programs answer as `gcc -fsigned-char` does.
+range results), 1 is a bit-field program upstream does not support, and 1 is a preprocessor program whose answer
+does not depend on the record (report 101). Under the default record, the first 19 of them (the ones run that way; 18 supported)
+answer as `gcc -fsigned-char` does. (An earlier text of this report counted 9 crashes and 8 agreeing among the first
+19 programs; the recorded file says 8 and 9.)
 
 (Measured 2026-11-22 on the un-forked upstream library installed from `c3ff8c53f`.)
 
@@ -115,6 +117,6 @@ and on its Cabs export path, 2026-11-22).
 
 Fixed in the fork (contract D20), with the patch above, a registered fork-ahead delta. The fork's two engines take
 `--impl-profile=default|hafnium` (the oracle driver calls `set` before any phase runs) and under `hafnium` both
-answer as `gcc -funsigned-char` does on the 21 supported programs of `tests/impl_profile/`, the three C-library
+answer as `gcc -funsigned-char` does on the 26 gcc-compared programs of `tests/impl_profile/`, four C-library
 programs included; `scripts/check_impl_profile.sh` runs them under both profiles and replays the upstream answers
 recorded above as its negative control.

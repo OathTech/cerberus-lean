@@ -639,29 +639,40 @@ witnesses and are not "thinly tested": they do not answer.
   block-scope typedef that shadows a file-scope one is merged with it by upstream's `register_typedef`, attributes
   included (tray 98, unchanged).
 
-- **D20 — the implementation profile is a parameter: plain `char` signedness is selectable on both engines**
-  ([USER 2026-11-22] rulings; record `docs/2026-11-22_impl-profile-record.md`; upstream-tray report 100). The
-  implementation-defined choices of the semantics are one value, selected once at the entry point of each engine and
-  read by every phase: on the Lean side an instance-implicit class, `CerberusImpl.ImplProfile` (one field today,
-  `char_is_signed`; every definition that reads it binds `[CerberusImpl.ImplProfile]`, and no instance is declared in
-  the repository), on the OCaml side upstream's `Ocaml_implementation` record. Two profiles, by upstream's names:
-  `default` (`DefaultImpl`, plain `char` signed; the profile of every lane, baseline, libc pin and quotation digest,
-  all unchanged) and `hafnium` (`HafniumImpl`, plain `char` unsigned, the profile RefinedC's frontend selects; D6's
-  LP64 holds for both). Selection: `--impl-profile=default|hafnium` on both drivers; in process,
-  `letI : CerberusImpl.ImplProfile := CerberusImpl.hafniumImpl` (Lean) and `Ocaml_implementation.(set
-  (HafniumImpl.impl))` before any phase (OCaml). An unknown name is refused (exit 2).
-  **No mixed configuration.** (i) The fork fixes the one binding of upstream's model that read the profile at module
+- **D20 — the implementation profile is a parameter of the run: plain `char` signedness is selectable on both engines**
+  ([USER 2026-11-22] rulings; record `docs/2026-11-22_impl-profile-record.md`; pre-merge review
+  `docs/2026-11-22_impl-profile-premerge-review.md` with its dispositions; upstream-tray report 100). The profile is
+  a property of the RUN on each engine, selected by the engine's flag or instance: on the Lean side an
+  instance-implicit class, `CerberusImpl.ImplProfile` (one field today, `char_is_signed`; every definition that reads
+  it binds `[CerberusImpl.ImplProfile]`, and no instance is declared in the repository), on the OCaml side upstream's
+  `Ocaml_implementation` record. Two profiles, by upstream's names: `default` (`DefaultImpl`, plain `char` signed; the
+  profile of every lane, baseline, libc pin and quotation digest, all unchanged) and `hafnium` (`HafniumImpl`, plain
+  `char` unsigned, the profile RefinedC's frontend selects; D6's LP64 holds for both). Selection:
+  `--impl-profile=default|hafnium` on both drivers; in process, `letI : CerberusImpl.ImplProfile :=
+  CerberusImpl.hafniumImpl` (Lean) and `Ocaml_implementation.(set (HafniumImpl.impl))` before any phase (OCaml). An
+  unknown name is refused (exit 2). The oracle accepts `hafnium` under the concrete memory model only: the VIP,
+  symbolic and CHERI drivers refuse it (exit 2).
+  **Which phases read it.** The desugarer's constant evaluation (character constants, case labels, array sizes, enumerators, static assertions), Ail typing, the elaboration, Core's signedness tests, the integer ranges behind `CHAR_MIN`/`CHAR_MAX`, and the memory model's store and load. **The preprocessor does not**: it is the host's `cc -E`,
+  no signedness flag is passed to it, `#if` arithmetic on a character constant is the host's (C17 6.10.1#4 allows it
+  to differ from the same expression elsewhere; upstream RefinedC's frontend is the same), and `CHAR_MIN`/`CHAR_MAX`
+  are identifiers there, evaluated as 0 under either profile (tray 101). The parser does not read it either: the Cabs
+  JSON export is byte-identical under the two profiles and carries no record of the profile; nothing ties an
+  export to a run.
+  **One configuration per run.** The fork fixes the one binding of upstream's model that read the profile at module
   initialisation (`AilTypesAux.is_signed_ity`): on un-patched upstream, after `set HafniumImpl.impl`, the
   elaboration, Core's signedness tests and the concrete store and load stayed on the default while the constant
   decoder and the ranges followed the selection: a store crash or a silently mixed answer. A registered fork-ahead
-  delta. (ii) A Cabs JSON document records the profile it was exported under (`impl_profile`, upstream's profile
-  name); the importer refuses a document whose profile is not the run's, one without the field, and one naming a
-  profile this port does not support. (iii) Core quotation is refused under a non-default profile (the quoted module
-  does not record it).
+  delta.
+  **Core quotation is not served under the second profile.** Quoting is refused under `hafnium` (the quoted module
+  does not record the profile it was elaborated under). The other direction is NOT stopped: a module quoted under
+  the default and replayed by a consumer at its own `hafniumImpl` instance runs, with its constants already
+  evaluated as signed. A default quotation must be replayed at `defaultImpl`; the question is with the operator.
   **Status of the second profile: consumer-configured.** It is validated by one witness lane and nothing else:
-  `scripts/check_impl_profile.sh` (row 1), 22 programs under both profiles with both engines equal to gcc's answer
-  under `-funsigned-char` / `-fsigned-char`, the refusals above, and un-patched upstream's recorded answers as the
-  negative control. No execution, libc, csmith or pristine-oracle row runs under `hafnium`; the libc is built under
-  the default and stands for both on the measurement that its sources elaborate to identical Core. Where the claim
-  stops: programs outside the witness set under `hafnium`; the VIP, symbolic and CHERI memory models; Morello's
-  profile and the other fields of the implementation record, which stay constants shared by the two profiles.
+  `scripts/check_impl_profile.sh` (row 1; needs gcc), 28 programs under both profiles: 26 with both engines equal to
+  gcc's answer under `-funsigned-char` / `-fsigned-char`, a bit-field refusal row, a preprocessor row pinned with
+  gcc's line beside it as the declared difference, the selector's refusals, and un-patched upstream's recorded
+  answers as the negative control. No execution, libc, csmith or pristine-oracle row runs under `hafnium`; the libc
+  is built under the default and stands for both on the measurement that its sources elaborate to identical Core.
+  Where the claim stops: programs outside the witness set under `hafnium`; the preprocessor; quotation; every memory
+  model but the concrete one; Morello's profile and the other fields of the implementation record, which stay
+  constants shared by the two profiles.

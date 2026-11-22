@@ -3,7 +3,10 @@
 Branch `arc/impl-profile`, base mainline `77229f846`. Charter `2026-11-22_worker-charter-impl-profile.md`; scoping
 `2026-11-20_impl-profile-scoping.md` (its option (b) is what was built). Worker: Claude Fable 5.2 (agent). Decisions
 no ruling covers are marked [AGENT]. Quoted machine output is verbatim; counts marked "derived" are mine. Commits:
-S1 `0c3817aef`, S2 `1c1ac30c4`, S3 this commit.
+S1 `0c3817aef`, S2 `1c1ac30c4`, S3 `44a206e0b`; the pre-merge review `987c2c51c`
+(`2026-11-22_impl-profile-premerge-review.md`, with its dispositions); the dispositions' code and witnesses
+`901ec9c03` and their documents in the commit after it. **Section 7 records what changed after the review; where
+sections 1 to 6 said something the review showed to be wrong they are corrected in place and say so.**
 
 ## 0. Rulings
 
@@ -17,7 +20,8 @@ Core `.impl` file), Morello/CHERI and contract D6 are untouched.
 
 ## 1. What exists now
 
-One configuration value, in the types on the Lean side, selected once at the entry point of each engine:
+One configuration value, a property of the RUN, in the types on the Lean side, selected once at the entry point of
+each engine:
 
 | | Lean | OCaml |
 |---|---|---|
@@ -25,9 +29,10 @@ One configuration value, in the types on the Lean side, selected once at the ent
 | Driver selector | `cerberus-lean --impl-profile=default\|hafnium` (both spellings), builds the run's instance | `cerberus --impl-profile=default\|hafnium` (fork-only), calls upstream's `set` before any phase |
 | In process | `letI : CerberusImpl.ImplProfile := CerberusImpl.hafniumImpl` around the calls, or `@f CerberusImpl.hafniumImpl …` | `Ocaml_implementation.(set (HafniumImpl.impl))` once, before `load_core_stdlib` (RefinedC's `cerb_wrapper.ml:44`) |
 | Unknown name | REFUSAL, exit 2 | refused, exit 2 |
-| Cabs JSON | `CabsImport.labelsOfParsed` refuses a document whose `impl_profile` is not the ambient instance's, is missing, or names an unsupported profile | `--cabs-json` writes `"impl_profile": "<upstream name>"`, read from `Ocaml_implementation.get ()` |
+| Cabs JSON | unchanged: `CabsImport.parseJson*` take no instance | unchanged: the export is byte-identical under the two profiles and records none (S2 added an `impl_profile` field and an import guard; both REMOVED after the review, section 7) |
 
-Every phase reads that one value: the character-constant decoder (`CerbDecode.wrapChar`), Ail typing and the
+The phases that read that one value (an earlier text said "every phase"; the preprocessor and the parser do not,
+section 7): the character-constant decoder (`CerbDecode.wrapChar`), Ail typing and the
 desugarer's constant evaluation (`Implementation.is_signed_ity` / `precision_ity` / `integerImpl ()`), the
 elaboration's and Core's signedness tests (`AilTypesAux.is_signed_integer_type`, `is_signed` in `std.core`), the
 `char` range (`CerbMem.maxIval` / `minIval`), store and load (`CerbMem.memValueToBytes` / `reconstructValueAbst`).
@@ -55,7 +60,8 @@ is read, and a definition that reaches it without an instance in scope does not 
 
 ### The readers that gained the binder (derived from the tree at S2)
 
-Generated: 261 declarations in 21 modules. Hand-written: 61 declarations in 14 modules.
+Generated: 261 declarations in 21 modules. Hand-written: 57 declarations in 13 modules (61 in 14 at S2, when the
+four `CabsImport` import functions also bound it; removed after the review).
 The per-module lists are in the consumer note `2026-11-22_consumer-note-cerberus-sl-impl-profile.md`.
 
 ## 3. S2: captures of the profile
@@ -81,13 +87,15 @@ in the run), `backend/cn` and the other back ends.
 
 **Found on the Lean side.** [AGENT 2026-11-22] Core quotation (`--quote-core`/`--quote-libc`) writes elaborated Core
 that a consumer replays under its own instance, and the module does not record the profile: REFUSED under a
-non-default profile.
+non-default profile. This closes ONE direction only (the review's finding 4): a module quoted under the default and
+replayed at a consumer's `hafniumImpl` is not stopped. Quotation is not served under the second profile at this
+delivery; the question is with the operator.
 
 **Built under the default, by construction.** The oracle's `libc.co` (`runtime/libc/dune`) and the Lean engine's
 `tests/libc/libc.core`. They are used under `hafnium` on a measurement the lane repeats on every run: the 12 libc
 sources elaborate to identical Core text under both profiles (108125 lines; derived).
 
-## 4. The witness lane
+## 4. The witness lane (as of S2; section 7 has the lane as it is now)
 
 `scripts/check_impl_profile.sh` (ladder row 1; about 8 s with `--selftest`), engine `scripts/impl_profile_witness.py`,
 corpus `tests/impl_profile/`. Both engines exhaustive. hafnium / default: both engines' verdict (they are equal);
@@ -118,12 +126,14 @@ gcc: `-funsigned-char` / `-fsigned-char`; pristine: c3ff8c53f under `HafniumImpl
 | `sw_labels` | nolibc | 12 | 48 | 12 / 48 | 12 |
 | `usual_arith` | nolibc | 53 | 42 | 53 / 42 | CRASH `bytes_of_int(signed)` |
 
-Pristine: 9 crashes, 1 silently mixed answer (`char_pointer_walk`: 12 where the unsigned answer is 16), 8 agreeing
-front-end results, 1 refusal; the three libc-mode programs were not run on pristine (derived from
-`tests/impl_profile/pristine_hafnium.tsv`). Bit-fields: upstream does not support them, so the plain-`char` bit-field
+Pristine, these 19 nolibc programs: 8 crashes, 1 silently mixed answer (`char_pointer_walk`: 12 where the unsigned
+answer is 16), 9 agreeing front-end results, 1 refusal; the three libc-mode programs were not run on pristine
+(derived from `tests/impl_profile/pristine_hafnium.tsv`). CORRECTION (the review's finding 5): an earlier text of
+this record, tray report 100 and the S2 commit message said 9 crashes and 8 agreeing; the table above always had 8
+crash rows. The commit message stands (no history rewrite). Bit-fields: upstream does not support them, so the plain-`char` bit-field
 question is not reached; both engines refuse identically under both profiles.
 
-Verbatim (final S2 tree):
+Verbatim (final S2 tree; the lane then also pinned four JSON-field refusals, since removed):
 
 ```
 check_impl_profile: SELFTEST OK (15 plants red on exactly the declared rows; the pristine-pair plant fails 9 rows, the selector-ignored plants 20)
@@ -186,7 +196,7 @@ Fork-drift manifest, single-row edits with dated NOTEs, no `--refresh`: `[files]
 (`lean_impl_profile.lem`); `[source-content]` the new row, `Makefile`, `ailTypesAux.lem`, `backend/driver/main.ml`;
 `[expected-semantic]` `ailTypesAux.ml`'s hash (one more hunk; layer 2 stays 37).
 
-## 6. What was not done
+## 6. What was not done (as of S3; see section 7 for the state after the review)
 
 - No lane runs under `hafnium` besides the 22 witnesses (by ruling).
 - Core quotation under `hafnium` is refused, not supported.
@@ -197,3 +207,82 @@ Fork-drift manifest, single-row edits with dated NOTEs, no `--refresh`: `[files]
 - The remaining Tier A and Tier B rows were not run by the worker.
 - The one-job-per-lane rule was not kept twice: rows 6 and 7, and `test_verify` with the pristine-oracle gate, ran
   back to back in one background job each.
+
+## 7. After the pre-merge review (2026-11-22)
+
+The review (`2026-11-22_impl-profile-premerge-review.md`, `987c2c51c`): no P1, six P2, P3 notes. Every finding is
+dispositioned in that file. Rulings [AGENT 2026-11-22, orchestrator]; code and witnesses `901ec9c03`.
+
+**The charter's premise about the Cabs JSON was wrong, and so was this record.** The charter required a profile
+field in the export and an import refusal on the premise that the preprocessor's and the parser's results in the
+document depend on the profile. The reviewer measured that they do not (98 documents byte-identical under the two
+profiles apart from the label), and the reason is structural: Cabs carries a character constant as its spelling and
+`CHAR_MIN` as an identifier, and the preprocessor is the host's. The field and the guard are REMOVED:
+`backend/driver/main.ml` writes no field; `CabsImport.lean`, `CabsImportTest.lean`, `RunDigestTest.lean`,
+`scripts/test_batch_diagnostics.py` and the ten fixtures are the mainline's text again (`git diff 77229f846` is
+empty on all of them; each fixture also equals a fresh export from this tree, 10 of 10). `parseJson*` do not bind
+the profile. With the guard gone, the review's finding 3 (its refusal class) has no object. The lane now checks the
+measured fact on every run: each program's export under `hafnium` equals its export under `default`.
+
+**The profile is a property of the run.** It is read by the desugarer's constant evaluation, Ail typing, the elaboration, Core's signedness tests, the integer ranges and the memory model's store and load. It is NOT read by the
+preprocessor: `#if` arithmetic on a character constant is the host `cc -E`'s (C17 6.10.1#4 permits the difference;
+upstream RefinedC's frontend is the same) and the limit macros are identifiers there. No signedness flag is passed
+to the preprocessor. Witness `preprocessor_if`: both engines 12 under `hafnium` and 52 under `default`; gcc 9 and 54,
+recorded beside the pins as the declared difference and re-checked live.
+
+**Quotation (finding 4): no change, and the gap stated.** Quoting is refused under `hafnium`; a default-quoted module
+replayed at a consumer's `hafniumImpl` is not stopped. The quotation flow is not served under the second profile at
+this delivery. With the operator.
+
+**Other changes.** `--impl-profile=hafnium` is accepted under the concrete memory model only: the VIP driver (a copy
+of `main.ml`) refuses it, exit 2, by one test on `Impl_mem.name`. Rule W3 also catches the priority form,
+`attribute [instance]` on the profile values and a header broken across lines. The lane gained five gcc-pinned
+programs (function argument and return conversions, floating conversions, a union with a `char` member, an
+`_Atomic char`, `realloc` of a `char` buffer holding bytes above 127), the preprocessor row, the VIP refusal with
+its default control, the oracle's repeated selector, and one plant that RUNS both engines with the selector
+omitted; its other plants tamper with recorded observations and rebuild no engine. gcc is a declared prerequisite
+of row 1. The five outside-the-slice observations: tray reports 101 (limit macros in `#if`), 102 (wide character
+constants), 103 (`strncmp`); the two Lean-versus-oracle ones (`strtol`'s execution blocks, the `printf` location)
+are in `TODO.md`, since the tray holds upstream reports [AGENT 2026-11-22]; the sixth, `'ab'`, is tray 63's.
+
+Pristine under HafniumImpl, now 24 nolibc programs: 12 store crashes, 1 silently mixed answer, 9 agreeing with
+`gcc -funsigned-char`, 1 bit-field refusal, and the preprocessor program (12, as the fork; its answer does not
+depend on the record) (derived from `pristine_hafnium.tsv`).
+
+The lane and the gates on `901ec9c03`, each a separate job on a still tree, verbatim:
+
+```
+check_impl_profile: SELFTEST OK (15 plants red on exactly the declared rows; the pristine-pair plant fails 13 rows, the selector-ignored plants 26)
+check_impl_profile: OK (28 programs x 2 profiles, both engines exhaustive; 26 gcc-pinned (4 in libc mode): oracle = Lean = gcc -funsigned-char under hafnium and = gcc -fsigned-char under default, byte for byte, exit codes equal, 25 with different answers under the two profiles; 1 refusal row identical under both; 1 preprocessor row (the engines agree with each other, gcc's line the declared difference); every Cabs export identical under the two profiles; 6 refusals (unknown and repeated selector on each engine, quotation under hafnium, hafnium on the VIP driver); pristine c3ff8c53f under HafniumImpl recorded for 24 programs (the negative control); the 12 libc sources elaborate to identical Core under both profiles (108125 lines))
+check_impl_profile: pristine-live OK (24 recorded observations re-derived from /home/dev/projects/cerberus-lean-proj/deps/cerberus-upstream/_build/install/default)
+check_no_fuel_numerals: SELFTEST OK (37 plants red with the declared label — F1-F6, A1-A3, W1, W3 and W2; E5 indirection a recorded known gap; unplanted set green)
+Total: 21 passed, 0 failed
+Golden tests: 10 passed, 0 failed, 0 skipped
+test_verify: 127 passed, 0 failed (25 fixtures, 28 call points, 14 corpus fixtures, 21 corpus points)
+SUMMARY: match=43 loc_only=2 diff=0
+ALL MATCH RECORDED BASELINE
+BASELINE OK (inner_arg_temps: 189 rows; classes and both distinct-observation/status hashes exact)
+Total: 2 passed, 0 failed
+Independent oracle: passed; {'semantic_agreement': 932, 'reviewed_difference': 43, 'matching_failure': 25, 'interface_agreement': 2}
+```
+
+In order: the lane's two lines (inside row 1) and its `--pristine-live` line (a separate run); the speedbump's
+selftest; row 1's tally (exit 0); the golden tests; `test_verify.sh`; row 5 (two lines); row 15; the tally of
+`test_unit.sh --core-quote-libc` (both libc digests the values they had); the pristine-oracle lane (its line cut
+before the report path). Also: `check_runtime_resolution` OK (35 witnesses), `test_stops` OK, fork drift OK (108
+files, layer 2 37; `backend/driver/main.ml` re-pinned, single row). Kernel replay: `leanchecker exit=0` over
+`CerberusImpl`, `CabsImport`, `CerbDecode`, `CerbMem`, `CerbMemDefaultFacts`, `CerbMemAccessFacts`,
+`CerbMem_lemMeasureProofs`, `CerbND`, `CerbCall`, `AilTypesAux`, `Implementation`, the four
+`*_lemMeasureProofs` modules of `Core_eval`, `Defacto_memory`, `Driver`, `Translation`, and
+`Unit.{RunDigestTest,FuelExemplar,MemoryAccessProofs,ReconstructLegacyTest,TotalityProofTest,EnumDataTest}`; negative
+control exit 1. The reviewer's tip-wide replay over 132 modules at `44a206e0b` is in the review.
+
+**Rows the worker did not re-run on `901ec9c03`** (finding 6): Tier A rows 2, 3, 4, 4b, 4c, 6, 6b, 7, 8, 9, 10, 11,
+12, 13, 14, and every Tier B row except `test_verify.sh`, `--core-quote-libc` and the pristine-oracle lane. Rows 2,
+6, 7 and 14 passed on earlier trees of this branch (sections 5 above) and are not evidence for this one. The
+orchestrator's battery on the new tip is the evidence for those rows.
+
+Not done, as it stands: no lane under `hafnium` besides the 28 witnesses (by ruling); quotation under the second
+profile (with the operator); the preprocessor does not follow the profile (by ruling); every memory model but the
+concrete one refuses `hafnium`; Morello and the other fields of the record are untouched (by ruling); the libc-mode
+witnesses were not run on pristine; the capture search did not execute the VIP, symbolic or CHERI models.

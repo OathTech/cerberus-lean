@@ -114,10 +114,22 @@ of this work's scope.
   `class CerberusImpl.ImplProfile`, `--impl-profile=default|hafnium` on both engines, upstream's start-up binding
   fixed (tray 100), the witness lane `scripts/check_impl_profile.sh`. Left open, each a declared limit and none
   started: (i) no execution, libc or csmith lane runs under `hafnium` ([USER 2026-11-22]: the witness lane alone);
-  (ii) Core quotation is refused under `hafnium`: supporting it means recording the profile in the quoted module and
-  checking it at the consumer's replay; (iii) the rest of the implementation record (sizes, alignments, the alias
+  (ii) **Core quotation is not served under `hafnium`** (with the operator): quoting is refused there, and a
+  default-quoted module replayed at a consumer's `hafniumImpl` is not stopped; the durable form is to record the
+  profile in the quoted module (a definition the consumer compares, or a module closed over the instance), which
+  closes both directions; whether the switch set has the same gap for quotation under `PNVI_ae_udi` was raised by
+  the pre-merge review and not examined; (iii) the rest of the implementation record (sizes, alignments, the alias
   table, Morello's profile) stays constants: a second field is added to the class, no second binder; (iv) the
-  capture search did not execute the VIP, symbolic or CHERI memory models.
+  preprocessor is the host's and does not follow the profile (D20); (v) the oracle refuses `hafnium` under every
+  memory model but the concrete one.
+- **Two Lean-versus-oracle observations from the impl-profile pre-merge review (2026-11-22; both profiles; measured
+  by the worker on the review's programs, not investigated).** (a) `strtol("42x", &e, 10)` in libc mode: the oracle
+  prints one `Defined {value: "Specified(142)", …}` line, the Lean driver prints `EXECUTION 0:` … `EXECUTION 2:`
+  blocks, each with that verdict: the engines agree on the verdict and differ in how many executions the
+  exhaustive run reports. Whether the lanes normalise this was not checked. (b) `printf("%d\n", 1L)`: both engines
+  `UB153b_illtyped_argument_for_format`; the oracle's `loc` is a libc position (`<717:10--717:40>`), the Lean
+  engine's `<unknown location>` (the libc lane has a `loc_only` class). Neither is an upstream report; they are the
+  zero-discrepancy rule's business.
 - **A-road polish basket** — backend/semantics cleanups (pure-render
   emission split, remaining audit L-slice gaps, ott finish);
   itemized with prices in
