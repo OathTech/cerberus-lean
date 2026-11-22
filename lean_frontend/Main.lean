@@ -1862,6 +1862,12 @@ def main (args : List String) : IO Unit := do
   -- accepted, every other value refused); a repeated option is refused as cmdliner
   -- does. (flag text as given, value)
   let mut switchesArg : Option (String × String) := none
+  -- --impl-profile <name> / --impl-profile=<name> (impl-profile S2, 2026-11-22): the
+  -- run's implementation profile, by the selector names the fork's oracle driver takes
+  -- (backend/driver/main.ml `--impl-profile`): `default` (upstream's DefaultImpl) or
+  -- `hafnium` (upstream's HafniumImpl, plain char unsigned). PARSED here, JUDGED below;
+  -- an unknown name and a repeated option are refused (exit 2).
+  let mut implProfileArg : Option String := none
   let mut restArgs : List String := []
   -- --parse-core consumes its file list itself (below); nothing to scan
   let mut pending := if parseCoreMode then [] else rest1
@@ -1908,10 +1914,16 @@ def main (args : List String) : IO Unit := do
           "cerberus-lean: option --switches cannot be repeated (as the oracle's command line)"
           ⟨"a single command-line occurrence matching upstream admission", by decide⟩)
       switchesArg := some (s!"--switches {v}", v); pending := rest
+    | "--impl-profile" :: v :: rest =>
+      if implProfileArg.isSome then
+        CerbStop.exitRefusals (driverRefusal .cli (some "--impl-profile")
+          "cerberus-lean: option --impl-profile cannot be repeated"
+          ⟨"a single command-line occurrence of the implementation profile", by decide⟩)
+      implProfileArg := some v; pending := rest
     | ["--libc"] | ["--libc-tu"] | ["--call"] | ["--call-args"]
-    | ["--args"] | ["--fuel"] | ["--address-space-top"] | ["--runtime"] | ["--switches"] =>
+    | ["--args"] | ["--fuel"] | ["--address-space-top"] | ["--runtime"] | ["--switches"] | ["--impl-profile"] =>
       IO.eprintln "cerberus-lean: --libc/--libc-tu/--call/--call-args/\
-        --args/--fuel/--address-space-top/--runtime/--switches require an argument"
+        --args/--fuel/--address-space-top/--runtime/--switches/--impl-profile require an argument"
       IO.Process.exit 1
     | a :: rest =>
       if a.startsWith "--runtime=" then
@@ -1923,6 +1935,12 @@ def main (args : List String) : IO Unit := do
             "cerberus-lean: option --switches cannot be repeated (as the oracle's command line)"
             ⟨"a single command-line occurrence matching upstream admission", by decide⟩)
         switchesArg := some (a, (a.drop "--switches=".length).toString); pending := rest; continue
+      if a.startsWith "--impl-profile=" then
+        if implProfileArg.isSome then
+          CerbStop.exitRefusals (driverRefusal .cli (some "--impl-profile")
+            "cerberus-lean: option --impl-profile cannot be repeated"
+            ⟨"a single command-line occurrence of the implementation profile", by decide⟩)
+        implProfileArg := some (a.drop "--impl-profile=".length).toString; pending := rest; continue
       -- Z-24: a `--` token here is not a file name (except `--stdin`). A `--switches`
       -- value already scanned is judged FIRST, so `--switches=V --batch …` reports V's
       -- own verdict before the position refusal (S1 review L5 item 1)
@@ -1937,6 +1955,17 @@ def main (args : List String) : IO Unit := do
   let switchSet : List CerbGlobal.CerbSwitch ← match switchesArg with
     | none => pure CerbGlobal.defaultSwitches
     | some (flag, value) => judgeSwitches flag value
+  -- --impl-profile (impl-profile S2): the run's implementation profile and the upstream
+  -- name it stands for. `default` without the option. An unknown name is REFUSED (exit
+  -- 2), as the oracle driver's flag refuses it: no phase runs under an unknown profile.
+  let implProfile : CerberusImpl.ImplProfile ← match implProfileArg with
+    | none => pure CerberusImpl.defaultImpl
+    | some sel => match CerberusImpl.profileOfSelector sel with
+      | some (p, _) => pure p
+      | none =>
+        CerbStop.exitRefusals (driverRefusal .cli (some "--impl-profile")
+          s!"cerberus-lean: refused — --impl-profile={sel}: unknown implementation profile (the profiles are: default, hafnium)"
+          ⟨"one of the implementation profiles default, hafnium", by decide⟩)
   -- --args "ARG1 ARG2 ..." — the oracle's flag of the same name
   -- (backend/driver/main.ml:512-514): one string, split on whitespace
   -- runs (main.ml:111-113, Str.split "[ \t]+" — empty pieces dropped,
@@ -2018,6 +2047,15 @@ def main (args : List String) : IO Unit := do
     CerbStop.exitRefusals (driverRefusal .cli (some "Core quotation")
       "cerberus-lean: refused — Core quotation cannot be combined with --pp-core, --first, --call, --call-args, --args or --trace-nodes"
       ⟨"Core quotation admission for this option combination", by decide⟩)
+  -- impl-profile S2 (2026-11-22 [AGENT]): Core quotation is REFUSED under a non-default
+  -- implementation profile. The quoted module is elaborated Core (constants evaluated,
+  -- conversions chosen under the run's profile) that a consumer replays under an instance
+  -- of its own; the module does not record the profile, so a hafnium quotation replayed
+  -- at the default instance would be a mixed configuration. Declared, not silently run.
+  if quoting && implProfile != CerberusImpl.defaultImpl then
+    CerbStop.exitRefusals (driverRefusal .cli (some "Core quotation")
+      "cerberus-lean: refused — Core quotation under --impl-profile=hafnium: the quoted module does not record the implementation profile it was elaborated under (see CONTRACT.md D20)"
+      ⟨"Core quotation under the default implementation profile", by decide⟩)
   if quoteLibc.isSome && libc.isNone then
     IO.eprintln "cerberus-lean: --quote-libc requires --libc and its --libc-tu metadata"
     IO.Process.exit 1
@@ -2111,7 +2149,9 @@ def main (args : List String) : IO Unit := do
   let mut idx := 0
   for content in contents do
     idx := idx + 1
-    match CabsImport.parseJsonWithAllLabels content with
+    -- the import checks the document's recorded profile against the run's (the
+    -- mixed-configuration guard, CabsImport.labelsOfParsed)
+    match (letI : CerberusImpl.ImplProfile := implProfile; CabsImport.parseJsonWithAllLabels content) with
     | .error e =>
       if batchMode then
         IO.println s!"Error \{msg: \"cabs-json parse error: {CerbEscape.text e}\"}"
@@ -2134,13 +2174,14 @@ def main (args : List String) : IO Unit := do
   -- general path, the set only selects the arms (no PNVI-only entry point). No other
   -- instance of `CerbGlobal.Switches` exists in this repository
   -- (speedbump: `scripts/check_no_fuel_numerals.sh` rule W1).
-  -- Between them, the run's implementation profile (impl-profile S1, 2026-11-22):
-  -- `implProfile`, upstream's `DefaultImpl` (`CerberusImpl.defaultImpl`, the value
-  -- `Ocaml_implementation.get ()` holds when `set` was never called). Every phase below
-  -- `runPipeline` reads THIS instance (constant evaluation, typing, elaboration, Core's
-  -- signedness tests, the ranges, store/load, the decoder); no instance of
-  -- `CerberusImpl.ImplProfile` is declared in this repository (speedbump: rule W3).
-  let implProfile : CerberusImpl.ImplProfile := CerberusImpl.defaultImpl
+  -- Between them, the run's implementation profile (impl-profile S1/S2, 2026-11-22):
+  -- `implProfile`, selected above by `--impl-profile` — upstream's `DefaultImpl`
+  -- (`CerberusImpl.defaultImpl`, the value `Ocaml_implementation.get ()` holds when `set`
+  -- was never called) without the option. Every phase below `runPipeline` reads THIS
+  -- instance (constant evaluation, typing, elaboration, Core's signedness tests, the
+  -- ranges, store/load, the decoder), and the import above checked every input document
+  -- against it; no instance of `CerberusImpl.ImplProfile` is declared in this repository
+  -- (speedbump: rule W3).
   let code ← (letI : LemFuel := ⟨fuel⟩; letI : CerberusImpl.ImplProfile := implProfile; letI : CerbGlobal.Switches := ⟨switchSet⟩; runPipeline runtimeDir batchMode ppCoreMode firstTrace
     addressSpaceTop callFn traceNodes libc quoteCore quoteLibc progArgs tunits)
   -- Report completed runs on stderr: batch stdout contains only verdict tokens.

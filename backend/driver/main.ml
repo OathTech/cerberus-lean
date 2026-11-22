@@ -95,13 +95,35 @@ let cerberus debug_level progress core_obj
              cpp_cmd syntax_only cabs_json nostdinc nolibc agnostic macros macros_undef
              runtime_path_opt incl_dirs incl_files cpp_only
              link_lib_path link_core_obj
-             impl_name
+             impl_name impl_profile
              exec exec_mode iso_switches switches batch batch_alloc_census address_space_top concurrency
              astprints pprints ppflags pp_ail_out pp_core_out
              sequentialise_core rewrite_core typecheck_core defacto permissive ignore_bitfields
              fs_dump fs trace
              output_name
              files args_opt =
+  (* --impl-profile (impl-profile S2, 2026-11-22; fork-only flag; record
+     lean_frontend/docs/2026-11-22_impl-profile-record.md): the implementation
+     profile is selected HERE, the first statement of the entry point, before
+     any phase reads it -- upstream's own setter, called once
+     (ocaml_implementation.ml set/get). `default` leaves upstream's start-up
+     value (DefaultImpl; under a CHERI memory model upstream's own
+     `set MorelloImpl.impl` below still applies); `hafnium` selects upstream's
+     HafniumImpl, the profile RefinedC's frontend selects (plain char unsigned).
+     Any other name is REFUSED, exit 2, as cerberus-lean refuses it: no phase
+     runs under an unknown profile. *)
+  begin match impl_profile with
+    | "default" -> ()
+    | "hafnium" ->
+        if is_cheri_memory () then begin
+          prerr_endline "cerberus: --impl-profile=hafnium is refused under a CHERI memory model (the model selects MorelloImpl; Ocaml_implementation.set may be called once)";
+          exit 2
+        end else
+          Cerb_frontend.Ocaml_implementation.(set (HafniumImpl.impl))
+    | other ->
+        prerr_endline ("cerberus: --impl-profile=" ^ other ^ " is refused: unknown implementation profile (the profiles are: default, hafnium)");
+        exit 2
+  end;
   Cerb_debug.debug_level := debug_level;
   Cerb_runtime.specified_runtime := runtime_path_opt;
   let cpp_cmd =
@@ -325,7 +347,17 @@ let cerberus debug_level progress core_obj
              object cannot carry it. *)
           let json = match (json :> Yojson.t) with
             | `Assoc kvs ->
-              `Assoc (kvs @ [("digest", `String (Digest.to_hex (Cerb_fresh.digest ())))])
+              (* impl-profile S2 (2026-11-22): the JSON also records the implementation
+                 profile it was produced under -- upstream's profile NAME, read from the
+                 selected record (not from the flag: a library user who called
+                 Ocaml_implementation.set gets the name of what is selected). The Lean
+                 importer REFUSES a document whose recorded profile differs from the
+                 run's, and one without the field (CabsImport.labelsOfParsed): the
+                 preprocessor's and the parser's results are already in the document,
+                 and running them under another profile would be the mixed
+                 configuration this field exists to prevent. *)
+              `Assoc (kvs @ [("digest", `String (Digest.to_hex (Cerb_fresh.digest ())));
+                             ("impl_profile", `String (Cerb_frontend.Ocaml_implementation.get ()).name)])
             | _ -> failwith "cabs-json: the translation unit did not serialise to a JSON object" in
           print_string (Yojson.pretty_to_string ~std:true json);
           print_newline ();
@@ -410,6 +442,16 @@ let macro_pair =
     | (m, None)   -> Format.pp_print_string ppf m
     | (m, Some v) -> Format.fprintf ppf "%s=%s" m v in
   Arg.(conv (parser, printer))
+
+(* impl-profile S2 (2026-11-22): a plain string, judged at the head of
+   `cerberus` so an unknown name is a refusal with exit 2 (cmdliner's own enum
+   conversion would exit 124). *)
+let impl_profile =
+  let doc = "Select the implementation profile (Ocaml_implementation): \
+             $(b,default) (upstream's DefaultImpl, plain char signed) or \
+             $(b,hafnium) (upstream's HafniumImpl, plain char unsigned). \
+             Independent of --impl, which names the Core .impl file." in
+  Arg.(value & opt string "default" & info ["impl-profile"] ~docv:"NAME" ~doc)
 
 let debug_level =
   let doc = "Set the debug message level to $(docv) (should range over [0-9])." in
@@ -656,7 +698,7 @@ let () =
                          cpp_cmd $ syntax_only $ cabs_json $ nostdinc $ nolibc $ agnostic $ macros $ macros_undef $
                          runtime_path $ incl_dir $ incl_file $ cpp_only $
                          link_lib_path $ link_core_obj $
-                         impl $
+                         impl $ impl_profile $
                          exec $ exec_mode $ iso $ switches $ batch $
                          batch_alloc_census $ address_space_top $
                          concurrency $

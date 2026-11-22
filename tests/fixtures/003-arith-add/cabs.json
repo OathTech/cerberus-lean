@@ -2619,5 +2619,6 @@
       }
     }
   ],
-  "digest": "3fc60a9f280dd8345410078e59f21204"
+  "digest": "3fc60a9f280dd8345410078e59f21204",
+  "impl_profile": "clang9_x86_64-apple-darwin16.7.0"
 }

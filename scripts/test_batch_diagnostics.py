@@ -59,7 +59,8 @@ def main():
     with tempfile.TemporaryDirectory(prefix='batch-diagnostics-') as tmp:
         path = Path(tmp) / 'libc-éλ😀.core'
         path.write_text('this is not a Core file', encoding='utf-8')
-        value = {'tag': 'TUnit', 'decls': [], 'digest': '0' * 32}
+        # the document records the implementation profile it stands for (contract D20): the default's upstream name
+        value = {'tag': 'TUnit', 'decls': [], 'digest': '0' * 32, 'impl_profile': 'clang9_x86_64-apple-darwin16.7.0'}
         options = ['--libc', str(path), '--libc-tu', str(Path(tmp) / 'unused.json')]
         human = run(binary, options, value)
         marker = b'  libc load failed: '

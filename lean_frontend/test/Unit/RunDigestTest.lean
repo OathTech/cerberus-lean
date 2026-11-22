@@ -39,7 +39,7 @@ def fixtureDigest : String := "81c0f476cb2abad15583f4fcde44a0ed"
 
 open Lean Elab Command in
 #eval show CommandElabM Unit from do
-  match CabsImport.parseJson fixtureJson with
+  match @CabsImport.parseJson CerberusImpl.defaultImpl fixtureJson with
   | .error e => throwError "RunDigestTest: committed cabs-json does not parse: {e}"
   | .ok (d, _) =>
       unless d == fixtureDigest do
@@ -139,7 +139,7 @@ end RunDigestTest
 
 def main : IO UInt32 := do
   let fixture ← IO.FS.readFile "../tests/fixtures/001-return-literal/cabs.json"
-  match CabsImport.parseJson fixture with
+  match @CabsImport.parseJson CerberusImpl.defaultImpl fixture with
   | .error e =>
       IO.eprintln s!"RunDigestTest: fixture parse failed: {e}"
       return 1

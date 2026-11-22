@@ -241,6 +241,19 @@
 # a659b8f7... -> 2332dc13... (the file joins LEM_SRC_LEAN_ONLY). No generated OCaml changes
 # in this stage (layer 2 stays 37; the tree was compared byte for byte before and after).
 # Record: lean_frontend/docs/2026-11-22_impl-profile-record.md.
+# arc/impl-profile S2, 2026-11-22 [AGENT, executing the same charter; the fix is the [USER 2026-11-22] ruling (2)]: FORK-AHEAD delta
+# of the first kind (the fork's own fix of an upstream mistake, filed upstream as tray report 100): the start-up binding of the
+# implementation profile. frontend/model/ail/ailTypesAux.lem `let is_signed_ity = Implementation.is_signed_ity` (generated as a
+# top-level value reading `(Ocaml_implementation.get()).is_signed_ity` once, at module initialisation, before any
+# `Ocaml_implementation.set`) becomes a function of its argument. Under the default profile the two forms are extensionally equal;
+# under upstream's HafniumImpl pristine c3ff8c53f crashes in the concrete store or answers from a mixed configuration (the report).
+# No other top-level capture of the profile exists in the generated or the hand-written OCaml (census and instrumented run, the
+# record's section on captures). With it, the fork-only driver flag `--impl-profile=default|hafnium` (backend/driver/main.ml: upstream's
+# own `set`, called before any phase) and the `impl_profile` field of the Cabs JSON export (same file). Single-row edits, no --refresh:
+# [source-content] re-pinned: ailTypesAux.lem 6acee29b... -> bd19655c..., backend/driver/main.ml a72d466e... -> 2866555f...;
+# [expected-semantic] ailTypesAux.ml's hash moved b90d962b... -> 64f883e3... (an already-differing file: one more hunk, the binding
+# and its comment; layer 2 stays 37). [files] stays 108. Leaves when upstream absorbs the fix.
+# Record: lean_frontend/docs/2026-11-22_impl-profile-record.md.
 [meta]
 merge-base=c3ff8c53f05982745f9b3a10b3d05442e214bcb5
 lem-pin=2220010bc25f0c5682d8200f016e786ee66d65c6
@@ -362,7 +375,7 @@ util/cerb_location.ml
 100644 1129fb53c1cfac1db4e439fbc210969df95914f01292a7a4f3995213d8719a19 backend/common/pipeline.ml
 100644 a52c605083f549e8548fe277675b60445ef46688bba87e555c3861a18cbf6fd2 backend/common/pipeline.mli
 100644 2a2d4d1b5ce9b61811f245ed00ce27a907a52de84174b67fa16548f5c2372ef0 backend/driver/dune
-100644 a72d466e051ff0105375a1a30ee6ecd57bbbd458d5d507af9532bbdbcc29cac9 backend/driver/main.ml
+100644 2866555f7c236c8225bf7ad15893f7fd5f517aa0c9f15a2a92a1b9194c1ed7d8 backend/driver/main.ml
 100644 eba22d24ef89cc0f4480de666ec5568fd6478acaef79fe7c5b66c03ea7dd9a86 backend/lean_export/cabs_json.ml
 100644 6940e7e73f0bd7d1fedfa9d83f9401125064171b6e9b26c62493cc667bcedc4d backend/lean_export/dune
 100644 ddf41c042204912440d8b0e7fd90b6e19677291b63aabdd5cdaa864d8f5bb188 cerberus-lib.opam
@@ -370,7 +383,7 @@ util/cerb_location.ml
 100644 53b16ced15ce07b825cd5e60859dffcba19d83812b70da5301041e71374ac81f frontend/concurrency/cmm_csem.lem
 100644 d9fb59bfce8faf2038f3db9bcdc5c2fdb60776353f4b5bc664602fc2b42c4f24 frontend/concurrency/cmm_op.lem
 100644 d0a92503d04964e24d8123e4c1c42b35d7926c1d207049704868362c294bcc42 frontend/model/ail/ailSyntax.lem
-100644 6acee29b3e44f4ae7f13a77ad3f1a01a82a69e9bca8d935fda9daef03cc16226 frontend/model/ail/ailTypesAux.lem
+100644 bd19655cf6978dc7563558dbbdcc64202407e63b2216e9c4c839fb994f61df2d frontend/model/ail/ailTypesAux.lem
 100644 cb5c28b31fb150925944814090d1fac7febe7d1d7c34c9dec586698258f18209 frontend/model/ail/ailWf.lem
 100644 40d95436f8ca10f3afbe864200338fa99c5a219425e8c7939f45bff0b5e39f3a frontend/model/ail/genTyping.lem
 100644 80ae210b93edaab2803223dd90521f9574a29ce659121e93b4b08a39612304ad frontend/model/annot.lem
@@ -465,7 +478,7 @@ util/cerb_location.ml
 100644 90c87a67406af33bf3e2f1a41ee8386cdf18f52ffcacc40591384de2da5fb9da util/cerb_location.ml
 [expected-semantic]
 71f682948f7b90074b944a046ee21eb0cb1ecac917a8be515e2964fde6e5d6ca ailSyntax.ml
-b90d962b5e6a62bf444e7dc263fec10d1f1979091e23996b87f367ffe28d6afc ailTypesAux.ml
+64f883e3b22830325b3560f070679eee297b2e69b9623da3dffe01bbf1698996 ailTypesAux.ml
 a53abfc8c3d43f33577bac1f6ba5c54a0de8277d4de8574f4a3aa70486741780 annot.ml
 a1fc25790c544b465870a04241a7a10abe78bcf540d3beb2969ca999c11dcbbc cabs.ml
 c163f7e6814246fd451ba3d6e3169bc85f1a08da1f0ccf068b73e865d742e385 cabs_to_ail.ml

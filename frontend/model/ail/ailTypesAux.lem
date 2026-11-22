@@ -25,7 +25,19 @@ let sub_qualifiers qs1 qs2 =
 
 (* == Predicates on integerTypes ============================================ *)
 val     is_signed_ity: integerType -> bool
-let is_signed_ity = Implementation.is_signed_ity
+(* FORK-AHEAD FIX (impl-profile S2, 2026-11-22; upstream-tray report 100,
+   lean_frontend/docs/upstream-tray/100-implementation-profile-read-at-module-initialisation.md).
+   Upstream wrote `let is_signed_ity =
+   Implementation.is_signed_ity`: on the OCaml target the right-hand side is
+   `(Ocaml_implementation.get()).is_signed_ity`, so the point-free binding read
+   the profile ONCE, at module initialisation, before any
+   `Ocaml_implementation.set` -- and every reader below (the usual arithmetic
+   conversions, the elaboration's and Core's signedness tests, the concrete
+   memory model's store and load) stayed on DefaultImpl after a later `set`,
+   while the constant evaluator and the integer ranges followed it. A function
+   of its argument reads the profile at each call. Under the default profile
+   the two forms are extensionally equal. *)
+let is_signed_ity ity = Implementation.is_signed_ity ity
 
 (* STD §6.2.5#6, sentence 4 *)
 val is_unsigned_ity: integerType -> bool

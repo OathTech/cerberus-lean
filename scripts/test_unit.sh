@@ -669,6 +669,19 @@ if ! "$DISCARDED_CONSTRUCTS_SH" --selftest; then
     exit 1
 fi
 
+# The implementation-profile witness lane (arc/impl-profile, 2026-11-22, contract D20): the profile is selected once
+# on each engine (`--impl-profile=default|hafnium`) and read by every phase. The ONLY validation of the hafnium
+# profile (plain char unsigned): 22 programs under both profiles, both engines exhaustive, each verdict equal to
+# gcc's under -funsigned-char / -fsigned-char; the mixed-configuration refusals of the Cabs JSON import; pristine
+# upstream's recorded answers under HafniumImpl (the store crash and a silently mixed answer) as the negative
+# control; the libc sources' Core identical under both profiles. --selftest: plants on the recorded observations.
+# Record lean_frontend/docs/2026-11-22_impl-profile-record.md.
+IMPL_PROFILE_SH="$(dirname "$PURITY_SH")/check_impl_profile.sh"
+if ! "$IMPL_PROFILE_SH" --selftest; then
+    echo "test_unit: implementation-profile witnesses FAILED"
+    exit 1
+fi
+
 # The formatter's declared refusals and fixes (fix/printf-refusals, 2026-11-07, contract D16; upstream-tray
 # reports 26, 16, 68, 69, 70): the row-1 CORE, 32 of the 161 programs under tests/printf_refusals/ in libc mode (4 nolibc
 # controls; the whole matrix is Tier B row 15, `--full`) -- in the matrix:
