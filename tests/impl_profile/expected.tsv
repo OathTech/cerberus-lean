@@ -3,8 +3,12 @@
 #            derived 2026-11-22 by `scripts/impl_profile_witness.py --derive` (gcc -std=c11 -w -O0) and re-checked against gcc on every run.
 # kind stop: columns 5 and 6 are the oracle's and the Lean engine's verdict, the same under both profiles (upstream does not support
 #            bit-fields; the plain-char bit-field question is never reached).
+# kind host: the preprocessor row. Columns 4 and 5 are BOTH ENGINES' verdict under hafnium and default (they agree with each other);
+#            columns 6 and 7 are gcc's lines under -funsigned-char and -fsigned-char, the declared difference: `#if` arithmetic is the
+#            host preprocessor's (C17 6.10.1#4) and does not read the profile, and CHAR_MIN/CHAR_MAX are identifiers there (value 0).
 arithmetic	nolibc	gcc	Defined {value: "Specified(45)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(82)", stdout: "", stderr: "", blocked: "false"}
 array_size	nolibc	gcc	Defined {value: "Specified(2)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(1)", stdout: "", stderr: "", blocked: "false"}
+atomic_char	nolibc	gcc	Defined {value: "Specified(11)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(20)", stdout: "", stderr: "", blocked: "false"}
 bitfield	nolibc	stop	bitfield.c:1:21: error: feature not yet supported: bit-fields	Error {msg: "desugaring failed at bitfield.c:1:21-22"}
 char_limits	nolibc	gcc	Defined {value: "Specified(115)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(108)", stdout: "", stderr: "", blocked: "false"}
 char_limits_const	nolibc	gcc	Defined {value: "Specified(31)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(12)", stdout: "", stderr: "", blocked: "false"}
@@ -14,14 +18,19 @@ comparisons	nolibc	gcc	Defined {value: "Specified(42)", stdout: "", stderr: "", 
 conversions	nolibc	gcc	Defined {value: "Specified(107)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(20)", stdout: "", stderr: "", blocked: "false"}
 conversions_const	nolibc	gcc	Defined {value: "Specified(24)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(13)", stdout: "", stderr: "", blocked: "false"}
 enumerator	nolibc	gcc	Defined {value: "Specified(42)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(49)", stdout: "", stderr: "", blocked: "false"}
+float_conv	nolibc	gcc	Defined {value: "Specified(59)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(21)", stdout: "", stderr: "", blocked: "false"}
+fn_arg_return	nolibc	gcc	Defined {value: "Specified(29)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(34)", stdout: "", stderr: "", blocked: "false"}
 generic	nolibc	gcc	Defined {value: "Specified(85)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(85)", stdout: "", stderr: "", blocked: "false"}
 libc_mem	libc	gcc	Defined {value: "Specified(43)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(52)", stdout: "", stderr: "", blocked: "false"}
 libc_printf	libc	gcc	Defined {value: "Specified(1)", stdout: "255 128 0 255\\n255 ff\\nok\\n", stderr: "", blocked: "false"}	Defined {value: "Specified(0)", stdout: "-1 -128 -128 127\\n4294967295 ff\\nok\\n", stderr: "", blocked: "false"}
+libc_realloc	libc	gcc	Defined {value: "Specified(43)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(20)", stdout: "", stderr: "", blocked: "false"}
 libc_string	libc	gcc	Defined {value: "Specified(127)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(63)", stdout: "", stderr: "", blocked: "false"}
+preprocessor_if	nolibc	host	Defined {value: "Specified(12)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(52)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(9)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(54)", stdout: "", stderr: "", blocked: "false"}
 promotions	nolibc	gcc	Defined {value: "Specified(197)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(58)", stdout: "", stderr: "", blocked: "false"}
 static_assert_const	nolibc	gcc	Defined {value: "Specified(5)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
 store_load	nolibc	gcc	Defined {value: "Specified(59)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(68)", stdout: "", stderr: "", blocked: "false"}
 store_load_struct	nolibc	gcc	Defined {value: "Specified(27)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(36)", stdout: "", stderr: "", blocked: "false"}
 string_literals	nolibc	gcc	Defined {value: "Specified(109)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(82)", stdout: "", stderr: "", blocked: "false"}
 sw_labels	nolibc	gcc	Defined {value: "Specified(12)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(48)", stdout: "", stderr: "", blocked: "false"}
+union_char	nolibc	gcc	Defined {value: "Specified(47)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(28)", stdout: "", stderr: "", blocked: "false"}
 usual_arith	nolibc	gcc	Defined {value: "Specified(53)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(42)", stdout: "", stderr: "", blocked: "false"}

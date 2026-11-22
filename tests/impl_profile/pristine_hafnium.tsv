@@ -1,10 +1,11 @@
 # tests/impl_profile/pristine_hafnium.tsv -- PRISTINE upstream c3ff8c53f under HafniumImpl, driven through its installed library as
 # RefinedC's cerb_wrapper.ml drives it (set_cerb_conf, Ocaml_implementation.set HafniumImpl.impl, then elaboration and execution):
 #   OCAMLPATH=<pristine prefix>/lib CAML_LD_LIBRARY_PATH=<pristine prefix>/lib/stublibs ocaml pristine_probe.ml hafnium <program>.c
-# Recorded 2026-11-22; one row per nolibc program: its Defined line, else its `failed:` line, else its first line. The libc-mode programs
+# Recorded 2026-11-22 (the five programs added after the pre-merge review the same day); one row per nolibc program: its Defined line, else its `failed:` line, else its first line. The libc-mode programs
 # were not run on pristine. Re-derived by `scripts/check_impl_profile.sh --pristine-live <pristine prefix>`.
 arithmetic	failed: bytes_of_int(signed), i= 200, nbits= 8, [-128 ... 127]
 array_size	Defined {value: "Specified(2)", stdout: "", stderr: "", blocked: "false"}
+atomic_char	failed: bytes_of_int(signed), i= 200, nbits= 8, [-128 ... 127]
 bitfield	bitfield.c:1:21: error: feature not yet supported: bit-fields
 char_limits	Defined {value: "Specified(115)", stdout: "", stderr: "", blocked: "false"}
 char_limits_const	Defined {value: "Specified(31)", stdout: "", stderr: "", blocked: "false"}
@@ -14,11 +15,15 @@ comparisons	failed: bytes_of_int(signed), i= 255, nbits= 8, [-128 ... 127]
 conversions	failed: bytes_of_int(signed), i= 200, nbits= 8, [-128 ... 127]
 conversions_const	Defined {value: "Specified(24)", stdout: "", stderr: "", blocked: "false"}
 enumerator	Defined {value: "Specified(42)", stdout: "", stderr: "", blocked: "false"}
+float_conv	failed: bytes_of_int(signed), i= 255, nbits= 8, [-128 ... 127]
+fn_arg_return	failed: bytes_of_int(signed), i= 200, nbits= 8, [-128 ... 127]
 generic	Defined {value: "Specified(85)", stdout: "", stderr: "", blocked: "false"}
+preprocessor_if	Defined {value: "Specified(12)", stdout: "", stderr: "", blocked: "false"}
 promotions	failed: bytes_of_int(signed), i= 240, nbits= 8, [-128 ... 127]
 static_assert_const	Defined {value: "Specified(5)", stdout: "", stderr: "", blocked: "false"}
 store_load	failed: bytes_of_int(signed), i= 200, nbits= 8, [-128 ... 127]
 store_load_struct	failed: bytes_of_int(signed), i= 250, nbits= 8, [-128 ... 127]
 string_literals	failed: bytes_of_int(signed), i= 255, nbits= 8, [-128 ... 127]
 sw_labels	Defined {value: "Specified(12)", stdout: "", stderr: "", blocked: "false"}
+union_char	failed: bytes_of_int(signed), i= 255, nbits= 8, [-128 ... 127]
 usual_arith	failed: bytes_of_int(signed), i= 255, nbits= 8, [-128 ... 127]

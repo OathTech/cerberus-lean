@@ -254,6 +254,12 @@
 # [expected-semantic] ailTypesAux.ml's hash moved b90d962b... -> 64f883e3... (an already-differing file: one more hunk, the binding
 # and its comment; layer 2 stays 37). [files] stays 108. Leaves when upstream absorbs the fix.
 # Record: lean_frontend/docs/2026-11-22_impl-profile-record.md.
+# arc/impl-profile, pre-merge review dispositions, 2026-11-22 [AGENT, executing the orchestrator's rulings of the same day on the
+# review docs/2026-11-22_impl-profile-premerge-review.md]: backend/driver/main.ml re-pinned 2866555f... -> aec5c71d... -- the
+# `impl_profile` field of the Cabs JSON export is REMOVED (finding 1: the export does not depend on the profile, so the field
+# recorded nothing; the charter's premise was wrong), and `--impl-profile=hafnium` is accepted under the concrete memory model
+# only (finding 8: the VIP driver, a copy of this file, refuses it; one test on Impl_mem.name replaces the CHERI-only one).
+# Single-row edit, no --refresh; no generated file moved.
 [meta]
 merge-base=c3ff8c53f05982745f9b3a10b3d05442e214bcb5
 lem-pin=2220010bc25f0c5682d8200f016e786ee66d65c6
@@ -375,7 +381,7 @@ util/cerb_location.ml
 100644 1129fb53c1cfac1db4e439fbc210969df95914f01292a7a4f3995213d8719a19 backend/common/pipeline.ml
 100644 a52c605083f549e8548fe277675b60445ef46688bba87e555c3861a18cbf6fd2 backend/common/pipeline.mli
 100644 2a2d4d1b5ce9b61811f245ed00ce27a907a52de84174b67fa16548f5c2372ef0 backend/driver/dune
-100644 2866555f7c236c8225bf7ad15893f7fd5f517aa0c9f15a2a92a1b9194c1ed7d8 backend/driver/main.ml
+100644 aec5c71d1f0db4313885ee9c20e495d0fd04d9e9af804084063c4892f8fa049f backend/driver/main.ml
 100644 eba22d24ef89cc0f4480de666ec5568fd6478acaef79fe7c5b66c03ea7dd9a86 backend/lean_export/cabs_json.ml
 100644 6940e7e73f0bd7d1fedfa9d83f9401125064171b6e9b26c62493cc667bcedc4d backend/lean_export/dune
 100644 ddf41c042204912440d8b0e7fd90b6e19677291b63aabdd5cdaa864d8f5bb188 cerberus-lib.opam

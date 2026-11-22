@@ -111,12 +111,20 @@ let cerberus debug_level progress core_obj
      `set MorelloImpl.impl` below still applies); `hafnium` selects upstream's
      HafniumImpl, the profile RefinedC's frontend selects (plain char unsigned).
      Any other name is REFUSED, exit 2, as cerberus-lean refuses it: no phase
-     runs under an unknown profile. *)
+     runs under an unknown profile. The profile is a property of the RUN: the
+     PREPROCESSOR (the host's `cc -E`) and the parser do not read it, so the Cabs
+     export is the same under every profile and carries no record of it. *)
   begin match impl_profile with
     | "default" -> ()
     | "hafnium" ->
-        if is_cheri_memory () then begin
-          prerr_endline "cerberus: --impl-profile=hafnium is refused under a CHERI memory model (the model selects MorelloImpl; Ocaml_implementation.set may be called once)";
+        (* one rule for every driver built from this file (main_vip.ml is a copy):
+           a non-default profile is accepted under the CONCRETE memory model only,
+           the one model the witness lane runs (scripts/check_impl_profile.sh). The
+           VIP, symbolic and CHERI models are REFUSED, not run unvalidated (the
+           pre-merge review's finding 8, [AGENT 2026-11-22, orchestrator]); a CHERI
+           model also selects MorelloImpl itself, and `set` may be called once. *)
+        if Impl_mem.name <> "concrete" then begin
+          prerr_endline ("cerberus: --impl-profile=hafnium is refused under the memory model '" ^ Impl_mem.name ^ "': a non-default implementation profile is validated under the concrete memory model only");
           exit 2
         end else
           Cerb_frontend.Ocaml_implementation.(set (HafniumImpl.impl))
@@ -347,17 +355,7 @@ let cerberus debug_level progress core_obj
              object cannot carry it. *)
           let json = match (json :> Yojson.t) with
             | `Assoc kvs ->
-              (* impl-profile S2 (2026-11-22): the JSON also records the implementation
-                 profile it was produced under -- upstream's profile NAME, read from the
-                 selected record (not from the flag: a library user who called
-                 Ocaml_implementation.set gets the name of what is selected). The Lean
-                 importer REFUSES a document whose recorded profile differs from the
-                 run's, and one without the field (CabsImport.labelsOfParsed): the
-                 preprocessor's and the parser's results are already in the document,
-                 and running them under another profile would be the mixed
-                 configuration this field exists to prevent. *)
-              `Assoc (kvs @ [("digest", `String (Digest.to_hex (Cerb_fresh.digest ())));
-                             ("impl_profile", `String (Cerb_frontend.Ocaml_implementation.get ()).name)])
+              `Assoc (kvs @ [("digest", `String (Digest.to_hex (Cerb_fresh.digest ())))])
             | _ -> failwith "cabs-json: the translation unit did not serialise to a JSON object" in
           print_string (Yojson.pretty_to_string ~std:true json);
           print_newline ();
@@ -450,6 +448,8 @@ let impl_profile =
   let doc = "Select the implementation profile (Ocaml_implementation): \
              $(b,default) (upstream's DefaultImpl, plain char signed) or \
              $(b,hafnium) (upstream's HafniumImpl, plain char unsigned). \
+             Read by the desugarer, typing, elaboration and execution, not by \
+             the preprocessor. Accepted under the concrete memory model only. \
              Independent of --impl, which names the Core .impl file." in
   Arg.(value & opt string "default" & info ["impl-profile"] ~docv:"NAME" ~doc)
 

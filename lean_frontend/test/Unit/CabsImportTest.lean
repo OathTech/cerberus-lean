@@ -33,16 +33,6 @@ Cabs node the grammar lets an attribute specifier sequence follow carries it in 
   which is the importer's convention everywhere (pinned so that it is a stated choice);
 - T9 the committed fixture carries the fields: every `Specifiers` object has `specifier_attrs` and every
   `Params`, `PDecl` and `ADecl` object has `attrs`.
-
-The implementation profile (2026-11-22, contract D20): the document records the profile it was
-exported under (`impl_profile`, upstream's profile name) and the importer checks it against the
-ambient `[CerberusImpl.ImplProfile]` at its one decode function.
-
-- T10 the committed fixture (exported under the default profile) imports under `defaultImpl` and is
-  REFUSED under `hafniumImpl`; the same document with the field naming Hafnium's profile imports
-  under `hafniumImpl` and is refused under `defaultImpl` (the mixed configuration, both directions);
-- T11 fail-closed: a document without the field, with an ill-typed field, and with a profile name
-  this port does not support (Morello's) is refused under either profile.
 -/
 open Lean (Json)
 
@@ -285,32 +275,6 @@ def main : IO UInt32 := do
   match carried with
   | .ok n => IO.println s!"T9: {n} objects checked"
   | .error _ => pure ()
-  -- T10/T11: the implementation profile recorded in the document (contract D20)
-  let withProfile (v : Option Json) : Except String String := do
-    let j ← Json.parse fixture |>.mapError toString
-    match j with
-    | .obj kvs => pure (Json.obj (match v with | some v => kvs.insert "impl_profile" v | none => kvs.erase "impl_profile")).compress
-    | _ => throw "the fixture is not a JSON object"
-  let importAt (ip : CerberusImpl.ImplProfile) (doc : Except String String) : Except String Unit := do
-    let _ ← @CabsImport.parseJson ip (← doc)
-    pure ()
-  let hafniumDoc := withProfile (some (.str CerberusImpl.hafniumImplName))
-  ok := (← expectOk "T10a the committed fixture records the default profile's upstream name"
-    (do let j ← Json.parse fixture |>.mapError toString; j.getObjValAs? String "impl_profile")
-    (· == CerberusImpl.defaultImplName)) && ok
-  ok := (← expectOk "T10b the fixture imports under the default profile" (importAt CerberusImpl.defaultImpl (pure fixture)) (fun _ => true)) && ok
-  ok := (← expectErr "T10c the fixture under the hafnium profile" (importAt CerberusImpl.hafniumImpl (pure fixture))
-    "REFUSED: mixed implementation profiles") && ok
-  ok := (← expectOk "T10d a document recording hafnium imports under the hafnium profile" (importAt CerberusImpl.hafniumImpl hafniumDoc) (fun _ => true)) && ok
-  ok := (← expectErr "T10e a document recording hafnium under the default profile" (importAt CerberusImpl.defaultImpl hafniumDoc)
-    "REFUSED: mixed implementation profiles") && ok
-  for (lbl, ip) in [("default", CerberusImpl.defaultImpl), ("hafnium", CerberusImpl.hafniumImpl)] do
-    ok := (← expectErr s!"T11a a document without impl_profile, under {lbl}" (importAt ip (withProfile none))
-      "missing 'impl_profile' field") && ok
-    ok := (← expectErr s!"T11b an ill-typed impl_profile, under {lbl}" (importAt ip (withProfile (some (.num 1))))
-      "'impl_profile' is not a string") && ok
-    ok := (← expectErr s!"T11c Morello's profile name, under {lbl}" (importAt ip (withProfile (some (.str "clang11_aarch64-unknown-freebsd13"))))
-      "names an implementation profile this port does not support") && ok
   if ok then
     IO.println "cabs-import-test: all checks passed"
     return 0

@@ -669,12 +669,15 @@ if ! "$DISCARDED_CONSTRUCTS_SH" --selftest; then
     exit 1
 fi
 
-# The implementation-profile witness lane (arc/impl-profile, 2026-11-22, contract D20): the profile is selected once
-# on each engine (`--impl-profile=default|hafnium`) and read by every phase. The ONLY validation of the hafnium
-# profile (plain char unsigned): 22 programs under both profiles, both engines exhaustive, each verdict equal to
-# gcc's under -funsigned-char / -fsigned-char; the mixed-configuration refusals of the Cabs JSON import; pristine
-# upstream's recorded answers under HafniumImpl (the store crash and a silently mixed answer) as the negative
-# control; the libc sources' Core identical under both profiles. --selftest: plants on the recorded observations.
+# The implementation-profile witness lane (arc/impl-profile, 2026-11-22, contract D20): the profile is a property of
+# the RUN, selected on each engine by `--impl-profile=default|hafnium` and read by the desugarer's constant
+# evaluation, typing, elaboration, Core's signedness tests, the ranges and store/load (not by the preprocessor). The
+# ONLY validation of the hafnium profile (plain char unsigned): 28 programs under both profiles, both engines
+# exhaustive; 26 equal to gcc's verdict under -funsigned-char / -fsigned-char; a bit-field refusal row; a preprocessor
+# row with gcc's line as the declared difference; every Cabs export identical under the two profiles; the selector's
+# refusals (the VIP driver's included); pristine upstream's recorded answers under HafniumImpl the negative control;
+# the libc sources' Core identical under both profiles. NEEDS gcc on the path (fails without it). --selftest: plants
+# on the recorded observations and one that runs both engines with the selector omitted.
 # Record lean_frontend/docs/2026-11-22_impl-profile-record.md.
 IMPL_PROFILE_SH="$(dirname "$PURITY_SH")/check_impl_profile.sh"
 if ! "$IMPL_PROFILE_SH" --selftest; then

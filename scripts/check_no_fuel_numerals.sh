@@ -89,9 +89,19 @@
 #                                            with `letI` (Main.lean) or pass a value
 #                                            explicitly (the tests); `CerberusImpl.defaultImpl`
 #                                            is an `abbrev`, not an instance.
-#   W3 SCOPE: W1's, word for word — a speedbump against an ACCIDENTAL instance, not
-#   adversarially robust, with W1's known edges; the backstop is that a lifted definition
-#   with no instance in scope does not elaborate, plus review.
+#   W3 also catches (pre-merge review finding 9, 2026-11-22), which W1 does not:
+#     - any line holding the word `instance` and the class name, so the priority form
+#       `instance (priority := low) : CerberusImpl.ImplProfile := …` (the one legitimate
+#       such line, CerberusImpl.lean's `deriving instance DecidableEq for ImplProfile`,
+#       is allowlisted by exact content);
+#     - `attribute [instance] CerberusImpl.defaultImpl` / `hafniumImpl` (the profile
+#       values are `abbrev`s of class type: that one line would make one a global default);
+#     - a header broken across lines: `instance foo` followed within three lines by the
+#       class name, before any `:=`.
+#   W3 SCOPE: a speedbump against an ACCIDENTAL instance, not adversarially robust (an
+#   alias of the class, an `extends`, an untyped `instance := e`, an attribute on a value
+#   under another name all pass it); the backstop is that a lifted definition with no
+#   instance in scope does not elaborate, plus review.
 # Default-reconstruct shape (PNVI arc S2, 2026-10-07; record
 # docs/2026-10-07_pnvi-s2-data-shapes-record.md; design record §B.7 condition (b)):
 #   W2  reconstructValue / reconstructValue_lemFuel   a mention (bare or `CerbMem.`-qualified)
@@ -223,7 +233,18 @@ run_gate() {  # <repo root>; prints verdict lines; returns 0/1
   # a plain-text speedbump, see the header's W1 SCOPE)
   report W1 '(^|[^A-Za-z0-9_.])instance\b[^:]*:[^=]*\bSwitches\b'
   # W3: the same for the implementation profile class (impl-profile S1; see W3 SCOPE)
-  report W3 '(^|[^A-Za-z0-9_.])instance\b[^:]*:[^=]*\bImplProfile\b'
+  # (same line; the attribute form on the profile values; a header broken across lines)
+  local w3rows; w3rows=$(echo "$filtered" | grep -Ev '^[^:]*/CerberusImpl\.lean:[0-9]+:[[:space:]]*deriving instance DecidableEq for ImplProfile[[:space:]]*$')
+  local w3hits; w3hits=$(echo "$w3rows" | grep -E '(^|[^A-Za-z0-9_.])instance\b.*\bImplProfile\b|attribute[[:space:]]*\[[^]]*\binstance\b[^]]*\].*\b(defaultImpl|hafniumImpl)\b')
+  local w3multi; w3multi=$(echo "$w3rows" | perl -ne '
+    if (/^([^:]*):(\d+):(.*)$/) { my ($f, $n, $l) = ($1, $2, $3);
+      if (defined $pf && $pf eq $f && $n <= $pn + 3 && $l =~ /^\s/) {
+        if ($l =~ /^([^=]*)\bImplProfile\b/ && $1 !~ /:=/) { print "$pf:$pn: $pl  [...]  $n: $l\n"; undef $pf; }
+        elsif ($l =~ /:=|\bwhere\b/) { undef $pf; }
+      } else { undef $pf; }
+      if ($l =~ /(^|[^A-Za-z0-9_.])instance\b/ && $l !~ /ImplProfile|:=|\bwhere\b/) { ($pf, $pn, $pl) = ($f, $n, $l); }
+    }')
+  if [[ -n "$w3hits$w3multi" ]]; then echo "check_no_fuel_numerals: FAIL (W3): forbidden shape found:"; { echo "$w3hits"; echo "$w3multi"; } | grep . | head -20; status=1; fi
   # W2: the default-pinned reconstruct wrappers named in production text (PNVI arc S2; a
   # plain-text speedbump, see the header's W2 SCOPE). Rows of the seams and the generated
   # tree only, proof carriers excluded, string literals blanked.
@@ -303,6 +324,9 @@ if [[ "${1:-}" == "--selftest" ]]; then
   plant "W3 profile instance in a seam"              W3 CerbND.lean 'instance : CerberusImpl.ImplProfile := CerberusImpl.defaultImpl'
   plant "W3 profile instance in the generated tree"  W3 generated/Utils.lean 'instance plantIp : ImplProfile where char_is_signed := false'
   plant "W3 local profile instance in a unit test"   W3 test/Unit/FuelExemplar.lean 'local instance : CerberusImpl.ImplProfile := ip₀'
+  plant "W3 priority form"                           W3 CerbND.lean 'instance (priority := low) : CerberusImpl.ImplProfile := CerberusImpl.defaultImpl'
+  plant "W3 attribute [instance] on a profile value" W3 generated/Utils.lean 'attribute [instance] CerberusImpl.defaultImpl'
+  plant "W3 header broken across lines"              W3 CerbCall.lean $'instance plantMl\n    : CerberusImpl.ImplProfile :=\n  CerberusImpl.hafniumImpl'
   # W2 (PNVI arc S2, 2026-10-07): a production call of the default-pinned wrapper — a
   # loadM-shaped call in the seam, and a qualified worker call in the generated tree
   plant "W2 default-pinned wrapper called in a seam"  W2 CerbMem.lean 'def plantLoad (st : MemState) := reconstructValue fmapEmpty default st.lastUsedUnionMembers st.funptrmap 0 plantTy []'
@@ -317,7 +341,7 @@ if [[ "${1:-}" == "--selftest" ]]; then
   echo "  REVERTED (unplanted scratch copy):"
   out=$(run_gate "$R"); rc=$?; echo "  $out"
   if [[ $rc -ne 0 ]]; then echo "  PLANT FAIL [green baseline]: the unplanted scan set is not green" >&2; fail=1; fi
-  if [[ $fail -eq 0 ]]; then echo "check_no_fuel_numerals: SELFTEST OK (34 plants red with the declared label — F1-F6, A1-A3, W1, W3 and W2; E5 indirection a recorded known gap; unplanted set green)"; else echo "check_no_fuel_numerals: SELFTEST FAILED" >&2; fi
+  if [[ $fail -eq 0 ]]; then echo "check_no_fuel_numerals: SELFTEST OK (37 plants red with the declared label — F1-F6, A1-A3, W1, W3 and W2; E5 indirection a recorded known gap; unplanted set green)"; else echo "check_no_fuel_numerals: SELFTEST FAILED" >&2; fi
   exit $fail
 fi
 

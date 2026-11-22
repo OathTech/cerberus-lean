@@ -137,28 +137,14 @@ abbrev defaultImpl : ImplProfile := { char_is_signed := true }
 abbrev hafniumImpl : ImplProfile := { char_is_signed := false }
 
 -- Two profiles are compared field by field (derived, so a later field is covered
--- without an edit here): the mixed-configuration guard of the Cabs JSON import.
+-- without an edit here): the driver's test for a non-default profile.
 deriving instance DecidableEq for ImplProfile
 
-/-- Upstream's profile names (the `name` field of the OCaml record,
-    ocaml_implementation.ml:115 and :358) — what `cerberus --cabs-json` records in
-    the document's `impl_profile` field. -/
-def defaultImplName : String := "clang9_x86_64-apple-darwin16.7.0"
-def hafniumImplName : String := "hafnium_aarch64-none-eabi"
-
-/-- The profile an upstream profile name denotes, for the two profiles this port
-    supports; any other name (`MorelloImpl`'s included) is `none` — a refusal at
-    every caller. -/
-def profileOfName (name : String) : Option ImplProfile :=
-  if name == defaultImplName then some defaultImpl
-  else if name == hafniumImplName then some hafniumImpl
-  else none
-
-/-- The driver's selector names (`--impl-profile=default|hafnium`, both engines) and
-    the upstream name each stands for. -/
-def profileOfSelector (sel : String) : Option (ImplProfile × String) :=
-  if sel == "default" then some (defaultImpl, defaultImplName)
-  else if sel == "hafnium" then some (hafniumImpl, hafniumImplName)
+/-- The driver's selector names (`--impl-profile=default|hafnium`, both engines):
+    upstream's `DefaultImpl` and `HafniumImpl`; any other name is `none`, a refusal. -/
+def profileOfSelector (sel : String) : Option ImplProfile :=
+  if sel == "default" then some defaultImpl
+  else if sel == "hafnium" then some hafniumImpl
   else none
 
 /-- Whether an integer type is signed.
@@ -310,8 +296,6 @@ theorem defaultImpl_char_is_signed : defaultImpl.char_is_signed = true := rfl
 theorem hafniumImpl_char_is_signed : hafniumImpl.char_is_signed = false := rfl
 theorem is_signed_ity_char_hafnium : @is_signed_ity hafniumImpl .Char0 = false := rfl
 theorem precision_ity_char_hafnium : @precision_ity hafniumImpl .Char0 = some 8 := rfl
-theorem profileOfName_default : profileOfName defaultImplName = some defaultImpl := by decide
-theorem profileOfName_hafnium : profileOfName hafniumImplName = some hafniumImpl := by decide
 theorem is_signed_ity_char_default : @is_signed_ity defaultImpl .Char0 = true := rfl
 theorem precision_ity_char_default : @precision_ity defaultImpl .Char0 = some 7 := rfl
 /-- Only the `Char` arm reads the profile: on every other constructor the two

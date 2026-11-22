@@ -1961,7 +1961,7 @@ def main (args : List String) : IO Unit := do
   let implProfile : CerberusImpl.ImplProfile ← match implProfileArg with
     | none => pure CerberusImpl.defaultImpl
     | some sel => match CerberusImpl.profileOfSelector sel with
-      | some (p, _) => pure p
+      | some p => pure p
       | none =>
         CerbStop.exitRefusals (driverRefusal .cli (some "--impl-profile")
           s!"cerberus-lean: refused — --impl-profile={sel}: unknown implementation profile (the profiles are: default, hafnium)"
@@ -2149,9 +2149,7 @@ def main (args : List String) : IO Unit := do
   let mut idx := 0
   for content in contents do
     idx := idx + 1
-    -- the import checks the document's recorded profile against the run's (the
-    -- mixed-configuration guard, CabsImport.labelsOfParsed)
-    match (letI : CerberusImpl.ImplProfile := implProfile; CabsImport.parseJsonWithAllLabels content) with
+    match CabsImport.parseJsonWithAllLabels content with
     | .error e =>
       if batchMode then
         IO.println s!"Error \{msg: \"cabs-json parse error: {CerbEscape.text e}\"}"
@@ -2179,8 +2177,8 @@ def main (args : List String) : IO Unit := do
   -- (`CerberusImpl.defaultImpl`, the value `Ocaml_implementation.get ()` holds when `set`
   -- was never called) without the option. Every phase below `runPipeline` reads THIS
   -- instance (constant evaluation, typing, elaboration, Core's signedness tests, the
-  -- ranges, store/load, the decoder), and the import above checked every input document
-  -- against it; no instance of `CerberusImpl.ImplProfile` is declared in this repository
+  -- ranges, store/load, the decoder). The import above does not: a Cabs document is the
+  -- same under every profile (the preprocessor and the parser do not read it). No instance of `CerberusImpl.ImplProfile` is declared in this repository
   -- (speedbump: rule W3).
   let code ← (letI : LemFuel := ⟨fuel⟩; letI : CerberusImpl.ImplProfile := implProfile; letI : CerbGlobal.Switches := ⟨switchSet⟩; runPipeline runtimeDir batchMode ppCoreMode firstTrace
     addressSpaceTop callFn traceNodes libc quoteCore quoteLibc progArgs tunits)
