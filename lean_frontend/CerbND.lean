@@ -370,18 +370,20 @@ A worker that passes the ambient on to its callees (the driver family)
 carries the instance itself: `@X ⟨n⟩ = @X_lemFuel ⟨n⟩ n` (a driver-family
 worker that also reads the switch set binds `[CerbGlobal.Switches]` after
 `[LemFuel]` — PNVI arc S1 — so its statement quantifies over that instance
-too: `@X ⟨n⟩ sws = @X_lemFuel ⟨n⟩ sws n`). The statement
+too: `@X ⟨n⟩ sws = @X_lemFuel ⟨n⟩ sws n`; a worker that reads the
+implementation profile binds `[CerberusImpl.ImplProfile]` between the two —
+impl-profile S1, 2026-11-22 — `@X ⟨n⟩ ip sws = @X_lemFuel ⟨n⟩ ip sws n`). The statement
 that used to read `X = X_lemFuel CerbFuel.driverFuel` is the instance
 `n := 100000000` of these. -/
 
-theorem driver2_wrapper_defeq (n : Nat) (sws : CerbGlobal.Switches) :
-    @driver2 ⟨n⟩ sws = @driver2_lemFuel ⟨n⟩ sws n := rfl
+theorem driver2_wrapper_defeq (n : Nat) (ip : CerberusImpl.ImplProfile) (sws : CerbGlobal.Switches) :
+    @driver2 ⟨n⟩ ip sws = @driver2_lemFuel ⟨n⟩ ip sws n := rfl
 
-theorem print_eval_conv_aux_wrapper_defeq (n : Nat) :
-    @print_eval_conv_aux ⟨n⟩ = @print_eval_conv_aux_lemFuel ⟨n⟩ n := rfl
+theorem print_eval_conv_aux_wrapper_defeq (n : Nat) (ip : CerberusImpl.ImplProfile) :
+    @print_eval_conv_aux ⟨n⟩ ip = @print_eval_conv_aux_lemFuel ⟨n⟩ ip n := rfl
 
-theorem drive_nonmemory_steps_aux2_wrapper_defeq (n : Nat) (sws : CerbGlobal.Switches) :
-    @drive_nonmemory_steps_aux2 ⟨n⟩ sws = @drive_nonmemory_steps_aux2_lemFuel ⟨n⟩ sws n := rfl
+theorem drive_nonmemory_steps_aux2_wrapper_defeq (n : Nat) (ip : CerberusImpl.ImplProfile) (sws : CerbGlobal.Switches) :
+    @drive_nonmemory_steps_aux2 ⟨n⟩ ip sws = @drive_nonmemory_steps_aux2_lemFuel ⟨n⟩ ip sws n := rfl
 
 /- `hack_wrapper_defeq` LEFT this list at the 2026-09-08 fuel-pending close-out:
    `hack` is MEASURED (`hack_lemFuel (lemSize pexpr1) …` under the hypothesis

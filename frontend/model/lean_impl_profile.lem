@@ -1,0 +1,61 @@
+(* LEAN-ONLY lem module: the implementation profile as an instance-implicit
+   parameter. impl-profile S1, 2026-11-22. Record:
+   lean_frontend/docs/2026-11-22_impl-profile-record.md; the precedent is
+   lean_switches.lem (PNVI arc S1), whose header explains why the reader lives
+   in a Lean-only file: a `val` here would otherwise be emitted as a comment
+   into the generated OCaml, and the generated OCaml tree stays byte-identical
+   in this stage. `declare` statements emit nothing, so the consumer
+   declarations below may name other modules' constants.
+
+   THE MECHANISM (lem-lean `doc/lean-backend/2026-10-05_instance-reader-record.md`):
+   `char_is_signed` is an instance reader — a read emits the projection
+   `CerberusImpl.ImplProfile.char_is_signed` and every definition that
+   transitively reads it, or calls one of its consumers, binds
+   `[CerberusImpl.ImplProfile]`. The consumers are the target_rep'd vals whose
+   hand-written Lean bodies bind `[CerberusImpl.ImplProfile]` themselves
+   (CerberusImpl.lean, CerbDecode.lean, CerbMem.lean); their call sites are
+   textually unchanged. No lem code reads `char_is_signed ()` directly: every
+   read of the profile in the shared model goes through
+   `Implementation.is_signed_ity` / `precision_ity` (and so `integerImpl ()`),
+   `Decode.decode_character_constant`, or the memory interface.
+
+   OCaml counterpart of the reader: `(Ocaml_implementation.get ()).is_signed_ity
+   Ctype.Char` (ocaml_implementation.ml:79-87 with each profile's
+   ~char_is_signed, :257 DefaultImpl, :378 HafniumImpl). *)
+
+open import Pervasives
+import Implementation Decode Mem
+
+val char_is_signed : unit -> bool
+(* target coverage: the projection itself — it typechecks only where a
+   `[CerberusImpl.ImplProfile]` instance is in scope, so it can never stand for
+   a default *)
+declare lean target_rep function char_is_signed u = `CerberusImpl.ImplProfile.char_is_signed`
+declare {lean} reader val char_is_signed = instance `CerberusImpl.ImplProfile.char_is_signed`
+
+(* the two type-only reps that read the profile (CerberusImpl.is_signed_ity's
+   `Char` arm; CerberusImpl.precision_ity through it) *)
+declare {lean} reader_consumer val Implementation.is_signed_ity_norm = instance char_is_signed
+declare {lean} reader_consumer val Implementation.precision_ity_norm = instance char_is_signed
+
+(* the character-constant wrap (CerbDecode.wrapChar; decode.ml:204-210 reads
+   `impl.is_signed_ity Ctype.Char`) *)
+declare {lean} reader_consumer val Decode.decode_character_constant = instance char_is_signed
+
+(* the memory interface (mem.lem) vals whose CerbMem.lean bodies read the
+   profile: the integer byte encoding of a store (memValueToBytes: store,
+   allocate_object's initial value, memcpy, realloc), the decoding of a load
+   (reconstructValueAbst: load, intfromptr's and memcmp's reads,
+   copy_alloc_id), and the range of plain `char` (max_ival, min_ival) —
+   impl_mem.ml's `AilTypesAux.is_signed_ity` / `impl.is_signed_ity` reads
+   (store `repr`, load `int_of_bytes`, the two range functions) *)
+declare {lean} reader_consumer val Mem.allocate_object = instance char_is_signed
+declare {lean} reader_consumer val Mem.load = instance char_is_signed
+declare {lean} reader_consumer val Mem.store = instance char_is_signed
+declare {lean} reader_consumer val Mem.intfromptr = instance char_is_signed
+declare {lean} reader_consumer val Mem.memcpy = instance char_is_signed
+declare {lean} reader_consumer val Mem.memcmp = instance char_is_signed
+declare {lean} reader_consumer val Mem.realloc = instance char_is_signed
+declare {lean} reader_consumer val Mem.copy_alloc_id = instance char_is_signed
+declare {lean} reader_consumer val Mem.max_ival = instance char_is_signed
+declare {lean} reader_consumer val Mem.min_ival = instance char_is_signed

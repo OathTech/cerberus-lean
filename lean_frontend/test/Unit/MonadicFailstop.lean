@@ -21,6 +21,7 @@ def testAddressSpaceTop : Int := 0x10000
 def checks (fuel : Nat) : List (String × Bool) := Id.run do
   letI := LemFuel.mk fuel
   -- the default switch set (PNVI arc S1): the witnesses run the default-mode arms
+  letI : CerberusImpl.ImplProfile := CerberusImpl.defaultImpl  -- the default implementation profile (impl-profile S1)
   letI : CerbGlobal.Switches := ⟨CerbGlobal.defaultSwitches⟩
   let st0 := initialMemState testAddressSpaceTop
   let tags : CerbTags.TagDefsMap := default

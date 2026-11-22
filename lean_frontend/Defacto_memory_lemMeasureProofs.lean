@@ -88,7 +88,7 @@ theorem find_array_index_measure_sufficient (size : Nat) (i : Nat) (ival_ : inte
     find_array_index_lemFuel lemFuel size i ival_ = find_array_index size i ival_ :=
   find_array_index_stable_aux (size - i + 1) size i ival_ lemFuel (size - i + 1) (Nat.le_refl _) lemMeasureLe (Nat.le_refl _)
 
-theorem easy_update_mem_value_aux_stable_aux [LemFuel] (k : Nat) :
+theorem easy_update_mem_value_aux_stable_aux [LemFuel] [CerberusImpl.ImplProfile] (k : Nat) :
     ∀ (ed : Fmap sym integerType) (td : Fmap sym (CerbLocation.Loc × tag_definition)) (loc1 : CerbLocation.Loc) (is_strong : Bool)
       (write_ty : ctype) (sh : List shift_path_element) (write_mval current_mval : impl_mem_value) (f g : Nat),
     List.length sh + 1 ≤ k → List.length sh + 1 ≤ f → List.length sh + 1 ≤ g →
@@ -114,7 +114,7 @@ theorem easy_update_mem_value_aux_stable_aux [LemFuel] (k : Nat) :
         · cases spe <;> cases current_mval <;> simp (disch := size_lt) only [easy_update_mem_value_aux_lemFuel, key]
 
 /-- THE OBLIGATION, exactly as Defacto_memory_auxiliary.lean states and delegates it. -/
-theorem easy_update_mem_value_aux_measure_sufficient [LemFuel] (_lemReader_enum_definitions : Fmap sym integerType) (_lemReader_tagDefs : Fmap sym (CerbLocation.Loc × tag_definition))
+theorem easy_update_mem_value_aux_measure_sufficient [LemFuel] [CerberusImpl.ImplProfile] (_lemReader_enum_definitions : Fmap sym integerType) (_lemReader_tagDefs : Fmap sym (CerbLocation.Loc × tag_definition))
     (loc1 : CerbLocation.Loc) (is_strong : Bool) (write_ty : ctype) (sh : List shift_path_element)
     (write_mval : impl_mem_value) (current_mval : impl_mem_value) (lemFuel : Nat)
     (lemMeasureLe : List.length sh + 1 ≤ lemFuel) :
@@ -125,7 +125,7 @@ theorem easy_update_mem_value_aux_measure_sufficient [LemFuel] (_lemReader_enum_
 
 /- `loc` binder since upstream f4a3a3d54 (merge-base bump stage 1): the worker takes the call's
    location for the per-byte load; the recursion and measure are unchanged. -/
-theorem memcmp_load_aux_stable_aux [LemFuel] (k : Nat) :
+theorem memcmp_load_aux_stable_aux [LemFuel] [CerberusImpl.ImplProfile] (k : Nat) :
     ∀ (ed : Fmap sym integerType) (td : Fmap sym (CerbLocation.Loc × tag_definition)) (loc1 : CerbLocation.Loc) (ptrval : impl_pointer_value) (offset max_offset : Int)
       (acc : List impl_mem_value) (f g : Nat),
     Int.toNat (max_offset - offset) + 1 ≤ k → Int.toNat (max_offset - offset) + 1 ≤ f →
@@ -153,7 +153,7 @@ theorem memcmp_load_aux_stable_aux [LemFuel] (k : Nat) :
           simp only [key]
 
 /-- THE OBLIGATION, exactly as Defacto_memory_auxiliary.lean states and delegates it. -/
-theorem memcmp_load_aux_measure_sufficient [LemFuel] (_lemReader_enum_definitions : Fmap sym integerType) (_lemReader_tagDefs : Fmap sym (CerbLocation.Loc × tag_definition)) (loc1 : CerbLocation.Loc)
+theorem memcmp_load_aux_measure_sufficient [LemFuel] [CerberusImpl.ImplProfile] (_lemReader_enum_definitions : Fmap sym integerType) (_lemReader_tagDefs : Fmap sym (CerbLocation.Loc × tag_definition)) (loc1 : CerbLocation.Loc)
     (ptrval : impl_pointer_value) (offset : Int) (max_offset : Int) (acc : List impl_mem_value) (lemFuel : Nat)
     (lemMeasureLe : Int.toNat (max_offset - offset) + 1 ≤ lemFuel) :
     memcmp_load_aux_lemFuel lemFuel _lemReader_enum_definitions _lemReader_tagDefs loc1 ptrval offset max_offset acc =

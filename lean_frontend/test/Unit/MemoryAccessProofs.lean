@@ -70,12 +70,12 @@ theorem stop_resolve (p : IotaPrecondFn) (hp : ∀ z s, p z (stopObserving s) = 
        | .ok r => .ok (r.1, stopObserving r.2)) :=
   CerbMem.resolveIota_stopObserving p hp iota s
 
-theorem load_erasure [LemFuel] [CerbGlobal.Switches] (es ts l t p s) :
+theorem load_erasure [LemFuel] [CerberusImpl.ImplProfile] [CerbGlobal.Switches] (es ts l t p s) :
     eraseNode (step (loadM es ts l t p) s) =
       step (loadM es ts l t p) (stopObserving s) :=
   CerbMem.loadM_erasure es ts l t p s
 
-theorem store_erasure [LemFuel] (es ts l t locking p v s) :
+theorem store_erasure [LemFuel] [CerberusImpl.ImplProfile] (es ts l t locking p v s) :
     eraseNode (step (storeM es ts l t locking p v) s) =
       step (storeM es ts l t locking p v) (stopObserving s) :=
   CerbMem.storeM_erasure es ts l t locking p v s

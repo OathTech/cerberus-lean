@@ -73,7 +73,7 @@ def productionDiagnostics : ReconstructionDiagnostics where
     consulted ONLY by the Pointer-to-Function arm (impl_mem.ml:1004-1016)
     — exactly as in OCaml's abst.
     Not ported: taint tracking (PNVI) and is_zap. -/
-def reconstructValueLegacy_lemFuel (diagnostics : ReconstructionDiagnostics) (lemFuel : Nat) (enumDefs : EnumDefs) (ambient : TagDefs)
+def reconstructValueLegacy_lemFuel [CerberusImpl.ImplProfile] (diagnostics : ReconstructionDiagnostics) (lemFuel : Nat) (enumDefs : EnumDefs) (ambient : TagDefs)
     (unionmap : List (Int × identifier))
     (funptrmap : Funptrmap) (addr : Int)
     (ty : ctype) (bytes : List AbsByte) : MemValue :=
@@ -241,7 +241,7 @@ def reconstructValueLegacy_lemFuel (diagnostics : ReconstructionDiagnostics) (le
 /-- Measured wrapper (C4): fuel-free, hypothesis `CerbTagsWf.Acyclic ambient`
     (its recursion is on the ctype being reconstructed, through member types
     read from the tag environment); obligation in CerbMem_lemMeasureProofs. -/
-def reconstructValueLegacy (diagnostics : ReconstructionDiagnostics) (enumDefs : EnumDefs) (ambient : TagDefs) (unionmap : List (Int × identifier))
+def reconstructValueLegacy [CerberusImpl.ImplProfile] (diagnostics : ReconstructionDiagnostics) (enumDefs : EnumDefs) (ambient : TagDefs) (unionmap : List (Int × identifier))
     (funptrmap : Funptrmap) (addr : Int)
     (ty : ctype) (bytes : List AbsByte) : MemValue :=
   reconstructValueLegacy_lemFuel diagnostics (CerbTagsWf.envBound ambient ty) enumDefs ambient unionmap funptrmap addr ty bytes
@@ -262,7 +262,7 @@ Charter §1 carve-out [R1/F5]; consumer note: refined-cerberus unfolds
 (TreeRotExhibit.lean:148, ListRevExhibit.lean:260), success arms C1 preserves. Consumers must now select the diagnostic instance explicitly. -/
 
 /-- Reference form (pre-C1): index-slicing array arm. -/
-def reconstructValueLegacy_indexed_lemFuel (diagnostics : ReconstructionDiagnostics) (lemFuel : Nat) (enumDefs : EnumDefs) (ambient : TagDefs)
+def reconstructValueLegacy_indexed_lemFuel [CerberusImpl.ImplProfile] (diagnostics : ReconstructionDiagnostics) (lemFuel : Nat) (enumDefs : EnumDefs) (ambient : TagDefs)
     (unionmap : List (Int × identifier))
     (funptrmap : Funptrmap) (addr : Int)
     (ty : ctype) (bytes : List AbsByte) : MemValue :=
@@ -359,7 +359,7 @@ def reconstructValueLegacy_indexed_lemFuel (diagnostics : ReconstructionDiagnost
     Induction on fuel; every arm but the array arm is textually identical
     once the recursive calls are rewritten by the induction hypothesis;
     the array arm is `chunksOf_eq_range_map` + `List.map_map`. -/
-theorem reconstructValueLegacy_lemFuel_eq_indexed (diagnostics : ReconstructionDiagnostics) :
+theorem reconstructValueLegacy_lemFuel_eq_indexed [CerberusImpl.ImplProfile] (diagnostics : ReconstructionDiagnostics) :
     ∀ (lemFuel : Nat) (enumDefs : EnumDefs) (ambient : TagDefs) (unionmap : List (Int × identifier))
       (funptrmap : Funptrmap) (addr : Int) (ty : ctype) (bytes : List AbsByte),
       reconstructValueLegacy_lemFuel diagnostics lemFuel enumDefs ambient unionmap funptrmap addr ty bytes =
@@ -389,7 +389,7 @@ theorem reconstructValueLegacy_lemFuel_eq_indexed (diagnostics : ReconstructionD
     | Basic bt => cases bt <;> rfl   -- the outer match is stuck until the basic type is split
     | _ => rfl
 
-theorem reconstructValueLegacy_eq_indexed (diagnostics : ReconstructionDiagnostics) (enumDefs : EnumDefs) (ambient : TagDefs) (unionmap : List (Int × identifier))
+theorem reconstructValueLegacy_eq_indexed [CerberusImpl.ImplProfile] (diagnostics : ReconstructionDiagnostics) (enumDefs : EnumDefs) (ambient : TagDefs) (unionmap : List (Int × identifier))
     (funptrmap : Funptrmap) (addr : Int) (ty : ctype) (bytes : List AbsByte) :
     reconstructValueLegacy diagnostics enumDefs ambient unionmap funptrmap addr ty bytes =
       reconstructValueLegacy_indexed_lemFuel diagnostics (CerbTagsWf.envBound ambient ty) enumDefs ambient unionmap funptrmap addr ty bytes :=
@@ -402,7 +402,7 @@ These private specification bodies are the pre-protocol definitions (names and
 recursive calls renamed). The new equations make historical recovery explicit,
 rather than treating a renamed historical instance as its own proof. -/
 
-private def reconstructValueFrozen_lemFuel (lemFuel : Nat) (enumDefs : EnumDefs) (ambient : TagDefs)
+private def reconstructValueFrozen_lemFuel [CerberusImpl.ImplProfile] (lemFuel : Nat) (enumDefs : EnumDefs) (ambient : TagDefs)
     (unionmap : List (Int × identifier))
     (funptrmap : Funptrmap) (addr : Int)
     (ty : ctype) (bytes : List AbsByte) : MemValue :=
@@ -486,7 +486,7 @@ private def reconstructValueFrozen_lemFuel (lemFuel : Nat) (enumDefs : EnumDefs)
 
 /-- Instantiating the direct messages recovers the previously frozen body,
 at every input and fuel. Shared callees are not frozen by this statement. -/
-theorem historical_linear_recovers :
+theorem historical_linear_recovers [CerberusImpl.ImplProfile] :
     ∀ (n : Nat) (e : EnumDefs) (a : TagDefs) (u : List (Int × identifier))
       (f : Funptrmap) (ad : Int) (t : ctype) (bs : List AbsByte),
       reconstructValueLegacy_lemFuel historicalDiagnostics n e a u f ad t bs =
@@ -503,7 +503,7 @@ theorem historical_linear_recovers :
     rw [hf]
     rfl
 
-private def reconstructValueFrozen_indexed_lemFuel (lemFuel : Nat) (enumDefs : EnumDefs) (ambient : TagDefs)
+private def reconstructValueFrozen_indexed_lemFuel [CerberusImpl.ImplProfile] (lemFuel : Nat) (enumDefs : EnumDefs) (ambient : TagDefs)
     (unionmap : List (Int × identifier))
     (funptrmap : Funptrmap) (addr : Int)
     (ty : ctype) (bytes : List AbsByte) : MemValue :=
@@ -590,7 +590,7 @@ private def reconstructValueFrozen_indexed_lemFuel (lemFuel : Nat) (enumDefs : E
 
 /-- Instantiating the direct messages recovers the previously frozen body,
 at every input and fuel. Shared callees are not frozen by this statement. -/
-theorem historical_indexed_recovers :
+theorem historical_indexed_recovers [CerberusImpl.ImplProfile] :
     ∀ (n : Nat) (e : EnumDefs) (a : TagDefs) (u : List (Int × identifier))
       (f : Funptrmap) (ad : Int) (t : ctype) (bs : List AbsByte),
       reconstructValueLegacy_indexed_lemFuel historicalDiagnostics n e a u f ad t bs =
@@ -609,8 +609,8 @@ theorem historical_indexed_recovers :
 
 /-- Historical direct-diagnostic instances of the two algorithms. They still
 call today's shared layout/decoding helpers; those helpers are not frozen here. -/
-abbrev reconstructValueHistorical_lemFuel := reconstructValueLegacy_lemFuel historicalDiagnostics
-abbrev reconstructValueHistorical_indexed_lemFuel := reconstructValueLegacy_indexed_lemFuel historicalDiagnostics
+abbrev reconstructValueHistorical_lemFuel [CerberusImpl.ImplProfile] := reconstructValueLegacy_lemFuel historicalDiagnostics
+abbrev reconstructValueHistorical_indexed_lemFuel [CerberusImpl.ImplProfile] := reconstructValueLegacy_indexed_lemFuel historicalDiagnostics
 
 /-! ## The equalities (PNVI arc S2) -/
 
@@ -626,10 +626,10 @@ theorem foldl_snd_eq {α β γ : Type} {F : γ × β → α → γ × β} {G : �
 
 /-- The full reconstruction at the DEFAULT switch set, whatever the `find_overlaping`
     closure, has the reference value at productionDiagnostics as its second component. -/
-theorem reconstructValueAbst_default_snd_eq_legacy (fo : Address → OverlapResult) :
+theorem reconstructValueAbst_default_snd_eq_legacy [CerberusImpl.ImplProfile] (fo : Address → OverlapResult) :
     ∀ (lemFuel : Nat) (enumDefs : EnumDefs) (ambient : TagDefs) (unionmap : List (Int × identifier))
       (funptrmap : Funptrmap) (addr : Int) (ty : ctype) (bytes : List AbsByte),
-      (@reconstructValueAbst_lemFuel ⟨CerbGlobal.defaultSwitches⟩ lemFuel enumDefs ambient fo unionmap funptrmap addr ty bytes).2 =
+      (@reconstructValueAbst_lemFuel ‹CerberusImpl.ImplProfile› ⟨CerbGlobal.defaultSwitches⟩ lemFuel enumDefs ambient fo unionmap funptrmap addr ty bytes).2 =
         reconstructValueLegacy_lemFuel productionDiagnostics lemFuel enumDefs ambient unionmap funptrmap addr ty bytes := by
   intro lemFuel
   induction lemFuel with
@@ -690,13 +690,13 @@ theorem reconstructValueAbst_default_snd_eq_legacy (fo : Address → OverlapResu
                 simp only [ih]
     | _ => rfl
 
-theorem reconstructValue_lemFuel_eq_legacy (lemFuel : Nat) (enumDefs : EnumDefs) (ambient : TagDefs)
+theorem reconstructValue_lemFuel_eq_legacy [CerberusImpl.ImplProfile] (lemFuel : Nat) (enumDefs : EnumDefs) (ambient : TagDefs)
     (unionmap : List (Int × identifier)) (funptrmap : Funptrmap) (addr : Int) (ty : ctype) (bytes : List AbsByte) :
     CerbMem.reconstructValue_lemFuel lemFuel enumDefs ambient unionmap funptrmap addr ty bytes =
       reconstructValueLegacy_lemFuel productionDiagnostics lemFuel enumDefs ambient unionmap funptrmap addr ty bytes :=
   reconstructValueAbst_default_snd_eq_legacy noOverlapping lemFuel enumDefs ambient unionmap funptrmap addr ty bytes
 
-theorem reconstructValue_eq_legacy (enumDefs : EnumDefs) (ambient : TagDefs)
+theorem reconstructValue_eq_legacy [CerberusImpl.ImplProfile] (enumDefs : EnumDefs) (ambient : TagDefs)
     (unionmap : List (Int × identifier)) (funptrmap : Funptrmap) (addr : Int) (ty : ctype) (bytes : List AbsByte) :
     CerbMem.reconstructValue enumDefs ambient unionmap funptrmap addr ty bytes =
       reconstructValueLegacy productionDiagnostics enumDefs ambient unionmap funptrmap addr ty bytes :=
@@ -704,15 +704,15 @@ theorem reconstructValue_eq_legacy (enumDefs : EnumDefs) (ambient : TagDefs)
 
 /-- What `loadM` runs (`(reconstructValueAbst … (findOverlapping st) …).2`, CerbMem.lean
     `loadM`/`doLoad`), at the default switch set: the reference value at the production renderer, for every state. -/
-theorem loadM_reconstruct_default (st : MemState) (enumDefs : EnumDefs) (ambient : TagDefs)
+theorem loadM_reconstruct_default [CerberusImpl.ImplProfile] (st : MemState) (enumDefs : EnumDefs) (ambient : TagDefs)
     (addr : Int) (ty : ctype) (bytes : List AbsByte) :
-    (@reconstructValueAbst ⟨CerbGlobal.defaultSwitches⟩ enumDefs ambient (@findOverlapping ⟨CerbGlobal.defaultSwitches⟩ st)
+    (@reconstructValueAbst ‹CerberusImpl.ImplProfile› ⟨CerbGlobal.defaultSwitches⟩ enumDefs ambient (@findOverlapping ⟨CerbGlobal.defaultSwitches⟩ st)
         st.lastUsedUnionMembers st.funptrmap addr ty bytes).2 =
       reconstructValueLegacy productionDiagnostics enumDefs ambient st.lastUsedUnionMembers st.funptrmap addr ty bytes :=
   reconstructValueAbst_default_snd_eq_legacy _ _ enumDefs ambient _ _ addr ty bytes
 
 /-- The C1 equalities, chained to the production wrapper at productionDiagnostics, with every original quantifier. -/
-theorem reconstructValue_lemFuel_eq_indexed :
+theorem reconstructValue_lemFuel_eq_indexed [CerberusImpl.ImplProfile] :
     ∀ (lemFuel : Nat) (enumDefs : EnumDefs) (ambient : TagDefs) (unionmap : List (Int × identifier))
       (funptrmap : Funptrmap) (addr : Int) (ty : ctype) (bytes : List AbsByte),
       CerbMem.reconstructValue_lemFuel lemFuel enumDefs ambient unionmap funptrmap addr ty bytes =
@@ -720,7 +720,7 @@ theorem reconstructValue_lemFuel_eq_indexed :
   fun n e a u f ad t b => (reconstructValue_lemFuel_eq_legacy n e a u f ad t b).trans
     (reconstructValueLegacy_lemFuel_eq_indexed productionDiagnostics n e a u f ad t b)
 
-theorem reconstructValue_eq_indexed (enumDefs : EnumDefs) (ambient : TagDefs) (unionmap : List (Int × identifier))
+theorem reconstructValue_eq_indexed [CerberusImpl.ImplProfile] (enumDefs : EnumDefs) (ambient : TagDefs) (unionmap : List (Int × identifier))
     (funptrmap : Funptrmap) (addr : Int) (ty : ctype) (bytes : List AbsByte) :
     CerbMem.reconstructValue enumDefs ambient unionmap funptrmap addr ty bytes =
       reconstructValueLegacy_indexed_lemFuel productionDiagnostics (CerbTagsWf.envBound ambient ty) enumDefs ambient unionmap funptrmap addr ty bytes :=
@@ -796,12 +796,12 @@ def checks : List (String × Bool) :=
     ("splitBytesProv: consecutive offsets over differing provenances are NotValidPtrProv", !(splitBytesProv [{ prov := .Prov_some 1, copyOffset := some 0 }, { prov := .Prov_some 2, copyOffset := some 1 }]).2),
     ("mkIval: PNVI strips the provenance", match @mkIval swAEUDI (.Prov_some 4) 9 with | .IV .Prov_none 9 => true | _ => false),
     ("mkIval: default keeps it", match @mkIval swDefault (.Prov_some 4) 9 with | .IV (.Prov_some 4) 9 => true | _ => false),
-    ("reconstruct, default: shared provenance, closure unused", provEq (provOf (@reconstructValueAbst swDefault fmapEmpty default closure7 [] [] 0 pt ptrBytes).2) (some .Prov_none)),
-    ("reconstruct, AE_UDI: NotValidPtrProv consults find_overlaping", provEq (provOf (@reconstructValueAbst swAEUDI fmapEmpty default closure7 [] [] 0 pt ptrBytes).2) (some (.Prov_some 7))),
-    ("reconstruct, integer leaf: taint = provs_of_bytes", taintEq (@reconstructValueAbst swDefault fmapEmpty default closure7 [] [] 0
+    ("reconstruct, default: shared provenance, closure unused", provEq (provOf (@reconstructValueAbst CerberusImpl.defaultImpl swDefault fmapEmpty default closure7 [] [] 0 pt ptrBytes).2) (some .Prov_none)),
+    ("reconstruct, AE_UDI: NotValidPtrProv consults find_overlaping", provEq (provOf (@reconstructValueAbst CerberusImpl.defaultImpl swAEUDI fmapEmpty default closure7 [] [] 0 pt ptrBytes).2) (some (.Prov_some 7))),
+    ("reconstruct, integer leaf: taint = provs_of_bytes", taintEq (@reconstructValueAbst CerberusImpl.defaultImpl swDefault fmapEmpty default closure7 [] [] 0
         (Ctype [] (.Basic (.Integer (.Signed .Int_)))) [{ prov := .Prov_some 2, value := some 1 }, { value := some 0 }, { value := some 0 }, { value := some 0 }]).1 (.NewTaint [2])),
     ("wrapper = full reconstruction at default, closure fixed, taint dropped",
-      provEq (provOf (CerbMem.reconstructValue fmapEmpty default [] [] 0 pt ptrBytes)) (some .Prov_none)) ]
+      provEq (provOf (@CerbMem.reconstructValue CerberusImpl.defaultImpl fmapEmpty default [] [] 0 pt ptrBytes)) (some .Prov_none)) ]
 
 end ReconstructLegacyTest
 

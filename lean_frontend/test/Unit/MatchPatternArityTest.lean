@@ -370,6 +370,7 @@ inductive RouteOutcome where
 /-- the ordinary `Elet` step of `Core_run.core_thread_step2`, its `Step_eval` payload run on a default run state -/
 def eletRoute (fuel : Nat) (arena : expr core_run_annotation) : RouteOutcome :=
   letI := LemFuel.mk fuel
+  letI : CerberusImpl.ImplProfile := CerberusImpl.defaultImpl  -- the default implementation profile (impl-profile S1)
   letI : CerbGlobal.Switches := ⟨CerbGlobal.defaultSwitches⟩  -- the default switch set (PNVI arc S1)
   let thSt : thread_state := { (default : thread_state) with arena := arena, env := [emptyEnv] }
   let steps := core_thread_step2 enumsEmpty tagsEmpty (CerbMem.initialMemState testAddressSpaceTop)
@@ -385,6 +386,7 @@ def eletRoute (fuel : Nat) (arena : expr core_run_annotation) : RouteOutcome :=
 /-- the `PElet` route of `Core_eval.step_eval_pexpr` -/
 def peletRoute (fuel : Nat) (pe : pexpr) : RouteOutcome :=
   letI := LemFuel.mk fuel
+  letI : CerberusImpl.ImplProfile := CerberusImpl.defaultImpl  -- the default implementation profile (impl-profile S1)
   match step_eval_pexpr enumsEmpty tagsEmpty 0 CerbLocation.Loc.unknown none fmapEmpty [emptyEnv] none
       (default : generic_file Unit core_run_annotation) false pe with
   | Exception (Illformed_program msg) => .illformed msg
@@ -575,6 +577,7 @@ def lookupSym (s : sym) (m : Fmap sym value) : Option value := fmapLookupBy (@Le
 /-- the driver's engine: `Core_reduction.step_ctx` on `run loop(pes)` inside `procSym` -/
 def reductionErun (fuel : Nat) (pes : List pexpr) : RunOutcome :=
   letI := LemFuel.mk fuel
+  letI : CerberusImpl.ImplProfile := CerberusImpl.defaultImpl  -- the default implementation profile (impl-profile S1)
   let thSt : thread_state := { (default : thread_state) with arena := runArena pes, env := [emptyEnv], current_proc_opt := some procSym }
   match step_ctx enumsEmpty tagsEmpty (CerbMem.initialMemState testAddressSpaceTop) (default : generic_file Unit core_run_annotation) fmapEmpty 0 (none, thSt) with
   | [Step_with_runstate2 (RSK_eval "Erun") m] =>
@@ -590,6 +593,7 @@ def reductionErun (fuel : Nat) (pes : List pexpr) : RunOutcome :=
 /-- the second engine: `Core_run.core_thread_step2` on `run loop(pes)` with `procSym` on the stack -/
 def coreRunErun (fuel : Nat) (pes : List pexpr) : RunOutcome :=
   letI := LemFuel.mk fuel
+  letI : CerberusImpl.ImplProfile := CerberusImpl.defaultImpl  -- the default implementation profile (impl-profile S1)
   letI : CerbGlobal.Switches := ⟨CerbGlobal.defaultSwitches⟩  -- the default switch set (PNVI arc S1)
   let thSt : thread_state := { (default : thread_state) with arena := runArena pes, env := [emptyEnv], stack0 := Stack_cons (some procSym) [] Stack_empty }
   match core_thread_step2 enumsEmpty tagsEmpty (CerbMem.initialMemState testAddressSpaceTop) (default : generic_file Unit core_run_annotation) fmapEmpty fmapEmpty 0 (none, thSt) with

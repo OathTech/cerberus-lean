@@ -233,6 +233,14 @@
 # cabs_to_ail_effect.lem, c_parser.mly; [expected-semantic] hashes moved (already-differing files; layer 2 stays 37):
 # annot.ml, cabs_to_ail.ml, cabs_to_ail_effect.ml. [files] stays 107. The parser's conflict counts are unchanged.
 # Record: lean_frontend/docs/2026-11-20_attribute-preservation-record.md section 11.
+# arc/impl-profile S1, 2026-11-22 [AGENT, executing the charter docs/2026-11-22_worker-charter-impl-profile.md under the
+# [USER 2026-11-22] rulings]: the implementation profile becomes an instance-implicit parameter on the Lean side. ONE new
+# oracle-surface file, frontend/model/lean_impl_profile.lem: a LEAN-ONLY lem module (Makefile LEM_SRC_LEAN_ONLY, never read by
+# the OCaml generation; the lean_switches.lem precedent) declaring the instance reader `char_is_signed` and its consumers.
+# Single-row edits, no --refresh: [files] 107 -> 108 (the new row); [source-content] the new row, and Makefile re-pinned
+# a659b8f7... -> 2332dc13... (the file joins LEM_SRC_LEAN_ONLY). No generated OCaml changes
+# in this stage (layer 2 stays 37; the tree was compared byte for byte before and after).
+# Record: lean_frontend/docs/2026-11-22_impl-profile-record.md.
 [meta]
 merge-base=c3ff8c53f05982745f9b3a10b3d05442e214bcb5
 lem-pin=2220010bc25f0c5682d8200f016e786ee66d65c6
@@ -291,6 +299,7 @@ frontend/model/formatted.lem
 frontend/model/fs.lem
 frontend/model/global.lem
 frontend/model/implementation.lem
+frontend/model/lean_impl_profile.lem
 frontend/model/lean_switches.lem
 frontend/model/loc.lem
 frontend/model/mem.lem
@@ -346,7 +355,7 @@ tools/gen_version.ml
 util/cerb_fresh.ml
 util/cerb_location.ml
 [source-content]
-100644 a659b8f7792b88fc1b1c2825fd7ea2c8c404210cf3fcd90c292e9f0330ddadf2 Makefile
+100644 2332dc13fc4db8f954bd7cc3acd26ca33a035f395956058f1c2f929ab30321a7 Makefile
 100644 31d182c1d1e716379f77ffcde0c34c5965a9af7b251cc328365f95ec9c4da359 backend/common/ail_sym_hwm.ml
 100644 e8c196998d46a6d44c6ecbcbf109d877d409ffff28b9310662446219a879e7c9 backend/common/driver_ocaml.ml
 100644 91d09d39c2b2e4ef9b870ea665f588f446ca7b5bb84e6701211861ff2a36565e backend/common/driver_ocaml.mli
@@ -399,6 +408,7 @@ util/cerb_location.ml
 100644 5079002023f7e22633acbd6b112f99213227475c4d19d3b1859ea388b322de80 frontend/model/fs.lem
 100644 c536bc19c689f1403e8296152886d948fcf66ce84cbccf56bf7b4e28216634c1 frontend/model/global.lem
 100644 2cb19e9989030a5ede6c4eff3e62ff2611eb6ef6eb7f41c204b153db0c5db315 frontend/model/implementation.lem
+100644 990ce49daae42a4b0e44994503456cebed3eccd5ab5418f1d573932e81953908 frontend/model/lean_impl_profile.lem
 100644 286059eacaa23270ae1e22d7a970710449e72656a8d3e2772db2c625ee166e87 frontend/model/lean_switches.lem
 100644 ae79a26c1cfd62acdf18ca6479625de8db05e01f43bdc3dc829cc5a83f465111 frontend/model/loc.lem
 100644 c46738259b6d025a39f264e6ddd24b8fdb2c344531f9b2295607f0a4b2cf69bb frontend/model/mem.lem

@@ -50,20 +50,23 @@ example : CerberusImpl.resolveEnum eU (.Signed .Long) = .Signed .Long := rfl
     is `some 4` BY `rfl` given the map — the property the consumer names. -/
 example : sizeof_ity eU t (.Enum0 s) = some 4 := rfl
 example : alignof_ity eU t (.Enum0 s) = some 4 := rfl
-example : is_signed_ity eU t (.Enum0 s) = false := rfl
-example : is_signed_ity eS t (.Enum0 s) = true := rfl
-example : precision_ity eU t (.Enum0 s) = some 32 := by decide
-example : precision_ity eS t (.Enum0 s) = some 31 := by decide
+-- impl-profile S1 (2026-11-22): the signedness examples hold for EVERY implementation profile
+-- (bound instance; none reads plain `char`); the `decide` ones are stated at `defaultImpl`
+-- (`decide` needs a closed term).
+example [CerberusImpl.ImplProfile] : is_signed_ity eU t (.Enum0 s) = false := rfl
+example [CerberusImpl.ImplProfile] : is_signed_ity eS t (.Enum0 s) = true := rfl
+example : @precision_ity CerberusImpl.defaultImpl eU t (.Enum0 s) = some 32 := by decide
+example : @precision_ity CerberusImpl.defaultImpl eS t (.Enum0 s) = some 31 := by decide
 
 /-! ## E4 controls (pre-merge audit 2026-09-20; charter D2 erratum W20): `is_signed_ity` resolves
     ONLY an enum — OCaml's `Common.is_signed_ity` (ocaml_implementation.ml:79-94) never consults the
     width-alias table, so an UNSUPPORTED width keeps its constructor's answer on both engines;
     `sizeof_ity` DOES normalise fully (:172-174) and fails closed on that width on both. -/
 
-example : is_signed_ity eU t (.Signed (.IntN_t 128)) = true := rfl      -- unsupported width: the constructor decides
-example : is_signed_ity eU t (.Unsigned (.IntN_t 128)) = false := rfl
-example : is_signed_ity eU t (.Signed (.IntN_t 32)) = true := rfl       -- supported-width control
-example : is_signed_ity eU t (.Unsigned (.IntN_t 32)) = false := rfl
+example [CerberusImpl.ImplProfile] : is_signed_ity eU t (.Signed (.IntN_t 128)) = true := rfl      -- unsupported width: the constructor decides
+example [CerberusImpl.ImplProfile] : is_signed_ity eU t (.Unsigned (.IntN_t 128)) = false := rfl
+example [CerberusImpl.ImplProfile] : is_signed_ity eU t (.Signed (.IntN_t 32)) = true := rfl       -- supported-width control
+example [CerberusImpl.ImplProfile] : is_signed_ity eU t (.Unsigned (.IntN_t 32)) = false := rfl
 example : sizeof_ity eU t (.Signed (.IntN_t 32)) = some 4 := rfl        -- the alias table, where it applies
 
 /-- error: Tactic `rfl` failed: The left-hand side
@@ -90,7 +93,7 @@ example : CerberusImpl.register_enum s [-1] = true := rfl
 
 /-! ## The seed-value pin (S0.5 audit N1): the map's VALUE decides -/
 
-example : is_signed_ity eU t (.Enum0 s) ≠ is_signed_ity eS t (.Enum0 s) := by decide
+example : @is_signed_ity CerberusImpl.defaultImpl eU t (.Enum0 s) ≠ @is_signed_ity CerberusImpl.defaultImpl eS t (.Enum0 s) := by decide
 
 /-! ## Negative controls: the retired effect-erased names are gone -/
 

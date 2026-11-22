@@ -98,10 +98,40 @@ def register_enum (_ : sym) (_ : List Int) : Bool := true
 
 /-! ## Integer Type Properties -/
 
+/-- THE IMPLEMENTATION PROFILE, as an instance-implicit parameter (impl-profile S1,
+    2026-11-22; record `docs/2026-11-22_impl-profile-record.md`; the shape of
+    `CerbGlobal.Switches`).
+    OCaml: the global `selected` behind `Ocaml_implementation.set`/`get`
+    (ocaml_implementation.ml:426-438), a record of the implementation-defined choices. The class is named
+    for the implementation and carries the ONE property in which upstream's
+    `DefaultImpl` and `HafniumImpl` differ: whether plain `char` is signed
+    (`char_is_signed`, ocaml_implementation.ml:257 `true` / :378 `false`). Every
+    other choice of the record (sizes, alignments, the alias table, LP64) is shared
+    by the two and stays a constant of this module; a later differing field is added
+    HERE and needs no second binder. lem's instance reader
+    `declare {lean} reader val char_is_signed = instance `CerberusImpl.ImplProfile.char_is_signed``
+    (frontend/model/lean_impl_profile.lem) emits this projection, and every lifted
+    definition binds `[CerberusImpl.ImplProfile]`.
+
+    Never declare an instance of this class in this repository; the entry points
+    supply it with `letI`; consumers declare their own. (Speedbump:
+    `scripts/check_no_fuel_numerals.sh` rule W3, the shape of W1 — not adversarially
+    robust.) -/
+class ImplProfile where
+  char_is_signed : Bool
+
+/-- Upstream's `DefaultImpl` (ocaml_implementation.ml:114-274, `name` =
+    `clang9_x86_64-apple-darwin16.7.0`): plain `char` signed (:257). The value
+    `Ocaml_implementation.get ()` holds when `set` was never called; FORCED by OCaml,
+    not a choice of this port. A plain value (an `abbrev`, as Lean asks of a
+    class-typed definition), NOT an instance: nothing resolves to it implicitly. -/
+abbrev defaultImpl : ImplProfile := { char_is_signed := true }
+
 /-- Whether an integer type is signed.
     Corresponds to: Common.is_signed_ity in ocaml_implementation.ml:79-107,
-    instantiated with ~typeof_enum ~char_is_signed:true as DefaultImpl does
-    (ocaml_implementation.ml:257). OCaml first resolves Enum through
+    instantiated with ~typeof_enum ~char_is_signed as each profile does
+    (ocaml_implementation.ml:257 DefaultImpl `true`, :378 HafniumImpl `false`): the
+    `Char` arm reads the profile parameter. OCaml first resolves Enum through
     typeof_enum, then matches; on Lean the resolution happens BEFORE this
     function — the lem wrapper `Implementation.is_signed_ity` resolves ONLY an
     enum through the reader (`Implementation.resolve_enum`, the OCaml's own
@@ -109,9 +139,9 @@ def register_enum (_ : sym) (_ : List Int) : Bool := true
     both engines), CerbMem resolves through `resolveEnum` — so the `Enum` arm
     here is the OCaml's `assert false`: unreachable by construction, a loud
     leaf. -/
-def is_signed_ity (ity : integerType) : Bool :=
+def is_signed_ity [ImplProfile] (ity : integerType) : Bool :=
   match ity with
-  | .Char0 => true      -- char_is_signed = true for DefaultImpl
+  | .Char0 => ImplProfile.char_is_signed  -- ~char_is_signed (ocaml_implementation.ml:86-87)
   | .Bool0 => false
   | .Signed _ => true
   | .Unsigned _ => false
@@ -230,11 +260,26 @@ def sizeof_ity (ity : integerType) : Option Nat :=
 
 /-- Precision (number of value bits) of an integer type.
     Corresponds to: Common.precision_ity in ocaml_implementation.ml -/
-def precision_ity (ity : integerType) : Option Nat :=
+def precision_ity [ImplProfile] (ity : integerType) : Option Nat :=
   match sizeof_ity ity with
   | some n =>
     if is_signed_ity ity then some (8 * n - 1) else some (8 * n)
   | none => none
+
+/-! ### The contract at the default profile
+    Stated AT THE EXPLICIT INSTANCE `defaultImpl` (the `has_switch_*_default` shape,
+    CerbGlobal.lean): the default profile gives the values this module held as
+    constants before the profile became a parameter (impl-profile S1). A consumer
+    binds `[ImplProfile]` to quantify, or states the default by `@f defaultImpl`. -/
+
+theorem defaultImpl_char_is_signed : defaultImpl.char_is_signed = true := rfl
+theorem is_signed_ity_char_default : @is_signed_ity defaultImpl .Char0 = true := rfl
+theorem precision_ity_char_default : @precision_ity defaultImpl .Char0 = some 7 := rfl
+/-- Only the `Char` arm reads the profile: on every other constructor the two
+    instances agree (each arm by `rfl`; the `Enum` arm is the same opaque leaf). -/
+theorem is_signed_ity_of_ne_char (p q : ImplProfile) (ity : integerType) (h : ity ≠ .Char0) :
+    @is_signed_ity p ity = @is_signed_ity q ity := by
+  cases ity <;> first | rfl | exact absurd rfl h
 
 /-- Size of a floating type in bytes.
     Corresponds to: DefaultImpl.sizeof_fty in ocaml_implementation.ml:206-212,

@@ -119,7 +119,7 @@ test module's `eraseNode (step …)` written out: `(r.1, stopObserving r.2)` for
 
 /-- Erasing the observation buffer commutes with a `loadM` step: same action, same
     post-state up to erasure. -/
-theorem loadM_erasure [LemFuel] [CerbGlobal.Switches] (es ts l t p s) :
+theorem loadM_erasure [LemFuel] [CerberusImpl.ImplProfile] [CerbGlobal.Switches] (es ts l t p s) :
     ((step (loadM es ts l t p) s).1, stopObserving (step (loadM es ts l t p) s).2) =
       step (loadM es ts l t p) (stopObserving s) := by
   simp only [CerbFail.step, loadM, refuseM]
@@ -148,7 +148,7 @@ theorem loadM_erasure [LemFuel] [CerbGlobal.Switches] (es ts l t p s) :
 
 /-- Erasing the observation buffer commutes with a `storeM` step: same action, same
     post-state up to erasure. -/
-theorem storeM_erasure [LemFuel] (es ts l t locking p v s) :
+theorem storeM_erasure [LemFuel] [CerberusImpl.ImplProfile] (es ts l t locking p v s) :
     ((step (storeM es ts l t locking p v) s).1, stopObserving (step (storeM es ts l t locking p v) s).2) =
       step (storeM es ts l t locking p v) (stopObserving s) := by
   simp only [CerbFail.step, storeM]

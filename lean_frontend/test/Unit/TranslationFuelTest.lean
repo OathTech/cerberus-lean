@@ -4,6 +4,10 @@ set_option autoImplicit false
 
 namespace TranslationFuelTest
 
+-- impl-profile S1 (2026-11-22): every statement below holds for EVERY implementation
+-- profile (none reads plain `char`'s signedness); the instance is a bound variable.
+variable [CerberusImpl.ImplProfile]
+
 -- The measured wrappers use data-derived fuel, with no ambient instance.
 example (enums : Fmap sym integerType)
     (tags : Fmap sym (CerbLocation.Loc × tag_definition)) (c : constant) :

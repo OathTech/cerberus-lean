@@ -74,11 +74,11 @@ def ivIs (iv : IntegerValue) (p : Provenance) (n : Int) : Bool :=
 
 /-- The memory operations at an explicit switch set (`letI`, never an instance). -/
 def ifp (sw : CerbGlobal.Switches) (pv : PointerValue) : CerbMem.memM IntegerValue :=
-  letI := sw; intfromptr fmapEmpty tags tloc intTy (.Unsigned .Long) pv
+  letI := sw; letI : CerberusImpl.ImplProfile := CerberusImpl.defaultImpl; intfromptr fmapEmpty tags tloc intTy (.Unsigned .Long) pv
 def pfi (sw : CerbGlobal.Switches) (iv : IntegerValue) : CerbMem.memM PointerValue :=
   letI := sw; ptrfromint tloc (.Unsigned .Long) intTy iv
 def ld [LemFuel] (sw : CerbGlobal.Switches) (ty : ctype) (pv : PointerValue) : CerbMem.memM (Footprint × MemValue) :=
-  letI := sw; loadM fmapEmpty tags tloc ty pv
+  letI := sw; letI : CerberusImpl.ImplProfile := CerberusImpl.defaultImpl; loadM fmapEmpty tags tloc ty pv
 def kl (sw : CerbGlobal.Switches) (dyn : Bool) (pv : PointerValue) : CerbMem.memM Unit :=
   letI := sw; killM tloc dyn pv
 def eqp (sw : CerbGlobal.Switches) (a b : PointerValue) : CerbMem.memM Bool :=
@@ -99,6 +99,8 @@ def stBytes : MemState := writeBytesTo (twoAllocs .Exposed .Unexposed) 100 ptrTo
 /-! ## Runtime witnesses -/
 
 def checks (fuel : Nat) : List (String × Bool) := Id.run do
+  -- the default implementation profile (impl-profile S1): the PNVI arms read no signedness of plain `char`
+  letI : CerberusImpl.ImplProfile := CerberusImpl.defaultImpl
   letI := LemFuel.mk fuel
   let r1 := step (ifp swAEUDI (some_ 0 104)) stU
   let r1d := step (ifp swDefault (some_ 0 104)) stU
@@ -314,7 +316,7 @@ run_cmd pin "R-PNVI-01" (← `(combineProv (.Prov_symbolic 0) .Prov_none))
 run_cmd pin "R-PNVI-01" (← `(combineProv (.Prov_some 3) (.Prov_symbolic 0)))
 run_cmd pin "R-PNVI-03" (← `(@findOverlapping swAEUDI stThree 108))
 run_cmd pin "R-PNVI-04" (← `(lookupIota stE 5))
-run_cmd pin "R-PNVI-05" (← `(ptrProv (@reconstructValueAbst swAEUDI fmapEmpty default closureDouble [] [] 0 ptrTy ptrBytes).2))
+run_cmd pin "R-PNVI-05" (← `(ptrProv (@reconstructValueAbst CerberusImpl.defaultImpl swAEUDI fmapEmpty default closureDouble [] [] 0 ptrTy ptrBytes).2))
 run_cmd pin "R-PNVI-06" (← `(fun (k : Nat) => @arrayShiftPtrval ⟨k⟩ fmapEmpty default CerbLocation.unknown (sym 0 108) intTy (.IV .Prov_none 1)))
 run_cmd pin "R-PNVI-07" (← `(casePtrval (α := Nat) (sym 0 108) (fun _ => 0) (fun _ => 1) (fun _ _ => 2)))
 run_cmd pin "R-PNVI-08" (← `(fun (k : Nat) => step (@dfp ⟨k⟩ swAEUDI (sym 0 108) (sym 1 112)) (withIota stE [(0, .Double 0 1), (1, .Double 0 1)])))

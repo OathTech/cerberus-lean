@@ -98,7 +98,7 @@ theorem unqualifyAndUnatomic_measure_sufficient (cty : ctype) (lemFuel : Nat)
     unqualifyAndUnatomic_lemFuel lemFuel cty = unqualifyAndUnatomic cty :=
   unqualifyAndUnatomic_stable_aux (ctype.lemSize cty) cty lemFuel (ctype.lemSize cty) (Nat.le_refl _) lemMeasureLe (Nat.le_refl _)
 
-theorem memValueToBytes_stable_aux (enumDefs : CerberusImpl.EnumDefs) (k : Nat) :
+theorem memValueToBytes_stable_aux [CerberusImpl.ImplProfile] (enumDefs : CerberusImpl.EnumDefs) (k : Nat) :
     ∀ (ambient : CerbTags.TagDefsMap) (funptrmap : Funptrmap) (v : MemValue) (f g : Nat),
     memValueSize v ≤ k → memValueSize v ≤ f → memValueSize v ≤ g →
     memValueToBytes_lemFuel f enumDefs ambient funptrmap v = memValueToBytes_lemFuel g enumDefs ambient funptrmap v := by
@@ -135,7 +135,7 @@ theorem memValueToBytes_stable_aux (enumDefs : CerberusImpl.EnumDefs) (k : Nat) 
 
 /-- THE OBLIGATION (the seam twin of the generated shape; its `[LemFuel]`
     went at C4 with the layout oracle's — audit F-A5). -/
-theorem memValueToBytes_measure_sufficient (enumDefs : CerberusImpl.EnumDefs) (ambient : CerbTags.TagDefsMap) (funptrmap : Funptrmap)
+theorem memValueToBytes_measure_sufficient [CerberusImpl.ImplProfile] (enumDefs : CerberusImpl.EnumDefs) (ambient : CerbTags.TagDefsMap) (funptrmap : Funptrmap)
     (val_ : MemValue) (lemFuel : Nat) (lemMeasureLe : memValueSize val_ ≤ lemFuel) :
     memValueToBytes_lemFuel lemFuel enumDefs ambient funptrmap val_ = memValueToBytes enumDefs ambient funptrmap val_ :=
   memValueToBytes_stable_aux enumDefs (memValueSize val_) ambient funptrmap val_ lemFuel (memValueSize val_)
@@ -217,7 +217,7 @@ theorem offsetsof_types (n : Nat) (enumDefs : CerberusImpl.EnumDefs) (ambient ta
     (the full `abst` — switch set, `find_overlaping` closure, taint); the
     closure and the instance are fixed through the induction (never recursed
     on), the taint rides along in the pair. -/
-theorem reconstructValueAbst_stable_aux [CerbGlobal.Switches] (enumDefs : CerberusImpl.EnumDefs) (ambient : CerbTags.TagDefsMap)
+theorem reconstructValueAbst_stable_aux [CerberusImpl.ImplProfile] [CerbGlobal.Switches] (enumDefs : CerberusImpl.EnumDefs) (ambient : CerbTags.TagDefsMap)
     (findOverlapping : Address → OverlapResult) (R : Entry → Nat)
     (hR : Ranked (lookup ambient) (lookup ambient) R) (k : Nat) :
     ∀ (unionmap : List (Int × identifier)) (funptrmap : Funptrmap) (addr : Int) (ty : ctype) (bytes : List AbsByte) (f g : Nat),
@@ -308,7 +308,7 @@ theorem reconstructValueAbst_stable_aux [CerbGlobal.Switches] (enumDefs : Cerber
 /-- THE OBLIGATION of the full reconstruction (PNVI arc S2; the seam twin of the
     generated `assuming` shape; register row `CerbMem.reconstructValueAbst_lemFuel`
     in scripts/fuel_hypotheses.txt). -/
-theorem reconstructValueAbst_measure_sufficient [CerbGlobal.Switches] (enumDefs : CerberusImpl.EnumDefs) (ambient : CerbTags.TagDefsMap)
+theorem reconstructValueAbst_measure_sufficient [CerberusImpl.ImplProfile] [CerbGlobal.Switches] (enumDefs : CerberusImpl.EnumDefs) (ambient : CerbTags.TagDefsMap)
     (findOverlapping : Address → OverlapResult) (unionmap : List (Int × identifier))
     (funptrmap : Funptrmap) (addr : Int) (ty : ctype) (bytes : List AbsByte)
     (lemHyp : CerbTagsWf.Acyclic ambient) (lemFuel : Nat)
@@ -326,13 +326,13 @@ theorem reconstructValueAbst_measure_sufficient [CerbGlobal.Switches] (enumDefs 
     `reconstructValue` are the `.2` of the full reconstruction pinned at
     `⟨CerbGlobal.defaultSwitches⟩` with the closure `noOverlapping`, so this is the
     full obligation's second projection. -/
-theorem reconstructValue_measure_sufficient (enumDefs : CerberusImpl.EnumDefs) (ambient : CerbTags.TagDefsMap) (unionmap : List (Int × identifier))
+theorem reconstructValue_measure_sufficient [ip : CerberusImpl.ImplProfile] (enumDefs : CerberusImpl.EnumDefs) (ambient : CerbTags.TagDefsMap) (unionmap : List (Int × identifier))
     (funptrmap : Funptrmap) (addr : Int) (ty : ctype) (bytes : List AbsByte)
     (lemHyp : CerbTagsWf.Acyclic ambient) (lemFuel : Nat)
     (lemMeasureLe : CerbTagsWf.envBound ambient ty ≤ lemFuel) :
     reconstructValue_lemFuel lemFuel enumDefs ambient unionmap funptrmap addr ty bytes =
       reconstructValue enumDefs ambient unionmap funptrmap addr ty bytes :=
-  congrArg Prod.snd (@reconstructValueAbst_measure_sufficient ⟨CerbGlobal.defaultSwitches⟩ enumDefs ambient
+  congrArg Prod.snd (@reconstructValueAbst_measure_sufficient ip ⟨CerbGlobal.defaultSwitches⟩ enumDefs ambient
     noOverlapping unionmap funptrmap addr ty bytes lemHyp lemFuel lemMeasureLe)
 
 end Reconstruct

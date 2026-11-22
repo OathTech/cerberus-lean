@@ -122,7 +122,7 @@ theorem pull_constrained_measure_sufficient (n : Nat) (g : generic_pexpr Unit sy
   pull_constrained_stable_aux (generic_pexpr.lemSize g) n g lemFuel (generic_pexpr.lemSize g)
     (Nat.le_refl _) lemMeasureLe (Nat.le_refl _)
 
-theorem step_eval_pexpr_stable_aux [LemFuel] (k : Nat) :
+theorem step_eval_pexpr_stable_aux [LemFuel] [CerberusImpl.ImplProfile] (k : Nat) :
     ∀ (ed : Fmap sym integerType) (td : Fmap sym (CerbLocation.Loc × tag_definition)) (n : Nat) (loc1 : CerbLocation.Loc)
       (pcl : Option CerbLocation.Loc) (ce : Fmap sym sym) (env1 : List (Fmap sym value))
       (mso : Option CerbMem.MemState) (file1 : generic_file Unit core_run_annotation) (hc : Bool)
@@ -177,7 +177,7 @@ theorem step_eval_pexpr_stable_aux [LemFuel] (k : Nat) :
           exact key (n + 1) false q (by have := pexpr_mem_lt_aux4 x q _ hx; size_lt)
 
 /-- THE OBLIGATION, exactly as Core_eval_auxiliary.lean states and delegates it. -/
-theorem step_eval_pexpr_measure_sufficient [LemFuel] (_lemReader_enum_definitions : Fmap sym integerType) (_lemReader_tagDefs : Fmap sym (CerbLocation.Loc × tag_definition))
+theorem step_eval_pexpr_measure_sufficient [LemFuel] [CerberusImpl.ImplProfile] (_lemReader_enum_definitions : Fmap sym integerType) (_lemReader_tagDefs : Fmap sym (CerbLocation.Loc × tag_definition))
     (n : Nat) (loc1 : CerbLocation.Loc) (parent_call_loc_opt : Option CerbLocation.Loc)
     (core_extern1 : Fmap sym sym) (env1 : List (Fmap sym value)) (mem_st_opt : Option CerbMem.MemState)
     (file1 : generic_file Unit core_run_annotation) (hasConstrained : Bool) (pexpr1 : generic_pexpr Unit sym)

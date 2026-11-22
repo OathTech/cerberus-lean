@@ -41,7 +41,7 @@ namespace Driver_lemMeasureProofs
 /-- `step_eval_pexpr`'s worker on a VALUE pexpr at any positive fuel returns
     the value pexpr with its annotations reset (core_eval.lem:583-584, the
     `PEval cval -> EU.return pexpr_` arm under `Pexpr [] () <$> …`). -/
-theorem step_eval_pexpr_value [LemFuel] (m : Nat) (hm : 1 ≤ m)
+theorem step_eval_pexpr_value [LemFuel] [CerberusImpl.ImplProfile] (m : Nat) (hm : 1 ≤ m)
     (ed : Fmap sym integerType) (td : Fmap sym (CerbLocation.Loc × tag_definition)) (n : Nat) (loc1 : CerbLocation.Loc)
     (pcl : Option CerbLocation.Loc) (ce : Fmap sym sym) (env1 : List (Fmap sym value))
     (mso : Option CerbMem.MemState) (file1 : generic_file Unit core_run_annotation) (hc : Bool)
@@ -57,7 +57,7 @@ theorem step_eval_pexpr_value [LemFuel] (m : Nat) (hm : 1 ≤ m)
 /-- `hack`'s worker on a VALUE pexpr at any positive fuel is that value: one
     `step_eval_pexpr` (the measured wrapper, at its own measure ≥ 1) returns
     the value pexpr and `valueFromPexpr` accepts it (core_aux.lem:862-868). -/
-theorem hack_value [LemFuel] (m : Nat) (hm : 1 ≤ m)
+theorem hack_value [LemFuel] [CerberusImpl.ImplProfile] (m : Nat) (hm : 1 ≤ m)
     (ed : Fmap sym integerType) (td : Fmap sym (CerbLocation.Loc × tag_definition)) (ce : Fmap sym sym)
     (env1 : List (Fmap sym value)) (mem_st : CerbMem.MemState)
     (file1 : generic_file Unit core_run_annotation) (csm : Fmap sym object_value)
@@ -72,7 +72,7 @@ theorem hack_value [LemFuel] (m : Nat) (hm : 1 ≤ m)
 /-- THE OBLIGATION, exactly as Driver_auxiliary.lean states and delegates it:
     under `IsValuePexpr pexpr1`, at every fuel at or above `lemSize pexpr1` the
     worker equals the wrapper (both are the pexpr's value). -/
-theorem hack_measure_sufficient [LemFuel]
+theorem hack_measure_sufficient [LemFuel] [CerberusImpl.ImplProfile]
     (_lemReader_enum_definitions : Fmap sym integerType) (_lemReader_tagDefs : Fmap sym (CerbLocation.Loc × tag_definition))
     (core_extern1 : Fmap sym sym) (env1 : List (Fmap sym value)) (mem_st : CerbMem.MemState)
     (core_file1 : generic_file Unit core_run_annotation) (concur_sym_map : Fmap sym object_value)

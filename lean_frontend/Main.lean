@@ -366,7 +366,7 @@ def countDecls : List external_declaration → Nat × Nat × Nat
     | .EDecl_decl _ => (funcs, decls + 1, other)
     | _ => (funcs, decls, other + 1)
 
-def selfTest : IO Unit := do
+def selfTest [CerberusImpl.ImplProfile] : IO Unit := do
   IO.println "cerberus-lean: loaded"
   match CerberusImpl.sizeof_ity (Signed Int_) with
   | some n => IO.println s!"  sizeof(int) = {n}"
@@ -774,7 +774,7 @@ def printUndefinedLine (ub : String) (stderr : String) (loc : String) : IO Unit 
     TU's symbols with the wrong digest (see CerberusFresh.forceIO and
     test/Unit/FreshIntTest.lean testDigestGlobal). This is frontend-only:
     the run receives `runDigest tunits` as data and never reads the global. -/
-def frontendTU [LemFuel] [CerbGlobal.Switches] (quiet : Bool) (supply : Nat) (addressSpaceTop : Int)
+def frontendTU [LemFuel] [CerberusImpl.ImplProfile] [CerbGlobal.Switches] (quiet : Bool) (supply : Nat) (addressSpaceTop : Int)
     (coreEvalStuff : Fmap String sym × fun_map Unit × impl)
     (ailnames : Fmap String sym) (stdFunMap : fun_map Unit) (coreImpl : impl)
     (tunit : translation_unit) : IO (Except UInt8 (file Unit × Nat)) := do
@@ -956,7 +956,7 @@ def checkLibcCallingConvention (mode : calling_convention) (parsed : CoreParser.
 
 /-- Load and assemble the libc library Core file (see the module note at
     "C-libc loading" above). -/
-def loadLibc [LemFuel] [CerbGlobal.Switches] (runtime : String) (quiet portableLabels : Bool) (supply0 : Nat) (addressSpaceTop : Int)
+def loadLibc [LemFuel] [CerberusImpl.ImplProfile] [CerbGlobal.Switches] (runtime : String) (quiet portableLabels : Bool) (supply0 : Nat) (addressSpaceTop : Int)
     (coreEvalStuff : Fmap String sym × fun_map Unit × impl)
     (ailnames : Fmap String sym) (stdFunMap : fun_map Unit) (coreImpl : impl)
     (libcCorePath : String) (libcTuJsons : List String) :
@@ -1264,7 +1264,7 @@ private def writeQuoteModule (output source : String) : IO (Except String Unit) 
     `ppCoreSignature`); the default human-readable mode is unchanged (and
     keeps its historical exit-code behavior: 0 even on semantic stage
     failures). -/
-def runPipeline [LemFuel] [CerbGlobal.Switches] (runtime : String) (batch : Bool) (ppCore : Bool)
+def runPipeline [LemFuel] [CerberusImpl.ImplProfile] [CerbGlobal.Switches] (runtime : String) (batch : Bool) (ppCore : Bool)
     (firstTrace : Bool)
     -- the address-space top (address-space-bound slice, 2026-09-17): ONE value for
     -- both entry points — the desugarer's const-expr mini-run (via frontendTU →
@@ -2036,7 +2036,9 @@ def main (args : List String) : IO Unit := do
   -- impossible by construction, so there is no stratification invariant
   -- left to probe.
   if args.length == 0 then
-    selfTest
+    -- the self-test reads the default implementation profile (impl-profile S1): no
+    -- argument, so no selection
+    (letI : CerberusImpl.ImplProfile := CerberusImpl.defaultImpl; selfTest)
     return
 
   -- --parse-core: test the Core text parser
@@ -2132,7 +2134,14 @@ def main (args : List String) : IO Unit := do
   -- general path, the set only selects the arms (no PNVI-only entry point). No other
   -- instance of `CerbGlobal.Switches` exists in this repository
   -- (speedbump: `scripts/check_no_fuel_numerals.sh` rule W1).
-  let code ← (letI : LemFuel := ⟨fuel⟩; letI : CerbGlobal.Switches := ⟨switchSet⟩; runPipeline runtimeDir batchMode ppCoreMode firstTrace
+  -- Between them, the run's implementation profile (impl-profile S1, 2026-11-22):
+  -- `implProfile`, upstream's `DefaultImpl` (`CerberusImpl.defaultImpl`, the value
+  -- `Ocaml_implementation.get ()` holds when `set` was never called). Every phase below
+  -- `runPipeline` reads THIS instance (constant evaluation, typing, elaboration, Core's
+  -- signedness tests, the ranges, store/load, the decoder); no instance of
+  -- `CerberusImpl.ImplProfile` is declared in this repository (speedbump: rule W3).
+  let implProfile : CerberusImpl.ImplProfile := CerberusImpl.defaultImpl
+  let code ← (letI : LemFuel := ⟨fuel⟩; letI : CerberusImpl.ImplProfile := implProfile; letI : CerbGlobal.Switches := ⟨switchSet⟩; runPipeline runtimeDir batchMode ppCoreMode firstTrace
     addressSpaceTop callFn traceNodes libc quoteCore quoteLibc progArgs tunits)
   -- Report completed runs on stderr: batch stdout contains only verdict tokens.
   -- Emit after execution so a panic's diagnostic envelope remains intact. Quotation

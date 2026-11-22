@@ -160,6 +160,7 @@ roots = [
   "Global", "Global_auxiliary",
   "Implementation", "Implementation_auxiliary",
   "Lean_switches", "Lean_switches_auxiliary",
+  "Lean_impl_profile", "Lean_impl_profile_auxiliary",
   "IntegerImpl", "IntegerImpl_auxiliary",
   "IntegerType", "IntegerType_auxiliary",
   "Linux", "Linux_auxiliary",

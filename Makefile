@@ -206,7 +206,11 @@ LEM_SRC_LEAN = $(filter-out frontend/model/core_unstruct.lem,$(LEM_SRC)) \
 # generated OCaml as a comment, so it lives outside LEM_SRC to keep the
 # generated OCaml byte-identical (record
 # lean_frontend/docs/2026-10-05_pnvi-s1-switch-parameter-record.md §3).
-LEM_SRC_LEAN_ONLY = frontend/model/lean_switches.lem
+# lean_impl_profile.lem (impl-profile S1, 2026-11-22): the same for the
+# implementation profile's instance reader (plain char signedness) and its
+# consumers (record lean_frontend/docs/2026-11-22_impl-profile-record.md).
+LEM_SRC_LEAN_ONLY = frontend/model/lean_switches.lem \
+                    frontend/model/lean_impl_profile.lem
 ####
 
 PRELUDE_SRC_DIR = ocaml_frontend/generated

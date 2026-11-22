@@ -248,8 +248,9 @@ fi
 # speclab) except Main.lean's `--fuel` default, and (W1, PNVI arc S1) no
 # `instance` declaration of `CerbGlobal.Switches` — a speedbump against an
 # accidental default switch set, not adversarially robust (Main.lean's local
-# `letI` wins for every lane). The gate's own plant battery (--selftest:
-# F1-F6, A1-A3, W1 planted red, unplanted green) runs first so a silently
+# `letI` wins for every lane), nor (W3, impl-profile S1) of the implementation
+# profile class `CerberusImpl.ImplProfile`, the same speedbump. The gate's own
+# plant battery (--selftest: F1-F6, A1-A3, W1, W3, W2 planted red, unplanted green) runs first so a silently
 # vacuous gate cannot pass. Fail-closed.
 NOFUEL_SH="$(dirname "$PURITY_SH")/check_no_fuel_numerals.sh"
 if ! "$NOFUEL_SH" --selftest; then

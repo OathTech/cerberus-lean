@@ -79,6 +79,19 @@
 #   binder AFTER a binder with a colon (`instance foo (x : T) [CerbGlobal.Switches] : C`)
 #   trips W1 — an accepted false positive; the one-line `instance (priority := …) :
 #   Switches` form is NOT caught (`[^:]*` stops at the `:=`) — speedbump scope.
+# Implementation-profile shape (impl-profile S1, 2026-11-22; record
+# docs/2026-11-22_impl-profile-record.md):
+#   W3  instance … : … ImplProfile           the same shape as W1 for the implementation
+#                                            profile class `CerberusImpl.ImplProfile`: an
+#                                            `instance` declaration whose same-line header
+#                                            names `ImplProfile` would be a hidden default
+#                                            profile. The entry points supply the profile
+#                                            with `letI` (Main.lean) or pass a value
+#                                            explicitly (the tests); `CerberusImpl.defaultImpl`
+#                                            is an `abbrev`, not an instance.
+#   W3 SCOPE: W1's, word for word — a speedbump against an ACCIDENTAL instance, not
+#   adversarially robust, with W1's known edges; the backstop is that a lifted definition
+#   with no instance in scope does not elaborate, plus review.
 # Default-reconstruct shape (PNVI arc S2, 2026-10-07; record
 # docs/2026-10-07_pnvi-s2-data-shapes-record.md; design record §B.7 condition (b)):
 #   W2  reconstructValue / reconstructValue_lemFuel   a mention (bare or `CerbMem.`-qualified)
@@ -123,7 +136,7 @@
 # seam code, and a measured wrapper carries its sufficiency obligation — a
 # numeral can only enter where a human writes an instance.
 #
-# --selftest: plant each shape (F1–F6, A1–A3, W1, W2) into a scratch COPY of the scan set,
+# --selftest: plant each shape (F1–F6, A1–A3, W1, W3, W2) into a scratch COPY of the scan set,
 # assert red with the right label, then assert the unplanted set is green
 # (loud plant banner; the test_unit.sh wiring runs the gate AND the selftest).
 set -u
@@ -134,15 +147,15 @@ MIN_FILES=150
 # Allowlist: exact (whitespace-trimmed) code lines permitted in Main.lean only.
 ALLOW_MAIN=(
   'def defaultFuel : Nat := 100000000'
-  'let code ← (letI : LemFuel := ⟨fuel⟩; letI : CerbGlobal.Switches := ⟨switchSet⟩; runPipeline runtimeDir batchMode ppCoreMode firstTrace'
+  'let code ← (letI : LemFuel := ⟨fuel⟩; letI : CerberusImpl.ImplProfile := implProfile; letI : CerbGlobal.Switches := ⟨switchSet⟩; runPipeline runtimeDir batchMode ppCoreMode firstTrace'
   'def defaultAddressSpaceTop : Int := 0xFFFFFFFFFFFF'
 )
 
 # W2 allowlist: exact (whitespace-trimmed) code lines permitted in CerbMem.lean only (the
 # hand-written file and its generated/ copy) — the default-pinned wrappers' own definitions.
 ALLOW_W2=(
-  'def reconstructValue_lemFuel (lemFuel : Nat) (enumDefs : EnumDefs) (ambient : TagDefs)'
-  'def reconstructValue (enumDefs : EnumDefs) (ambient : TagDefs) (unionmap : List (Int × identifier))'
+  'def reconstructValue_lemFuel [ip : CerberusImpl.ImplProfile] (lemFuel : Nat) (enumDefs : EnumDefs) (ambient : TagDefs)'
+  'def reconstructValue [CerberusImpl.ImplProfile] (enumDefs : EnumDefs) (ambient : TagDefs) (unionmap : List (Int × identifier))'
   'reconstructValue_lemFuel (CerbTagsWf.envBound ambient ty) enumDefs ambient unionmap funptrmap addr ty bytes'
 )
 
@@ -209,6 +222,8 @@ run_gate() {  # <repo root>; prints verdict lines; returns 0/1
   # W1: an `instance` declaration whose same-line header names `Switches` (PNVI arc S1;
   # a plain-text speedbump, see the header's W1 SCOPE)
   report W1 '(^|[^A-Za-z0-9_.])instance\b[^:]*:[^=]*\bSwitches\b'
+  # W3: the same for the implementation profile class (impl-profile S1; see W3 SCOPE)
+  report W3 '(^|[^A-Za-z0-9_.])instance\b[^:]*:[^=]*\bImplProfile\b'
   # W2: the default-pinned reconstruct wrappers named in production text (PNVI arc S2; a
   # plain-text speedbump, see the header's W2 SCOPE). Rows of the seams and the generated
   # tree only, proof carriers excluded, string literals blanked.
@@ -223,13 +238,13 @@ run_gate() {  # <repo root>; prints verdict lines; returns 0/1
   local w2hits; w2hits=$(echo "$w2rows" | grep -Ev "$w2allowed_re" | grep -E "(^|[^A-Za-z0-9_'])reconstructValue(_lemFuel)?([^A-Za-z0-9_'!?]|\$)")
   if [[ -n "$w2hits" ]]; then echo "check_no_fuel_numerals: FAIL (W2): forbidden shape found:"; echo "$w2hits" | head -20; status=1; fi
   if [[ $status -eq 0 ]]; then
-    echo "check_no_fuel_numerals: OK ($n files scanned comment-stripped; no lemDefaultFuel/driverFuel/ndDefaultFuel, no LemFuel instance, no literal fuel (F1-F6), no address-space-top literal (A1-A3), no switch-set instance declaration (W1), no production call of the default-pinned reconstructValue wrappers (W2); allowed Main.lean sites seen: $allowed_hits of $((2 * ${#ALLOW_MAIN[@]})) (hand-written + generated copy); W2 wrapper lines seen: $w2allowed_hits of $((2 * ${#ALLOW_W2[@]})))"
+    echo "check_no_fuel_numerals: OK ($n files scanned comment-stripped; no lemDefaultFuel/driverFuel/ndDefaultFuel, no LemFuel instance, no literal fuel (F1-F6), no address-space-top literal (A1-A3), no switch-set instance declaration (W1), no implementation-profile instance declaration (W3), no production call of the default-pinned reconstructValue wrappers (W2); allowed Main.lean sites seen: $allowed_hits of $((2 * ${#ALLOW_MAIN[@]})) (hand-written + generated copy); W2 wrapper lines seen: $w2allowed_hits of $((2 * ${#ALLOW_W2[@]})))"
   fi
   return $status
 }
 
 if [[ "${1:-}" == "--selftest" ]]; then
-  echo "check_no_fuel_numerals: SELFTEST — planting F1-F6, A1-A3, W1 and W2 into a scratch copy of the scan set (loud plant banner; nothing in the tree is touched)"
+  echo "check_no_fuel_numerals: SELFTEST — planting F1-F6, A1-A3, W1, W3 and W2 into a scratch copy of the scan set (loud plant banner; nothing in the tree is touched)"
   W=$(mktemp -d "${TMPDIR:-/tmp}/nofuel-plant.XXXXXX") || exit 1
   trap 'rm -rf "$W"' EXIT
   R="$W/root"; LF="$R/lean_frontend"; mkdir -p "$LF/generated" "$LF/test/Unit" "$LF/speclab/test/SLUnit" "$R/tests/immaculate"
@@ -283,6 +298,11 @@ if [[ "${1:-}" == "--selftest" ]]; then
   plant "W1 switch-set instance in a seam"           W1 CerbND.lean 'instance : CerbGlobal.Switches := ⟨[]⟩'
   plant "W1 switch-set instance in the generated tree" W1 generated/Utils.lean 'instance plantSw : Switches where switches := []'
   plant "W1 local switch-set instance in a unit test" W1 test/Unit/FuelExemplar.lean 'local instance : CerbGlobal.Switches := sw₀'
+  # W3 (impl-profile S1, 2026-11-22): an accidental implementation-profile instance in a
+  # seam, in the generated tree and in a unit test
+  plant "W3 profile instance in a seam"              W3 CerbND.lean 'instance : CerberusImpl.ImplProfile := CerberusImpl.defaultImpl'
+  plant "W3 profile instance in the generated tree"  W3 generated/Utils.lean 'instance plantIp : ImplProfile where char_is_signed := false'
+  plant "W3 local profile instance in a unit test"   W3 test/Unit/FuelExemplar.lean 'local instance : CerberusImpl.ImplProfile := ip₀'
   # W2 (PNVI arc S2, 2026-10-07): a production call of the default-pinned wrapper — a
   # loadM-shaped call in the seam, and a qualified worker call in the generated tree
   plant "W2 default-pinned wrapper called in a seam"  W2 CerbMem.lean 'def plantLoad (st : MemState) := reconstructValue fmapEmpty default st.lastUsedUnionMembers st.funptrmap 0 plantTy []'
@@ -297,7 +317,7 @@ if [[ "${1:-}" == "--selftest" ]]; then
   echo "  REVERTED (unplanted scratch copy):"
   out=$(run_gate "$R"); rc=$?; echo "  $out"
   if [[ $rc -ne 0 ]]; then echo "  PLANT FAIL [green baseline]: the unplanted scan set is not green" >&2; fail=1; fi
-  if [[ $fail -eq 0 ]]; then echo "check_no_fuel_numerals: SELFTEST OK (31 plants red with the declared label — F1-F6, A1-A3, W1 and W2; E5 indirection a recorded known gap; unplanted set green)"; else echo "check_no_fuel_numerals: SELFTEST FAILED" >&2; fi
+  if [[ $fail -eq 0 ]]; then echo "check_no_fuel_numerals: SELFTEST OK (34 plants red with the declared label — F1-F6, A1-A3, W1, W3 and W2; E5 indirection a recorded known gap; unplanted set green)"; else echo "check_no_fuel_numerals: SELFTEST FAILED" >&2; fi
   exit $fail
 fi
 

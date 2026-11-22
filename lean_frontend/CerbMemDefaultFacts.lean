@@ -41,19 +41,19 @@ under `is_PNVI ()`, which is `false`). The equality with the pre-S2 TEXT stays i
 test module (`reconstructValueAbst_default_snd_eq_legacy`, row 1). -/
 
 /-- The wrapper equation (design §B.7 "`reconstructValue_lemFuel_unfold`"), for `simp only` sets. -/
-theorem reconstructValue_lemFuel_unfold (lemFuel : Nat) (enumDefs : EnumDefs) (ambient : TagDefs)
+theorem reconstructValue_lemFuel_unfold [ip : CerberusImpl.ImplProfile] (lemFuel : Nat) (enumDefs : EnumDefs) (ambient : TagDefs)
     (unionmap : List (Int × identifier)) (funptrmap : Funptrmap) (addr : Int) (ty : ctype) (bytes : List AbsByte) :
     reconstructValue_lemFuel lemFuel enumDefs ambient unionmap funptrmap addr ty bytes =
-      (@reconstructValueAbst_lemFuel ⟨CerbGlobal.defaultSwitches⟩ lemFuel enumDefs ambient noOverlapping unionmap funptrmap addr ty bytes).2 :=
+      (@reconstructValueAbst_lemFuel ip ⟨CerbGlobal.defaultSwitches⟩ lemFuel enumDefs ambient noOverlapping unionmap funptrmap addr ty bytes).2 :=
   rfl
 
 /-- Closure irrelevance at the default switch set: the WHOLE result (taint and value)
     does not depend on the `find_overlaping` closure. -/
-theorem reconstructValueAbst_lemFuel_default_closure (fo fo' : Address → OverlapResult) :
+theorem reconstructValueAbst_lemFuel_default_closure [ip : CerberusImpl.ImplProfile] (fo fo' : Address → OverlapResult) :
     ∀ (lemFuel : Nat) (enumDefs : EnumDefs) (ambient : TagDefs) (unionmap : List (Int × identifier))
       (funptrmap : Funptrmap) (addr : Int) (ty : ctype) (bytes : List AbsByte),
-      @reconstructValueAbst_lemFuel ⟨CerbGlobal.defaultSwitches⟩ lemFuel enumDefs ambient fo unionmap funptrmap addr ty bytes =
-        @reconstructValueAbst_lemFuel ⟨CerbGlobal.defaultSwitches⟩ lemFuel enumDefs ambient fo' unionmap funptrmap addr ty bytes := by
+      @reconstructValueAbst_lemFuel ip ⟨CerbGlobal.defaultSwitches⟩ lemFuel enumDefs ambient fo unionmap funptrmap addr ty bytes =
+        @reconstructValueAbst_lemFuel ip ⟨CerbGlobal.defaultSwitches⟩ lemFuel enumDefs ambient fo' unionmap funptrmap addr ty bytes := by
   intro lemFuel
   induction lemFuel with
   | zero => intros; rfl
@@ -91,25 +91,25 @@ theorem reconstructValueAbst_lemFuel_default_closure (fo fo' : Address → Overl
 
 /-- The fuel'd full reconstruction at the default set, any closure, value component =
     the fuel'd default-mode wrapper. -/
-theorem reconstructValueAbst_lemFuel_default_snd (fo : Address → OverlapResult) (lemFuel : Nat) (enumDefs : EnumDefs)
+theorem reconstructValueAbst_lemFuel_default_snd [ip : CerberusImpl.ImplProfile] (fo : Address → OverlapResult) (lemFuel : Nat) (enumDefs : EnumDefs)
     (ambient : TagDefs) (unionmap : List (Int × identifier)) (funptrmap : Funptrmap) (addr : Int) (ty : ctype)
     (bytes : List AbsByte) :
-    (@reconstructValueAbst_lemFuel ⟨CerbGlobal.defaultSwitches⟩ lemFuel enumDefs ambient fo unionmap funptrmap addr ty bytes).2 =
+    (@reconstructValueAbst_lemFuel ip ⟨CerbGlobal.defaultSwitches⟩ lemFuel enumDefs ambient fo unionmap funptrmap addr ty bytes).2 =
       reconstructValue_lemFuel lemFuel enumDefs ambient unionmap funptrmap addr ty bytes := by
   rw [reconstructValueAbst_lemFuel_default_closure fo noOverlapping]
   rfl
 
 /-- The same for the measured (fuel-free) pair. -/
-theorem reconstructValueAbst_default_snd (fo : Address → OverlapResult) (enumDefs : EnumDefs) (ambient : TagDefs)
+theorem reconstructValueAbst_default_snd [ip : CerberusImpl.ImplProfile] (fo : Address → OverlapResult) (enumDefs : EnumDefs) (ambient : TagDefs)
     (unionmap : List (Int × identifier)) (funptrmap : Funptrmap) (addr : Int) (ty : ctype) (bytes : List AbsByte) :
-    (@reconstructValueAbst ⟨CerbGlobal.defaultSwitches⟩ enumDefs ambient fo unionmap funptrmap addr ty bytes).2 =
+    (@reconstructValueAbst ip ⟨CerbGlobal.defaultSwitches⟩ enumDefs ambient fo unionmap funptrmap addr ty bytes).2 =
       reconstructValue enumDefs ambient unionmap funptrmap addr ty bytes :=
   reconstructValueAbst_lemFuel_default_snd fo _ enumDefs ambient unionmap funptrmap addr ty bytes
 
 /-- The form for a consumer's OWN instance: any instance whose switch list is
     `CerbGlobal.defaultSwitches` (e.g. `instance : CerbGlobal.Switches :=
     ⟨CerbGlobal.defaultSwitches⟩`, `h := rfl`). -/
-theorem reconstructValueAbst_snd_of_default [inst : CerbGlobal.Switches]
+theorem reconstructValueAbst_snd_of_default [ip : CerberusImpl.ImplProfile] [inst : CerbGlobal.Switches]
     (h : inst.switches = CerbGlobal.defaultSwitches) (fo : Address → OverlapResult)
     (enumDefs : EnumDefs) (ambient : TagDefs)
     (unionmap : List (Int × identifier)) (funptrmap : Funptrmap) (addr : Int) (ty : ctype) (bytes : List AbsByte) :
@@ -123,7 +123,7 @@ theorem reconstructValueAbst_snd_of_default [inst : CerbGlobal.Switches]
 /-- The `loadM`-facing form: the exact subterm `loadM`'s `doLoad` builds (the
     `find_overlaping st` closure, the state's union map and funptrmap), rewritten to the
     default-mode `reconstructValue`, at any default-valued instance. -/
-theorem loadM_reconstruct_eq_reconstructValue [inst : CerbGlobal.Switches]
+theorem loadM_reconstruct_eq_reconstructValue [ip : CerberusImpl.ImplProfile] [inst : CerbGlobal.Switches]
     (h : inst.switches = CerbGlobal.defaultSwitches) (st : MemState)
     (enumDefs : EnumDefs) (ambient : TagDefs) (addr : Int) (ty : ctype) (bytes : List AbsByte) :
     (reconstructValueAbst enumDefs ambient (findOverlapping st) st.lastUsedUnionMembers st.funptrmap addr ty bytes).2 =

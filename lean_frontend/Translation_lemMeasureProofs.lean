@@ -29,7 +29,7 @@ theorem constant_field_mem_lt (p : identifier × constant) (cs : List (identifie
     | head => simp only [constant.lemSize_aux2]; omega
     | tail _ h => have := ih h; simp only [constant.lemSize_aux2]; omega
 
-theorem translate_constant_stable (enums : Fmap sym integerType)
+theorem translate_constant_stable [CerberusImpl.ImplProfile] (enums : Fmap sym integerType)
     (tags : Fmap sym (CerbLocation.Loc × tag_definition)) (k : Nat) :
     ∀ (c : constant) (f g : Nat), constant.lemSize c ≤ k →
       constant.lemSize c ≤ f → constant.lemSize c ≤ g →
@@ -67,7 +67,7 @@ theorem translate_constant_stable (enums : Fmap sym integerType)
             [translate_constant_lemFuel, key, keys, fields]
         all_goals rename_i i; cases i <;> rfl
 
-theorem translate_constant_measure_sufficient (enums : Fmap sym integerType)
+theorem translate_constant_measure_sufficient [CerberusImpl.ImplProfile] (enums : Fmap sym integerType)
     (tags : Fmap sym (CerbLocation.Loc × tag_definition)) (cst : constant) (lemFuel : Nat)
     (lemMeasureLe : constant.lemSize cst ≤ lemFuel) :
     translate_constant_lemFuel lemFuel enums tags cst = translate_constant enums tags cst :=

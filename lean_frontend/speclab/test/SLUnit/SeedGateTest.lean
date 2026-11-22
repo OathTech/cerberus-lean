@@ -45,7 +45,7 @@ def gateRunDigest : String := "900150983cd24fb0d6963f7d28e17f72"
 
 /-- Run the assembled file through the production driver entry and
 project the single-execution verdict. -/
-def runFile [LemFuel] [CerbGlobal.Switches] (f : file core_run_annotation) : Sum Int String :=
+def runFile [LemFuel] [CerberusImpl.ImplProfile] [CerbGlobal.Switches] (f : file core_run_annotation) : Sum Int String :=
   match CerbND.runND (drive f.enumDefs f.tagDefs false f ["cmdname"])
       ((initial_driver_state 0 gateAddressSpaceTop gateRunDigest f CerbFS.fs_initial_state).1) with
   | [(Active r, _, _)] =>
@@ -102,7 +102,7 @@ def applyParams : List Int → Option (generic_fun_map_decl Unit Unit)
 
 /-- The gate body at the ambient fuel (`[LemFuel]`; fuel-parameter arc):
     `main` below instantiates it once from `--fuel N` (SLUnit.Fuel). -/
-def mainAt [LemFuel] [CerbGlobal.Switches] : IO UInt32 := do
+def mainAt [LemFuel] [CerberusImpl.ImplProfile] [CerbGlobal.Switches] : IO UInt32 := do
   let mut failures := 0
   -- 1. drift gate
   let (sa, sb, sd, sc, sp, std) ← SpecLabEmitCore.readSeedInputs
@@ -175,4 +175,4 @@ def mainAt [LemFuel] [CerbGlobal.Switches] : IO UInt32 := do
 def main (args : List String) : IO UInt32 := do
   let fuel ← SLUnit.fuelFromArgs args
   -- the default switch set (PNVI arc S1): the gate runs the shipped default-mode pipeline
-  @mainAt ⟨fuel⟩ ⟨CerbGlobal.defaultSwitches⟩
+  @mainAt ⟨fuel⟩ CerberusImpl.defaultImpl ⟨CerbGlobal.defaultSwitches⟩
