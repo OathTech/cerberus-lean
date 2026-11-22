@@ -5,7 +5,8 @@ Branch `arc/impl-profile`, base mainline `77229f846`. Charter `2026-11-22_worker
 no ruling covers are marked [AGENT]. Quoted machine output is verbatim; counts marked "derived" are mine. Commits:
 S1 `0c3817aef`, S2 `1c1ac30c4`, S3 `44a206e0b`; the pre-merge review `987c2c51c`
 (`2026-11-22_impl-profile-premerge-review.md`, with its dispositions); the dispositions' code and witnesses
-`901ec9c03` and their documents `1eb8e7638`; the probes outside the Lake graph `59b48520c` (section 8). **Section 7 records what changed after the review; where
+`901ec9c03` and their documents `1eb8e7638`; the probes outside the Lake graph `59b48520c` (section 8). The orchestrator's gate
+lines on S1, on `1eb8e7638` and on the tip are at the end of section 5. **Section 7 records what changed after the review; where
 sections 1 to 6 said something the review showed to be wrong they are corrected in place and say so.**
 
 ## 0. Rulings
@@ -195,6 +196,50 @@ Failures on the way, each a real finding:
 Fork-drift manifest, single-row edits with dated NOTEs, no `--refresh`: `[files]` 107 → 108
 (`lean_impl_profile.lem`); `[source-content]` the new row, `Makefile`, `ailTypesAux.lem`, `backend/driver/main.ml`;
 `[expected-semantic]` `ailTypesAux.ml`'s hash (one more hunk; layer 2 stays 37).
+
+### The orchestrator's gates (close-out, 2026-11-22)
+
+These are the ORCHESTRATOR's runs, in a separate audit checkout, relayed to the worker and written here as
+relayed; the worker did not run them and saw none of their logs. Each quoted line is verbatim as relayed.
+
+Tier A on S1 `0c3817aef`, after a forced regeneration:
+
+```
+fast: passed; 20/20 selected commands completed successfully.
+Source unchanged: True. Complete tier selection: True.
+```
+
+The full battery on `1eb8e7638`, after a forced regeneration, the three dune steps and the capped lake build:
+
+```
+full: failed; 46/48 selected commands completed successfully.
+Source unchanged: True. Complete tier selection: True.
+```
+
+A FAILURE: the two reds were Tier B row 5 (`./scripts/test_immaculate.sh`) and Tier B row 9
+(`python3 scripts/test_observation_lanes.py`), the out-of-graph probe of section 8.
+
+On the tip `031c580db`, the same checkout, the two red rows re-run:
+
+```
+PASSED B5 (110.7s)
+PASSED B9 (2385.7s)
+Source unchanged: True.
+release rc=0
+```
+
+**What is evidence for what.** No single run of all 48 rows on the tip exists. For rows 5 and 9 the evidence is
+the run on `031c580db`. For the 46 other rows the evidence is the run on `1eb8e7638`, and it carries to the tip
+for this reason: the commits since `1eb8e7638` (`59b48520c`, `031c580db`) touch three files only,
+`lean_frontend/docs/2026-11-22_impl-profile-record.md`, `tests/immaculate/illtyped-store.lean` and
+`lean_frontend/test/CoreQuote/probes/CoreQuotePipelineProbe.lean` (`git diff --name-only 1eb8e7638..031c580db`,
+checked by the orchestrator and again by the worker), and none of them is a Lake root or a source of the oracle:
+the first is a document, the second is compiled only by the immaculate lane at lane time (rows 5 and 9), the third
+is an unwired development probe that no target and no lane compiles (the quotation targets' roots are
+`CoreQuoteRunner` and `CoreQuoteCompare`). So both engines' binaries, both generated trees and every baseline the
+46 rows read are the ones the run on `1eb8e7638` used. That is an argument from the changed-file set, not a
+re-run; one of the 46, row 1's `check_no_fuel_numerals.sh`, scans the immaculate probe as text, and the worker ran
+that script on the tree with the fixed probe (green, section 8's commit).
 
 ## 6. What was not done (as of S3; see section 7 for the state after the review)
 
