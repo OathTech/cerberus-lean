@@ -466,6 +466,11 @@ weakening semantic acceptance.
 `arc/sc-prototype` is a **quarry**, not the implementation base or the project
 roadmap. Pinned implementation: `631382a9d23a709112f38add53357d4cbe6fc108`;
 documentation-only handoff: `4860f0ef0d20f2a2a4d8d96e6ecfc7b2c99ceed2`.
+The original branch was not published. A code-only copy with the run evidence
+removed is on `arc/sc-prototype-code`, where the pinned implementation is
+`05000ce68` and the handoff is `ff982afae`; its
+`lean_frontend/docs/2026-11-23_sc-prototype-code-only.md` maps every original
+hash to its copy.
 The older `feature/concurrency` is another source of counterexamples.
 
 The [quarry assessment](lean_frontend/docs/2026-09-24_sc-prototype-quarry.md)
