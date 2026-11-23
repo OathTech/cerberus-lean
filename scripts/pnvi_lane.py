@@ -67,8 +67,10 @@ the Lean side — an Error, a crash, a verdict, another id — is DIFF), and a L
 crash merely CONTAINING the text does not qualify; a payload that matches (e.g. any
 `Not_found`, R-PNVI-04) but comes from another upstream site still demands the refusal — RED,
 never absorbed.
-LIMIT of the 'verdict' ids (R-PNVI-03/-05/-08/-10): the classifier checks only that the
-oracle ANSWERED (an OBS); it cannot check that the oracle took the flagged arm. That is
+LIMIT of the 'verdict' ids (R-PNVI-03/-05/-08): the classifier checks only that the
+oracle ANSWERED (an OBS); it cannot check that the oracle took the flagged arm. (R-PNVI-10 is
+the exception: its arm prints a debug line to stdout, which the lane decodes on the oracle side
+and REQUIRES — ORACLE_DEBUG_LINE below.) That is
 covered by the per-row review of the registered row (design §G.1, the baseline header) plus
 the pinned oracle hash, which turns any later change of the oracle's answer RED.
 Every non-AGREE row must be in the committed baseline with the same class; the baseline
@@ -109,6 +111,19 @@ ORACLE_SIDE = {
     'R-PNVI-08': ('verdict', None),
     'R-PNVI-10': ('verdict', None),
 }
+# The ONE oracle stdout line outside the batch protocol the lane decodes ([AGENT 2026-10-08],
+# review F1 of the arm-witness rows): eff_array_shift_ptrval's PNVI-ae-udi `Double` arm prints
+#   Printf.printf "id1= %s, id2= %s ==> addr= %s\n" … ; fail ~loc (MerrOther "(PNVI-ae-uid) ambiguous non-zero array shift")
+# (impl_mem.ml:2331-2334), i.e. EXACTLY this line immediately before EXACTLY this one `Error`
+# verdict, and nothing else. Only the ORACLE side is decoded this way; the line is kept as a
+# leading `DBG:` token (so it is in the pinned oracle hash), and a DBG-bearing oracle side pairs
+# ONLY with Lean `REFUSAL R-PNVI-10`, which in turn REQUIRES it (both directions, classify_row):
+# the debug line is positive evidence that the oracle took R-PNVI-10's own arm, so R-PNVI-10 is
+# the one 'verdict' id the classifier can check (module docstring, LIMIT). Any other shape (a
+# second line, another message, more verdicts, the line on the Lean side) stays INVALID / DIFF.
+ORACLE_DEBUG_LINE = re.compile(rb'(id1= [0-9]+, id2= [0-9]+ ==> addr= [0-9]+)\n')
+ORACLE_DEBUG_ERROR = b'MerrOther "(PNVI-ae-uid) ambiguous non-zero array shift"'
+ORACLE_DEBUG_ID = 'R-PNVI-10'
 ROW_CLASS = re.compile(r'^(AGREE|AGREE-FIRST|BOTH_FAIL|RESOURCE oracle:(KILL|TIMEOUT|FUEL)|'
                        r'REFUSAL R-PNVI-[0-9]{2}b? (ORACLE_CRASH|ORACLE_VERDICT))$')
 
@@ -140,6 +155,17 @@ def classify_side(prefix: str, lean: bool):
         return ('OBS', tuple(o.tokens('full')), tuple(o.tokens('failure-class')))
     except obs.ProtocolError as batch_exc:
         batch_reason = str(batch_exc)
+    if not lean:
+        m = ORACLE_DEBUG_LINE.match(stdout)
+        if m:
+            try:
+                o = obs.parse(stdout[m.end():], stderr, status, 'batch')
+            except obs.ProtocolError:
+                o = None
+            if (o is not None and len(o.verdicts) == 1 and o.verdicts[0].kind == 'Error'
+                    and o.verdicts[0].field('msg') == ORACLE_DEBUG_ERROR):
+                dbg = 'DBG:' + m.group(1).decode('ascii')
+                return ('OBS', (dbg,) + tuple(o.tokens('full')), (dbg,) + tuple(o.tokens('failure-class')))
     # the internal-failure decoders: Lean's PANIC under the `litmus` policy; the oracle's
     # bare uncaught-exception envelope (`cerberus: internal error, uncaught exception:` +
     # the Failure payload + its OCaml frames) is decoded by the `immaculate` policy only
@@ -183,6 +209,16 @@ def classify_row(mode: str, o, l) -> tuple[str, str]:
         return (f'RESOURCE oracle:{o[1]}', f'lean side {l[0]}')
     if l[0] == 'RESOURCE':
         return ('DIFF', f'(b)-VIOLATION: lean {l[1]} where the oracle completed ({o[0]})')
+    o_dbg = o[0] == 'OBS' and len(o[1]) > 0 and o[1][0].startswith('DBG:')
+    if o_dbg or (l[0] == 'REFUSAL' and l[1] == ORACLE_DEBUG_ID):
+        # ORACLE_DEBUG_LINE: the debug-printing arm and R-PNVI-10 pair both directions
+        if o_dbg and l[0] == 'REFUSAL' and l[1] == ORACLE_DEBUG_ID:
+            return (f'REFUSAL {ORACLE_DEBUG_ID} ORACLE_VERDICT', o[1][0])
+        if o_dbg:
+            return ('DIFF', f'the oracle took the {ORACLE_DEBUG_ID} debug-print arm ({o[1][0]}): Lean must refuse '
+                            f'with {ORACLE_DEBUG_ID}; lean: {l[0]} {str(l[1])[:120]}')
+        return ('DIFF', f'{ORACLE_DEBUG_ID} must pair with the oracle debug line + Error of impl_mem.ml:2331-2334; '
+                        f'oracle: {o[0]} {str(o[1])[:120]}')
     named = named_crash_ids(o)
     if named:
         # the REFUSAL-CRASH rule: an oracle crash an R-PNVI id names requires that refusal

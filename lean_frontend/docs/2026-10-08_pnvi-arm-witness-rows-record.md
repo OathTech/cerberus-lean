@@ -1,6 +1,7 @@
 # PNVI lane: arm-witness rows for the arms only unit witnesses covered (arc-end audit F4) — record (2026-10-08)
 
-Branch `lane/pnvi-symbolic-rows`, cut from mainline `c4284b08f`. Worker: Claude Opus 5.5 (agent). Every
+Branch `lane/pnvi-symbolic-rows`, cut from mainline `c4284b08f` and gated there (§7); later rebased onto
+mainline `854aaeb65` (§8). The interval `c4284b08f..854aaeb65` is docs-only (§8.1). Worker: Claude Opus 5.5 (agent). Every
 judgement no operator quote covers is marked [AGENT]. Quoted tool output is verbatim; counts marked
 "derived" are mine. No semantics change: no `.lem`, no hand-written Lean file and no OCaml file changed.
 Line numbers `impl_mem.ml:N` are `memory/concrete/impl_mem.ml` in THIS tree.
@@ -28,6 +29,10 @@ oracle-compared lane row, only unit witnesses (`test/Unit/PnviArmsTest.lean`):
 | `lean_frontend/VALIDATION.md`, `scripts/LADDER.md`, `lean_frontend/CLAUDE.md` | the lane's row: the new corpus, 177 rows / 165 AGREE, `arm 5/8` default split |
 | `lean_frontend/docs/2026-10-07_pnvi-s4-lane-record.md` | §14 addendum: pointer to this record |
 | this record | NEW |
+| **Fix round (§8):** `tests/pnvi_refusals/r08-…`, `r10-…` | NEW: the R-PNVI-08 / R-PNVI-10 lane witnesses (review F1) |
+| `scripts/pnvi_lane.py`, `scripts/test_pnvi.sh` | the oracle-side decoding of R-PNVI-10's `id1= …` debug line (`ORACLE_DEBUG_LINE`), plants P9a-P9c, the selftest selection +1 row |
+| `tests/pnvi_lane/baseline.txt` | re-recorded: +2 `witness/` rows; header lines for them |
+| CONTRACT, VALIDATION, SUPPORTED, LADDER, design record §G.1, S4 record §14, stop-paths inventory, tray 52/54 + INDEX | the reach correction, counts, tray draft 54 |
 
 [AGENT] A new corpus and section rather than extending `tests/pnvi_refusals/`: that directory's rows are
 the CONTRACT §4.1 refusal witnesses (each a registered `REFUSAL` row); these rows are agreement rows, and the
@@ -85,7 +90,7 @@ Lean took the same arm:
 - **`Prov_none` shift.** a13's message text occurs at exactly one code site on each side
   (`impl_mem.ml:2395`; `CerbMem.lean:3545` — `:3442` is that definition's doc comment).
 
-## 4. Unreachable from C (with evidence) [AGENT]
+## 4. Unreachable from C (with evidence) [AGENT] — §4.3 CORRECTED, see §8
 
 The audit expected the kill arm's full `resolve_iota` path to be unreachable because adjacent `malloc`
 blocks could not be produced. That premise is narrower than it looked: two `malloc`s are never adjacent
@@ -107,12 +112,20 @@ otherwise; an `_Alignas(16)` variant missed by 8 bytes, the region being 8-align
    `allocator_with_address` placement, which no C construct requests).
 2. **`kill`'s symbolic arm with `is_dyn = false` (:1538-1539).** Static kills (end of lifetime) are
    issued on the pointer `create` returned, always `Prov_some`. Unreachable from C (argued).
-3. **`diff_ptrval` sym/sym, intersection `Double` with addr1 ≠ addr2 (:2103-2104; Lean's R-PNVI-08
-   refusal).** A `Double {p, q}` iota is minted only at the single address where one allocation ends and
-   the other begins; `eff_array_shift` on a `Double` iota either keeps the address (offset 0) or collapses
-   it (a non-zero shift cannot satisfy both preconditions: one needs offset >= 0, the other <= 0;
-   `PERMISSIVE` is not this switch set). So two `Double` iotas over the same pair always carry the same
-   address. Unreachable from C (argued) — consistent with CONTRACT's "no C witness found" for -08.
+3. **CORRECTED 2026-10-08 (fresh review F1): `diff_ptrval` sym/sym, intersection `Double` with addr1 ≠
+   addr2 (:2103-2104; Lean's R-PNVI-08 refusal) IS REACHABLE from C**, and so is R-PNVI-10 (the
+   `eff_array_shift` `Double` non-zero-shift debug-print arm, :2331-2334). Witnesses (lane rows, §8):
+   `tests/pnvi_refusals/r08-diff-member-shifted-symbolic.c` and
+   `tests/pnvi_refusals/r10-array-shift-member-shifted-symbolic.c`. The error: the argument below considered
+   only `eff_array_shift` and missed `member_shift_ptrval` (:2267-2286, used by `eff_member_shift_ptrval`
+   :2402), which keeps the `Prov_symbolic` iota and moves the address with NO collapse — so `&p->a` and
+   `&p->b` of a symbolic `struct S *p` share one `Double` iota at different addresses (R-PNVI-08), and
+   `&p->b - 1` is a non-zero shift both candidates admit (R-PNVI-10). The original (wrong) text, retained:
+   > A `Double {p, q}` iota is minted only at the single address where one allocation ends and
+   > the other begins; `eff_array_shift` on a `Double` iota either keeps the address (offset 0) or collapses
+   > it (a non-zero shift cannot satisfy both preconditions: one needs offset >= 0, the other <= 0;
+   > `PERMISSIVE` is not this switch set). So two `Double` iotas over the same pair always carry the same
+   > address. Unreachable from C (argued) — consistent with CONTRACT's "no C witness found" for -08.
 
 Reachable sub-cases left without a row (low value, same code paths as rows above) [AGENT]: `eq_ptrval`
 `Single`/`Single` naming different allocations; `diff_ptrval` sym/sym `Single`/`Single` equal; the mixed
@@ -123,7 +136,7 @@ arm's `Double` case with a non-member allocation or a failing precondition.
 `a12`: with three adjacent exposed globals `y > x > z`, `r` minted at `x`'s end (`{y, x}`) and `s` at
 `x`'s base (`{x, z}`) both admit `x`, but upstream's `Double`/`Double` intersection is POSITIONAL
 (`x1 = y1`, `x2 = y2`, :2081-2090), finds nothing and makes `r - s` UB048. Lean mirrors it ([USER
-2026-10-03]: no innovation vs upstream). A candidate upstream-tray report; not filed here.
+2026-10-03]: no innovation vs upstream). Upstream-tray draft 54 (`docs/upstream-tray/54-*.md`, §8; reports only).
 
 ## 6. Baseline diff (existing rows unchanged)
 
@@ -223,3 +236,126 @@ during it; it is superseded by the run above.
 
 Cost [AGENT]: the lane pass is now 3:28 inside Tier A (MEASURED, A14.2) against 2:49 at S4; the 13 rows add
 about 3 x 13 short engine runs. The LADDER row's Tier A rationale ("a few minutes") still holds.
+
+## 8. Fix round (2026-10-08): review F1-F3 and tray 54
+
+Operator approval of the round: [USER 2026-10-08] "(3) agree". Worker: Claude Opus 5.5 (agent). No semantics change
+(no `.lem`, hand-written Lean or OCaml file changed).
+
+### 8.1 F3 — base of the branch
+
+The slice (§1-§7) was cut and gated on mainline `c4284b08f` (§7's gated tree). The branch was then rebased onto
+mainline `854aaeb65`. The interval is docs-only — `git diff --stat c4284b08f 854aaeb65` (verbatim):
+
+```
+ lean_frontend/docs/2026-10-08_ladder-b9-profile.md | 320 ++++++++++++
+ .../docs/2026-10-08_stop-paths-inventory.md        | 534 +++++++++++++++++++++
+ 2 files changed, 854 insertions(+)
+```
+
+The fix round's gates (§8.6) ran on the rebased tree.
+
+### 8.2 F1 (high) — R-PNVI-08 and R-PNVI-10 are reachable from C
+
+§4.3 (and the slice commit's message, "Unreachable from C … diff_ptrval's Double addr1<>addr2 (R-PNVI-08)") was
+wrong: the argument considered only `eff_array_shift_ptrval` and missed `member_shift_ptrval`
+(`impl_mem.ml:2267-2286`, via `eff_member_shift_ptrval` :2402), which keeps a `Double` iota and moves the address
+with no collapse. §4.1 and §4.2 are unaffected (they do not involve a shifted symbolic pointer). Two witnesses, each
+with an adjacency guard (`return 9` if `&z + 1 != &s`) and a header naming the arm:
+
+- `tests/pnvi_refusals/r08-diff-member-shifted-symbolic.c`: `struct S {int a; int b;} s; int z;`,
+  `p = (struct S *)(uintptr_t)&s`, `return (int)(&p->b - &p->a);`.
+- `tests/pnvi_refusals/r10-array-shift-member-shifted-symbolic.c`: the same set-up, `int *t = &p->b - 1;`.
+
+Both engines, from the lane's kept captures (`--rows '^witness/r(08|10)-' --keep-run`; verbatim; Lean's
+backtrace lines elided):
+
+r08 — oracle `--switches=PNVI_ae_udi` (exit 1):
+```
+Error {msg: "MerrOther "in `diff_ptrval` invariant of PNVI-ae-udi failed: ambiguous iotas with addr1 <> addr2""}
+```
+r08 — oracle default mode (exit 0):
+```
+Defined {value: "Specified(1)", stdout: "", stderr: "", blocked: "false"}
+```
+r08 — Lean `--switches=PNVI_ae_udi` (exit 134, stderr):
+```
+PANIC at _private.LemLib.0.failwithIImpl LemLib:226:2: PNVI_ae_udi refusal (unsupported upstream arm): R-PNVI-08: diff_ptrval, (Prov_symbolic, Prov_symbolic), ambiguous intersection with addr1 <> addr2 — impl_mem.ml:2104 `fail ~loc (MerrOther "in `diff_ptrval` invariant of PNVI-ae-udi failed: ambiguous iotas with addr1 <> addr2")` (upstream's own invariant failure) — refused, not mirrored (upstream crashes, debug-print arms and self-declared-wrong arms on the PNVI path are loud refusals: design record docs/2026-10-04_pnvi-ae-udi-design.md §G/§H)
+```
+r10 — oracle `--switches=PNVI_ae_udi` (exit 1):
+```
+id1= 19, id2= 20 ==> addr= 281474976707756
+Error {msg: "MerrOther "(PNVI-ae-uid) ambiguous non-zero array shift""}
+```
+r10 — oracle default mode (exit 0):
+```
+Defined {value: "Specified(1)", stdout: "", stderr: "", blocked: "false"}
+```
+r10 — Lean `--switches=PNVI_ae_udi` (exit 134, stderr; stdout empty):
+```
+PANIC at _private.LemLib.0.failwithIImpl LemLib:226:2: PNVI_ae_udi refusal (unsupported upstream arm): R-PNVI-10: eff_array_shift_ptrval, Prov_symbolic, Double, non-zero shift admitted by both allocations (19, 20) — impl_mem.ml:2331-2334 `Printf.printf "id1= %s, id2= %s ==> addr= %s\n" …; fail ~loc (MerrOther "(PNVI-ae-uid) ambiguous non-zero array shift")` (a debug print to stdout in a semantics arm) — refused, not mirrored (upstream crashes, debug-print arms and self-declared-wrong arms on the PNVI path are loud refusals: design record docs/2026-10-04_pnvi-ae-udi-design.md §G/§H)
+```
+
+Lean gives exactly R-PNVI-08 and R-PNVI-10 in the ruled refusal shape; the allocation ids in Lean's R-PNVI-10
+message (19, 20) equal the oracle's `id1`/`id2`. Pristine upstream `b9aeedcb4` (`deps/cerberus-upstream`, read-only
+run) prints the same oracle lines for both programs (MEASURED).
+
+### 8.3 The classifier and R-PNVI-10's debug line [AGENT]
+
+Before this round the codec (`scripts/observations.py`, `batch` policy, then `immaculate`) rejected the oracle's
+`id1= …` line, so the r10 row classified fail-closed as INVALID (verbatim, the first selection run):
+
+```
+  INVALID                            witness/r10-array-shift-member-shifted-symbolic  [oracle: batch: unknown or malformed stdout record: b'id1= 19, id2= 20 ==> addr= 281474976707756'; immaculate: unknown or malformed stdout record: b'id1= 19, id2= 20 ==> addr= 281474976707756']  default=changed
+```
+
+The shared codec is unchanged. `pnvi_lane.py` gains ONE oracle-side decoding (`ORACLE_DEBUG_LINE`): exactly one
+leading line `id1= <digits>, id2= <digits> ==> addr= <digits>` followed by exactly one `Error` verdict whose message
+is exactly `MerrOther "(PNVI-ae-uid) ambiguous non-zero array shift"` — the arm's own output, impl_mem.ml:2331-2334
+— decodes to an OBS whose first token is `DBG:<line>` (so the line is in the pinned oracle hash). Anything else stays
+INVALID. A DBG-bearing oracle side pairs ONLY with Lean `REFUSAL R-PNVI-10`, and R-PNVI-10 REQUIRES it (both
+directions, DIFF otherwise) — so R-PNVI-10 is no longer subject to the 'verdict' ids' LIMIT (the line is positive
+evidence that the oracle took the flagged arm); -03/-05/-08 still are. Plants (selftest): P9a the line removed from
+the oracle's answer → r10 DIFF; P9b the line prepended to another answer (r05) → INVALID; P9c Lean refusing the r10
+row with R-PNVI-08 → DIFF. The selftest selection gains the r10 row (7 rows).
+
+Rows after the change (verbatim, classifier re-run on the kept captures):
+```
+  REFUSAL R-PNVI-08 ORACLE_VERDICT   witness/r08-diff-member-shifted-symbolic  default=changed
+  REFUSAL R-PNVI-10 ORACLE_VERDICT   witness/r10-array-shift-member-shifted-symbolic  [DBG:id1= 19, id2= 20 ==> addr= 281474976707756]  default=changed
+```
+
+### 8.4 Baseline diff (existing rows unchanged)
+
+`scripts/test_pnvi.sh --record-baseline`, then `diff` against the committed baseline BEFORE the header lines were
+added (verbatim):
+
+```
+215a216,217
+> witness/r08-diff-member-shifted-symbolic REFUSAL R-PNVI-08 ORACLE_VERDICT oracle=4247e1d8754c default=changed
+> witness/r10-array-shift-member-shifted-symbolic REFUSAL R-PNVI-10 ORACLE_VERDICT oracle=c8a540dbfc1d default=changed
+```
+
+Additions only: every one of the 177 existing rows keeps its class, oracle hash, `lean=` hash and `default=` flag.
+The header gained one paragraph each for the two rows.
+
+### 8.5 Docs corrected
+
+- §4.3 above (corrected in place, the wrong text retained as a quote); §2; §5 (tray pointer).
+- CONTRACT §3 PNVI row: -08/-10 now witnessed in the lane, REACHABLE (was "no C witness found … reach is UNREVIEWED").
+- VALIDATION: the PNVI refusal paragraph (witnessed -08/-10, REACHABLE) and the `test_pnvi.sh` table row (179 rows,
+  9 refusal rows, witness 0/5, plants P9a-P9c).
+- SUPPORTED (review F2): the lane's row counts (was "164 rows, 152 AGREE …") and the `tests/pnvi_arms` /
+  `tests/pnvi_refusals` corpora.
+- LADDER row 14: witness count, selftest selection size, the new plants.
+- Design record §G.1: a dated correction paragraph after the counts (R12/R16 reach); history not rewritten.
+- S4 lane record §14: a second addendum (supersedes §12 F2's "UNREVIEWED").
+- Stop-paths inventory (`2026-10-08_stop-paths-inventory.md`): a dated correction line under its "UNREVIEWED"
+  sentence about -08/-10.
+- Failure-reach register: NO rows added (-08/-10 are monadic sites outside the pure census, as before).
+- Upstream tray: draft 54 (NEW, "PNVI-ae-udi: diff_ptrval symbolic/symbolic intersection is positional, misses a
+  shared allocation", reports only, INDEX row); draft 52 gains a dated reproducer correction (its "None found" was
+  the same error).
+
+### 8.6 Gates
+

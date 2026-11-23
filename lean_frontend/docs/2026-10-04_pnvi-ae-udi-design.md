@@ -955,6 +955,16 @@ Counts (derived): **(A) 6** (R1, R3, R5, R8, R11-symbolic, R13) + **(A′) 1** (
 4 proposed mirrors; **CLI 2** (R20) → 2 refusals; **also-default, not decided: 2 + 1 half** (R9, R10, R11-device); **not
 a class: 2** (R18, R19). Named refusals: `R-PNVI-01…12` (twelve, with `01b` folded into `01`).
 
+**Correction (2026-10-08, review F1 of the arm-witness rows, branch `lane/pnvi-symbolic-rows`) [AGENT]:** R12
+(`R-PNVI-08`) and R16 (`R-PNVI-10`) ARE reachable from C. The R12 reach note above ("needs two Double iotas over
+the same two allocations at different addresses") considered only `eff_array_shift`, which collapses on a non-zero
+shift; `member_shift_ptrval` (`:2267-2286`, via `eff_member_shift_ptrval` `:2402`) keeps the `Double` iota and moves
+the address with no collapse. Witnesses (lane rows, `REFUSAL R-PNVI-08|10 ORACLE_VERDICT`):
+`tests/pnvi_refusals/r08-diff-member-shifted-symbolic.c` (`&p->b - &p->a` on a member-shifted symbolic pointer) and
+`tests/pnvi_refusals/r10-array-shift-member-shifted-symbolic.c` (`&p->b - 1`, the oracle prints the `id1= …` line).
+The R16 "MEASURED none" columns stay true of the litmus and pKVM corpora; the disposition of both rows is unchanged.
+Record: `docs/2026-10-08_pnvi-arm-witness-rows-record.md` §4.3, §8.
+
 ### G.2 Reach summary and how each pKVM driver ends
 
 - **Litmus (44, MEASURED):** the only refusal any file reaches is **R1** (4 files; the oracle crashes there). The 7

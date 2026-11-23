@@ -102,7 +102,9 @@ if [[ "$MODE" == selftest ]]; then
     # NOT pkvm-init: its exhaustive set is the same with and without the switch (S4 record §5.2).
     # minimal/073-exit.libc: a BOTH_FAIL row (Error/Error equal modulo symbol numbering) for the
     # BOTH_FAIL plants (P8b, P8c).
-    SEL='^(litmus/(pointer_from_int_disambiguation_1|cheri_03_ii|provenance_basic_using_uintptr_t_global_yx)|witness/r05-abst-double-alloc-union-punning|pkvm/pkvm-alloc|minimal/073-exit\.libc)$'
+    # witness/r10-array-shift-member-shifted-symbolic: the R-PNVI-10 row whose oracle side carries
+    # the impl_mem.ml:2331 debug line (pnvi_lane.py ORACLE_DEBUG_LINE) — plants P9a-P9c.
+    SEL='^(litmus/(pointer_from_int_disambiguation_1|cheri_03_ii|provenance_basic_using_uintptr_t_global_yx)|witness/(r05-abst-double-alloc-union-punning|r10-array-shift-member-shifted-symbolic)|pkvm/pkvm-alloc|minimal/073-exit\.libc)$'
     stub() { # <file> <python body using REAL, args>
         printf "#!/usr/bin/env python3\nimport os, re, subprocess, sys\nREAL = '%s'\nargs = sys.argv[1:]\n%s\n" "$2" "$3" > "$1"
         chmod +x "$1"
@@ -143,6 +145,27 @@ sys.stderr.buffer.write(p.stderr)
 sys.exit(134 if p.returncode == -6 else p.returncode)'
     # PO: the ORACLE ignores the flag (its answer moves away from the pinned hashes)
     stub "$ST/oracle-strip" "$REAL_ORACLE" 'os.execv(REAL, [REAL] + [a for a in args if not a.startswith("--switches")])'
+    # P9a: the oracle's R-PNVI-10 debug line removed (an oracle that answers the Error WITHOUT
+    # taking the debug-printing arm) — R-PNVI-10 requires the line
+    stub "$ST/oracle-nodbg" "$REAL_ORACLE" 'p = subprocess.run([REAL] + args, capture_output=True)
+out = p.stdout
+if "--switches=PNVI_ae_udi" in args and "--exec" in args:
+    out = re.sub(rb"\Aid1= [0-9]+, id2= [0-9]+ ==> addr= [0-9]+\n", b"", out)
+sys.stdout.buffer.write(out); sys.stderr.buffer.write(p.stderr)
+sys.exit(p.returncode)'
+    # P9b: a debug line in FRONT of any other answer (here: R-PNVI-05 witness) — decoded only
+    # before the exact R-PNVI-10 Error, so INVALID
+    stub "$ST/oracle-dbg" "$REAL_ORACLE" 'p = subprocess.run([REAL] + args, capture_output=True)
+out = p.stdout
+if "--switches=PNVI_ae_udi" in args and "--exec" in args and not out.startswith(b"id1= "):
+    out = b"id1= 1, id2= 2 ==> addr= 3\n" + out
+sys.stdout.buffer.write(out); sys.stderr.buffer.write(p.stderr)
+sys.exit(p.returncode)'
+    # P9c: Lean refuses the R-PNVI-10 row with ANOTHER registered verdict id
+    stub "$ST/lean-wrongid" "$REAL_LEAN" 'p = subprocess.run([REAL] + args, capture_output=True)
+sys.stdout.buffer.write(p.stdout)
+sys.stderr.buffer.write(p.stderr.replace(b"): R-PNVI-10: ", b"): R-PNVI-08: "))
+sys.exit(134 if p.returncode == -6 else p.returncode)'
     fails=0
     expect() { # <label> <want: green|red> <grep-pattern for the reason or ""> <env/cmd...>
         local label="$1" want="$2" pat="$3"; shift 3
@@ -176,6 +199,12 @@ sys.exit(134 if p.returncode == -6 else p.returncode)'
         CERB_LEAN_BIN_OVERRIDE="$ST/lean-symnum" "$SELF" --rows "$SEL"
     expect "PO the oracle ignores the switch" red "oracle-side hash .* != baseline" \
         CERB_ORACLE_BIN_OVERRIDE="$ST/oracle-strip" "$SELF" --rows "$SEL"
+    expect "P9a the oracle's R-PNVI-10 debug line removed" red 'witness/r10-array-shift-member-shifted-symbolic: DIFF — R-PNVI-10 must pair with the oracle debug line' \
+        CERB_ORACLE_BIN_OVERRIDE="$ST/oracle-nodbg" "$SELF" --rows "$SEL"
+    expect "P9b a debug line in front of another answer" red 'witness/r05-abst-double-alloc-union-punning: INVALID — oracle: batch: unknown or malformed stdout record' \
+        CERB_ORACLE_BIN_OVERRIDE="$ST/oracle-dbg" "$SELF" --rows "$SEL"
+    expect "P9c Lean refuses the debug-print arm with another id" red 'witness/r10-array-shift-member-shifted-symbolic: DIFF — the oracle took the R-PNVI-10 debug-print arm' \
+        CERB_LEAN_BIN_OVERRIDE="$ST/lean-wrongid" "$SELF" --rows "$SEL"
     expect "missing Lean engine" red 'FAIL — (engines not built|Lean driver missing)' \
         CERB_LEAN_BIN_OVERRIDE="$ST/nonexistent" "$SELF" --rows "$SEL"
     expect "empty selection" red 'empty selection|matches no' "$SELF" --rows '^no-such-row$'
@@ -199,7 +228,7 @@ sys.exit(134 if p.returncode == -6 else p.returncode)'
         echo "  PLANT FAILED [baseline plants] the control run left no manifest at $M"; fails=$((fails+1))
     fi
     [[ $fails -eq 0 ]] || { echo "test_pnvi: SELFTEST FAILED ($fails)"; exit 1; }
-    echo "test_pnvi: SELFTEST OK (control green; 10 engine plants RED — P1 flag ignored, P6 refuse-everything, P7a unnamed crash, P7b mirrored crash, P8a oracle crash vs Lean Error, P8b Error/Error failure class differs, P8c BOTH_FAIL Lean side moved, PO oracle ignores the switch, missing engine, empty selection; 7 baseline plants RED — deleted, phantom, relabelled refusal, oracle hash, default flag, malformed class, BOTH_FAIL lean hash missing)"
+    echo "test_pnvi: SELFTEST OK (control green; 13 engine plants RED — P1 flag ignored, P6 refuse-everything, P7a unnamed crash, P7b mirrored crash, P8a oracle crash vs Lean Error, P8b Error/Error failure class differs, P8c BOTH_FAIL Lean side moved, P9a R-PNVI-10 debug line missing, P9b debug line before another answer, P9c debug-print arm refused with another id, PO oracle ignores the switch, missing engine, empty selection; 7 baseline plants RED — deleted, phantom, relabelled refusal, oracle hash, default flag, malformed class, BOTH_FAIL lean hash missing)"
     exit 0
 fi
 

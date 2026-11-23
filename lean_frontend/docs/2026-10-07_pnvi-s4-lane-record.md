@@ -662,3 +662,10 @@ exhaustive, all `AGREE`): oracle-compared witnesses for the symbolic `kill`/`res
 symbolic/symbolic, both `diff_ptrval` symbolic arms and `eff_array_shift`'s `Prov_none` bounds arm. The lane is
 now 177 rows (165 AGREE); the 164 rows above are unchanged. Record:
 `docs/2026-10-08_pnvi-arm-witness-rows-record.md`.
+
+Second addendum (2026-10-08, same branch, review F1 of the arm-witness rows) [AGENT]: R-PNVI-08 and R-PNVI-10 are
+REACHABLE from C (through `member_shift_ptrval`, impl_mem.ml:2267-2286); two `witness/` rows were added
+(`r08-…`, `r10-…`, `REFUSAL R-PNVI-08|10 ORACLE_VERDICT`), and `pnvi_lane.py` now decodes the R-PNVI-10 arm's
+`id1= …` stdout line on the ORACLE side only (`ORACLE_DEBUG_LINE`, plants P9a-P9c). §12 F2's "their reach is
+UNREVIEWED" is superseded. The lane is 179 rows (165 AGREE, 9 registered refusal rows). Record:
+`docs/2026-10-08_pnvi-arm-witness-rows-record.md` §8.

@@ -109,6 +109,9 @@ say what WP2 cannot reach (pure sites) so the operator is not surprised later.
 - Monadic sites (`failStopMem`, `CerbFail.failStopKill`, `pnviRefuseM`, the switch-gated kills): grep only — the
   register is a PURE-site census (its header: "the pure failure sites (`failwithI`/`panic!`)"); their reach is
   UNREVIEWED unless a lane row witnesses them (CONTRACT §3 says the same of R-PNVI-08/-10).
+  *Correction (2026-10-08, branch `lane/pnvi-symbolic-rows`, review F1 of the PNVI arm-witness rows) [AGENT]:
+  R-PNVI-08 and -10 are now REACHABLE, lane witnesses `tests/pnvi_refusals/r08-…`/`r10-…` (CONTRACT §3 updated;
+  record `docs/2026-10-08_pnvi-arm-witness-rows-record.md` §8). Still no register row (monadic sites).*
 - Upstream forms: `grep -n -E 'failwith|assert false|Printf\.printf|Printf\.fprintf|prerr_endline|print_endline|FIXME|HACK' memory/concrete/impl_mem.ml` over `:277-2830` (the design's own window), read against the function bodies.
 - Reach witnesses: the register's `need/invariant/witness` column; the committed baselines `tests/immaculate/baseline.txt`
   (31 rows carry a crash token: 18 `MATCH | L=CRASH`, 6 `DIFF | L=CRASH`, 7 `ORACLE_CRASH | L=<verdict>`),

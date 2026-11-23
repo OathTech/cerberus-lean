@@ -19,6 +19,15 @@
 #     Prov_symbolic pointer (impl_mem.ml:2254-2255) — §G.1 R8, (A).
 #   REFUSAL R-PNVI-07 ORACLE_CRASH (witness): case_ptrval's wildcard on a Prov_symbolic
 #     concrete pointer (impl_mem.ml:1858) — §G.1 R11 (symbolic half), (A).
+#   REFUSAL R-PNVI-08 ORACLE_VERDICT (witness, added 2026-10-08, review F1 of the arm-witness
+#     rows): member_shift_ptrval (impl_mem.ml:2267-2286) keeps a `Double` iota, so &p->b - &p->a
+#     reaches diff_ptrval's ambiguous-intersection failure with addr1 <> addr2 (impl_mem.ml:2104):
+#     the oracle answers that `Error`, Lean refuses — §G.1 R12, (A').
+#   REFUSAL R-PNVI-10 ORACLE_VERDICT (witness, added 2026-10-08, same finding): &p->b - 1 on
+#     the member-shifted `Double` pointer reaches eff_array_shift_ptrval's debug-print arm
+#     (impl_mem.ml:2331-2334): the oracle prints `id1= …, id2= … ==> addr= …` and answers
+#     `Error`; the lane decodes exactly that line on the oracle side (pnvi_lane.py
+#     ORACLE_DEBUG_LINE, part of the pinned oracle hash) and requires it — §G.1 R16, (B).
 #   AGREE-FIRST ×3 (pkvm-alloc/-free/-split-merge): oracle --mode=random one trace vs Lean
 #     --first, OUTSIDE CONTRACT §1 (design §F.8). Their exhaustive sets breach the 4G per-test
 #     cap on the oracle (MEASURED 2026-10-07, pkvm-alloc: `capped: OOM-KILLED (exit 137 —
@@ -213,3 +222,5 @@ pkvm/pkvm-split-merge AGREE-FIRST oracle=cfc818cfbaae default=changed
 witness/r05-abst-double-alloc-union-punning REFUSAL R-PNVI-05 ORACLE_VERDICT oracle=df41d0d7e717 default=changed
 witness/r06-memcpy-symbolic-source REFUSAL R-PNVI-06 ORACLE_CRASH oracle=41bada4747f5 default=changed
 witness/r07-call-through-symbolic-pointer REFUSAL R-PNVI-07 ORACLE_CRASH oracle=cba75a2ad565 default=changed
+witness/r08-diff-member-shifted-symbolic REFUSAL R-PNVI-08 ORACLE_VERDICT oracle=4247e1d8754c default=changed
+witness/r10-array-shift-member-shifted-symbolic REFUSAL R-PNVI-10 ORACLE_VERDICT oracle=c8a540dbfc1d default=changed
