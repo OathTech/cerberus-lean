@@ -6,7 +6,7 @@ no ruling covers are marked [AGENT]. Quoted machine output is verbatim; counts m
 S1 `0c3817aef`, S2 `1c1ac30c4`, S3 `44a206e0b`; the pre-merge review `987c2c51c`
 (`2026-11-22_impl-profile-premerge-review.md`, with its dispositions); the dispositions' code and witnesses
 `901ec9c03` and their documents `1eb8e7638`; the probes outside the Lake graph `59b48520c` (section 8). The orchestrator's gate
-lines on S1, on `1eb8e7638` and on the tip are at the end of section 5. **Section 7 records what changed after the review; where
+lines, the landing run on `b8a491f35` among them, are at the end of section 5. **Section 7 records what changed after the review; where
 sections 1 to 6 said something the review showed to be wrong they are corrected in place and say so.**
 
 ## 0. Rulings
@@ -197,10 +197,11 @@ Fork-drift manifest, single-row edits with dated NOTEs, no `--refresh`: `[files]
 (`lean_impl_profile.lem`); `[source-content]` the new row, `Makefile`, `ailTypesAux.lem`, `backend/driver/main.ml`;
 `[expected-semantic]` `ailTypesAux.ml`'s hash (one more hunk; layer 2 stays 37).
 
-### The orchestrator's gates (close-out, 2026-11-22)
+### The orchestrator's gates (2026-11-22 and 2026-11-23)
 
 These are the ORCHESTRATOR's runs, in a separate audit checkout, relayed to the worker and written here as
-relayed; the worker did not run them and saw none of their logs. Each quoted line is verbatim as relayed.
+relayed; the worker did not run them and saw none of their logs. Each quoted line is verbatim as relayed. The
+LANDING EVIDENCE is the last run below; the three before it are history.
 
 Tier A on S1 `0c3817aef`, after a forced regeneration:
 
@@ -228,18 +229,30 @@ Source unchanged: True.
 release rc=0
 ```
 
-**What is evidence for what.** No single run of all 48 rows on the tip exists. For rows 5 and 9 the evidence is
-the run on `031c580db`. For the 46 other rows the evidence is the run on `1eb8e7638`, and it carries to the tip
-for this reason: the commits since `1eb8e7638` (`59b48520c`, `031c580db`) touch three files only,
-`lean_frontend/docs/2026-11-22_impl-profile-record.md`, `tests/immaculate/illtyped-store.lean` and
-`lean_frontend/test/CoreQuote/probes/CoreQuotePipelineProbe.lean` (`git diff --name-only 1eb8e7638..031c580db`,
-checked by the orchestrator and again by the worker), and none of them is a Lake root or a source of the oracle:
-the first is a document, the second is compiled only by the immaculate lane at lane time (rows 5 and 9), the third
-is an unwired development probe that no target and no lane compiles (the quotation targets' roots are
-`CoreQuoteRunner` and `CoreQuoteCompare`). So both engines' binaries, both generated trees and every baseline the
-46 rows read are the ones the run on `1eb8e7638` used. That is an argument from the changed-file set, not a
-re-run; one of the 46, row 1's `check_no_fuel_numerals.sh`, scans the immaculate probe as text, and the worker ran
-that script on the tree with the fixed probe (green, section 8's commit).
+**The landing evidence: the whole battery as ONE run on the exact tip `b8a491f35`** (2026-11-23; a separate audit
+checkout detached at that commit; forced regeneration `make clean-prelude-src prelude-src lean-prelude-src`, the
+three dune steps, the capped lake build):
+
+```
+full: passed; 48/48 selected commands completed successfully.
+Source unchanged: True. Complete tier selection: True.
+release rc=0
+```
+
+**What is evidence for what, and a correction.** The three earlier runs above stay as history: Tier A on S1, the
+failed battery on `1eb8e7638`, and the two red rows re-run on `031c580db`. An earlier text of this paragraph
+(commit `b8a491f35`) argued that the 46 rows that were green on `1eb8e7638` carried to the tip because the commits
+since touched only three files (this record, `tests/immaculate/illtyped-store.lean` and the unwired
+`CoreQuotePipelineProbe.lean`), none of them a Lake root or an oracle source. That argument from the changed-file
+set was NOT ACCEPTED as landing evidence [USER 2026-11-23]: before a landing the whole battery is one run on the
+exact commit being landed, from re-derived generated trees, and a run on an earlier commit plus re-runs of some
+rows plus an argument about which files changed does not stand in for it; only commits that change documentation
+alone may follow the run. The argument is withdrawn and replaced by the single run on `b8a491f35` quoted above. It
+was also weaker than it read: two of the three files were a probe a gate compiles and a Lean source, not
+documents.
+
+The commit that adds this paragraph changes this Markdown record only, so under the same ruling it needs no new
+run: `git diff --name-only b8a491f35 HEAD` lists this file and nothing else.
 
 ## 6. What was not done (as of S3; see section 7 for the state after the review)
 
