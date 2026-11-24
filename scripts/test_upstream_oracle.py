@@ -407,7 +407,7 @@ def corpus(cn_root, stage):
                 lean=lean_recipe(map(rel, paths), ['--batch'],
                                  projection='failure-class' if label == 'multi_tu_tray' else 'full'))
     if cn_root is None:
-        cn_root = next((parent / 'deps/cn/tests/cn' for parent in ROOT.parents
+        cn_root = next((parent / 'deps/cn/tests/cn' for parent in [ROOT, *ROOT.parents]
                         if (parent / 'deps/cn/tests/cn').is_dir()), None)
     if cn_root is None:
         raise ValueError('CN corpus missing; provide --cn-root')

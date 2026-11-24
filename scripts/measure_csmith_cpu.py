@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """NON-GATING per-engine CPU export from the unmodified csmith corpus lane.
 
-Run after sourcing the container's scripts/env.sh. The lane itself stages
+Run under the project's OCaml environment (`opam exec --switch=. --`). The lane itself stages
 inputs, invokes both engines, and assigns statuses. A shell-local cleanup
 hook copies only its completed GNU time records and status.txt before rm;
 it changes neither engine invocation nor the lane's classification code.
@@ -164,8 +164,6 @@ def collect(run, output):
 
 
 def run_lane(repo, args, overrides=None):
-    if not os.environ.get("GIT_CONFIG_GLOBAL"):
-        raise ValueError("source the container scripts/env.sh first")
     for key in ("CERB_DRIVER_FRESH_OVERRIDE", "CERB_ORACLE_BIN_OVERRIDE", "CERB_LEAN_BIN_OVERRIDE", "CSMITH_BASELINE"):
         if os.environ.get(key):
             raise ValueError("ambient override refused: " + key)

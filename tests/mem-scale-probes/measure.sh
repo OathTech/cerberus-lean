@@ -40,7 +40,7 @@
 #              (default oracle,lean-first,lean-exh; oracle-random = the
 #              oracle's --mode=random single trace, the analogue of Lean
 #              --first — for like-for-like single-trace comparison)
-#   Needs env loaded (scripts/ce). libc mode needs $MS_LIBCJSON (the 12
+#   Runs the built binaries directly. libc mode needs $MS_LIBCJSON (the 12
 #   metadata cabs-jsons from scripts/libc_prep.sh --jsons), default
 #   .tmp/memscale/libcjson.
 # Fail-closed: a missing binary, a failed cabs-json export, or a missing
@@ -82,7 +82,6 @@ F="${1:?usage: measure.sh [opts] file.c}"
 [[ -x "$CERB" ]] || { echo "measure.sh: oracle binary missing: $CERB" >&2; exit 2; }
 [[ -x "$LEAN" ]] || { echo "measure.sh: lean binary missing: $LEAN" >&2; exit 2; }
 [[ -x "$TIME" ]] || { echo "measure.sh: $TIME missing" >&2; exit 2; }
-[[ -n "${GIT_CONFIG_GLOBAL:-}" ]] || { echo "measure.sh: env not loaded (run via scripts/ce)" >&2; exit 2; }
 mkdir -p "$OUTDIR"
 name="$(basename "$F" .c)"
 

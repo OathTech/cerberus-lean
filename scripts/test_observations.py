@@ -289,7 +289,15 @@ class ObservationTests(unittest.TestCase):
                  b'/tmp/scripts/capped: line 55: 123 Aborted                 "$@"\n')
         self.assertEqual(parse(b'', lean+trace, 134, 'litmus').verdicts,
                          parse(b'', lean, 134, 'litmus').verdicts)
+        # the wrapper line with a core-dump note: unpadded, and padded as bash 5.3 prints it
+        for note in [b'Aborted (core dumped) "$@"', b'Aborted                    (core dumped) "$@"']:
+            with self.subTest(note=note):
+                cored = trace.replace(b'Aborted                 "$@"', note)
+                self.assertNotEqual(cored, trace)
+                self.assertEqual(parse(b'', lean+cored, 134, 'litmus').verdicts,
+                                 parse(b'', lean, 134, 'litmus').verdicts)
         for bad in [trace+b'Fatal error: exception Stack_overflow\n',
+                    trace.replace(b'Aborted                 "$@"', b'Aborted (core dumped) extra "$@"'),
                     trace.replace(b'/tmp/lean(+0x12) [0x1234]', b'unknown diagnostic')]:
             with self.assertRaises(ProtocolError): parse(b'', lean+bad, 134, 'litmus')
         oracle = (b'internal error: reason\ncerberus: internal error, uncaught exception:\n'

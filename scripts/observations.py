@@ -58,7 +58,9 @@ CAP_OOM = re.compile(Path(__file__).with_name('cap_oom.regex').read_bytes().stri
 # free-form location field absorbed a stray second space after the origin), then the message
 LEAN_PANIC = re.compile(rb'PANIC at ([^ \r\n]+) ([^ \r\n]+:[0-9]+:[0-9]+): (.+)')
 LEAN_FRAME = re.compile(rb'[^\r\n]+\([^()\r\n]*\) \[0x[0-9a-fA-F]+\]')
-ABORT_WRAPPER = re.compile(rb'[^\r\n]*/scripts/capped: line [0-9]+: +[0-9]+ Aborted(?: \(core dumped\))? +"\$@"')
+# bash pads the status word before "(core dumped)" (as STOP_ABORT_WRAPPER below already accepts);
+# bash 5.3 prints `Aborted                    (core dumped) "$@"` where a core-dump handler is configured.
+ABORT_WRAPPER = re.compile(rb'[^\r\n]*/scripts/capped: line [0-9]+: +[0-9]+ Aborted(?: +\(core dumped\))? +"\$@"')
 OCAML_FRAME = re.compile(rb'          (?:Raised at|Raised by primitive operation at|Called from|Re-raised at) '
                           rb'.+ in file "[^"\r\n]+"(?: \(inlined\))?, lines? [0-9]+(?:-[0-9]+)?, characters [0-9]+-[0-9]+')
 OCAML_ENVELOPE = b'cerberus: internal error, uncaught exception:'
