@@ -6,11 +6,22 @@
 # ALWAYS TRIAGED_<CLASS>, even when the two values happen to coincide
 # (a layout coincidence is not agreement; counting it AGREE would
 # inflate the metric and arm a flip-to-DISAGREE trap if either side's
-# layout changes). Fields 3-4 are MACHINE-CHECKED PINS of the observed
-# value pair (gcc = native exit byte under the §2.1 byte-stable
-# execution recipe; lean = the expected-byte set exactly as the harness
-# prints it). On any drift from the pins the row surfaces as an
-# unresolved DISAGREE (fatal, row named), forcing re-triage. Classes +
+# layout changes). Fields 3-4 are MACHINE-CHECKED PINS (lean = the
+# expected-byte set exactly as the harness prints it, in every class;
+# gcc = native exit byte under the §2.1 byte-stable execution recipe, in
+# every class but TRIAGED_ADDR). On any drift from the pins the row
+# surfaces as an unresolved DISAGREE (fatal, row named), forcing
+# re-triage.
+# TRIAGED_ADDR entries: <row-key> TRIAGED_ADDR src=<sha256> lean={<byte-set>}
+# <rationale...>. An address observer's native value is the machine's
+# process layout: six of these rows' gcc values moved when the project
+# changed machine on 2026-11-24 (kernel and libc differ; identical under
+# gcc 13.4 and 15.2), with no change to any program or to Lean's values.
+# The entry therefore pins the PROGRAM (sha256 of the .c file: the
+# reviewed claim is that this source observes an address) and Lean's
+# value; gcc's value is printed by the lane, not compared. The gcc
+# numbers in the rationales below are the first machine's, kept as
+# history. [USER 2026-11-24] agreed to this form; design note §4. Classes +
 # procedure: lean_frontend/docs/2026-08-30_gcc-second-oracle-design.md
 # §4. FAIL-CLOSED both directions: unlisted DISAGREE is fatal; a
 # listed file that no longer reaches the compare stage is fatal.
@@ -28,30 +39,30 @@
 # intfromptr-10) coincide with the Lean value under the normalized
 # stack — they remain triaged per the by-file rule above.
 #
-tests/debug/align-01-char-array-addr.c TRIAGED_ADDR gcc=1 lean={0} observes (unsigned long)&B % 8 of a char[32] global: gcc native globals 8-aligned; lean allocator gives a non-8-aligned address (char alignment 1 requires none)
-tests/debug/align-02-print-addr.c TRIAGED_ADDR gcc=64 lean={223} observes &B & 0xFF of a char[32] global — raw address low byte, layout-defined on both sides
-tests/debug/align-03-single-global.c TRIAGED_ADDR gcc=17 lean={254} observes &B & 0xFF of a char[1] global
-tests/debug/align-04-no-globals.c TRIAGED_ADDR gcc=244 lean={244} observes &x & 0xFF of a stack local (values coincide under the normalized stack — layout coincidence, still an observer)
-tests/debug/intfromptr-05-to-long.c TRIAGED_ADDR gcc=244 lean={244} observes (int)(long)&a of a stack local (values coincide under the normalized stack — layout coincidence, still an observer)
-tests/debug/intfromptr-07-check-addr.c TRIAGED_ADDR gcc=236 lean={244} observes (long)&a % 1000000 of a stack local
-tests/debug/intfromptr-08-full-addr.c TRIAGED_ADDR gcc=193 lean={130} observes (long)&a / 1000000000 of a stack local (native stack ~0x7ffd..., allocator addresses differ)
-tests/debug/intfromptr-09-first-alloc.c TRIAGED_ADDR gcc=236 lean={244} observes (long)&a % 1000000 of a stack local
-tests/debug/intfromptr-10-minimal.c TRIAGED_ADDR gcc=244 lean={244} observes (int)((unsigned long)&a % 1000000) of a stack local (values coincide under the normalized stack — layout coincidence, still an observer)
+tests/debug/align-01-char-array-addr.c TRIAGED_ADDR src=e606523613ccef89a4746fc92de30e907384bece57617f869b1e29fcb9c25b3e lean={0} observes (unsigned long)&B % 8 of a char[32] global: gcc native globals 8-aligned; lean allocator gives a non-8-aligned address (char alignment 1 requires none)
+tests/debug/align-02-print-addr.c TRIAGED_ADDR src=c3daa6242a20bfa72d0ac75591d2228fd4bbacb2b0467047b6961b6293845029 lean={223} observes &B & 0xFF of a char[32] global — raw address low byte, layout-defined on both sides
+tests/debug/align-03-single-global.c TRIAGED_ADDR src=badaaaec564b6e28583e10a55db8a933ed9fd223bd10e44518dea55c137356db lean={254} observes &B & 0xFF of a char[1] global
+tests/debug/align-04-no-globals.c TRIAGED_ADDR src=68c42d095e58d904c64c0cda099f8056ffe6e0049f81d677214b3f91bacceff2 lean={244} observes &x & 0xFF of a stack local (values coincide under the normalized stack — layout coincidence, still an observer)
+tests/debug/intfromptr-05-to-long.c TRIAGED_ADDR src=35b4fa0e4933f8c3b5b48be284526c221eb6b3d1a856ea7727d060a81551f0ad lean={244} observes (int)(long)&a of a stack local (values coincide under the normalized stack — layout coincidence, still an observer)
+tests/debug/intfromptr-07-check-addr.c TRIAGED_ADDR src=bf025b6748273a7d004b9ce49a18ef5854418f922a15120985b5a6b02e1f1b4b lean={244} observes (long)&a % 1000000 of a stack local
+tests/debug/intfromptr-08-full-addr.c TRIAGED_ADDR src=d8a595c56545f7a583683fe49e961fa9e25fa8d2daadd470c9564ee07c4ae9fa lean={130} observes (long)&a / 1000000000 of a stack local (native stack ~0x7ffd..., allocator addresses differ)
+tests/debug/intfromptr-09-first-alloc.c TRIAGED_ADDR src=e78c0a5987c749e8a6ba0c6e96902948bfb55646b78f9eae93b8934cc9d70f19 lean={244} observes (long)&a % 1000000 of a stack local
+tests/debug/intfromptr-10-minimal.c TRIAGED_ADDR src=dc54d2a4e31d4a14e787625a1cfabd1c43506dd899a7d50ba535fc0bc44292f2 lean={244} observes (int)((unsigned long)&a % 1000000) of a stack local (values coincide under the normalized stack — layout coincidence, still an observer)
 #
 # [AGENT 2026-09-03] zero-discrepancy Z1 (record docs/2026-09-03_zero-discrepancy-Z1-record.md
 # §9): the Z1 pins added to tests/immaculate/nolibc/ enter this lane's corpus.
 # Three are divergence-class observers, not semantics disagreements:
-tests/immaculate/nolibc/zd-da-offset.c TRIAGED_ADDR gcc=64 lean={8} observes (uintptr_t)&x - (uintptr_t)malloc(0) in bytes (mod 256): Cerberus's abstract allocator (8-aligned malloc region directly below the size_t argument temporary; = the oracle's 8 since Z-76) vs glibc's heap-to-stack distance — layout on both sides, D2 (design §2.3 "allocation addresses"/max_alignment row)
-tests/immaculate/nolibc/zd-da-align16.c TRIAGED_ADDR gcc=3 lean={2} observes malloc(0) % 16 == 0 (+2 for &x % 16 == 0): Cerberus's IvMaxAlignment = DefaultImpl.max_alignment = 8 (core_parser.mly:1536-1537; = the oracle since Z-76) vs glibc's 16-byte malloc alignment — D2 (design §2.3 max_alignment row: gcc's 16 vs Cerberus's 8; the gcc lane referees ISO values, not layout)
+tests/immaculate/nolibc/zd-da-offset.c TRIAGED_ADDR src=4f04cff8d1f923a0b60320e46c923cf0777af6e07a77a09d23d46b3a0111fd22 lean={8} observes (uintptr_t)&x - (uintptr_t)malloc(0) in bytes (mod 256): Cerberus's abstract allocator (8-aligned malloc region directly below the size_t argument temporary; = the oracle's 8 since Z-76) vs glibc's heap-to-stack distance — layout on both sides, D2 (design §2.3 "allocation addresses"/max_alignment row)
+tests/immaculate/nolibc/zd-da-align16.c TRIAGED_ADDR src=786386d7f6f21bc6257ae8d7281844719e5f42a2a99c416e0f1486cdc55b0079 lean={2} observes malloc(0) % 16 == 0 (+2 for &x % 16 == 0): Cerberus's IvMaxAlignment = DefaultImpl.max_alignment = 8 (core_parser.mly:1536-1537; = the oracle since Z-76) vs glibc's 16-byte malloc alignment — D2 (design §2.3 max_alignment row: gcc's 16 vs Cerberus's 8; the gcc lane referees ISO values, not layout)
 tests/immaculate/nolibc/zd-d5-device-range-load.c TRIAGED_UB gcc=139 lean={3} `int *p = (int*)0xABC; int y = *p;` is UB natively (invalid pointer deref, SIGSEGV exit 139) but DEFINED by the Cerberus memory model: 0xABC lies in its hard-coded device_ranges (impl_mem.ml:620-624), ptrfromint mints Prov_device (:2165-2167) and the load succeeds via is_within_device (:1611-1617) — the oracle AND Lean answer Specified(3) (Z-06 mirror). D3(a) per design §4: UB the model deliberately defines, cite given; the ranges themselves are a tray question (charter Z-06). PROVISIONAL (audit F6): the "documented model choice" is impl_mem.ml's own `TODO … hardcoded ranges` comment; pending the Z4 tray draft on the device ranges this row may move to the PINNED_TRAY_<n> class the charter §4.2 mandates for oracle==Lean≠gcc rows
 #
 # [AGENT 2026-09-29] contract enforcement, named-deviation register N1 (VALIDATION.md §2b): these witnesses
 # observe a FUNCTION's address number (integer conversion / stored bytes). Lean serves the function symbol's
 # fresh-supply number, gcc a native code address; neither is indicted by the other (ADDR class, by-file).
 # Values observed in the full-ladder run on 3d85f64b1 (release evidence 20260928T233838.902783Z/B7).
-tests/immaculate/nolibc/zd-funptr-bytes-deviation.c TRIAGED_ADDR gcc=73 lean={19} observes the low two bytes of a stored int (*)(void): a function address number, layout-defined on both sides (N1)
-tests/immaculate/nolibc/zd-funptr-int-direct.c TRIAGED_ADDR gcc=41 lean={47} observes (intptr_t)&f & 0xfff: a function address number (N1)
-tests/immaculate/nolibc/zd-funptr-int-voidptr.c TRIAGED_ADDR gcc=41 lean={47} observes (uintptr_t)(void*)f & 0xfff through a stored void*: a function address number (N1)
+tests/immaculate/nolibc/zd-funptr-bytes-deviation.c TRIAGED_ADDR src=78233aa5cf7cf8645929ed7ff0190edc8fb5238342818b8e6612102ef22e2cd3 lean={19} observes the low two bytes of a stored int (*)(void): a function address number, layout-defined on both sides (N1)
+tests/immaculate/nolibc/zd-funptr-int-direct.c TRIAGED_ADDR src=496db9b1e41d23c903d42bffd4360fccefd99e526505186a4bc787275e0f9057 lean={47} observes (intptr_t)&f & 0xfff: a function address number (N1)
+tests/immaculate/nolibc/zd-funptr-int-voidptr.c TRIAGED_ADDR src=d15b8266fe7fbdaa02bfe23a07fc9970745e88262bbc937bb22cd4e29e95116e lean={47} observes (uintptr_t)(void*)f & 0xfff through a stored void*: a function address number (N1)
 #
 # [AGENT 2026-09-29] named-deviation register N2 (VALIDATION.md §2b): Lean's Float.toBits canonicalizes NaNs, so a
 # stored NaN's bytes differ from gcc's and the oracle's (both 255 here). FLOAT class, by-file.

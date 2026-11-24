@@ -53,10 +53,16 @@
 #       classes = design note §4. BY-FILE semantics (2026-08-30 audit
 #       follow-up + ruling): a listed file is ALWAYS TRIAGED_*, even if
 #       its values happen to coincide (layout coincidence is not
-#       agreement). Each entry PINS the observed value pair (mandatory
-#       'gcc=<exit>' and 'lean={<byte-set>}' fields); on any drift from
-#       the pins the row surfaces as an unresolved DISAGREE (fatal, row
-#       named) forcing re-triage. Fail-closed both ways: unlisted
+#       agreement). Each entry carries two mandatory PINS; on any drift
+#       from them the row surfaces as an unresolved DISAGREE (fatal, row
+#       named) forcing re-triage. 'lean={<byte-set>}' pins the Lean
+#       value in every class. TRIAGED_FLOAT/_UB/_ORDER also pin gcc's
+#       exit byte ('gcc=<exit>'). TRIAGED_ADDR pins the PROGRAM instead
+#       ('src=<sha256 of the .c file>'): the native value of an address
+#       observer is the machine's process layout (it moved with the
+#       kernel/libc, not with the compiler, 2026-11-24), so it is
+#       printed but not pinned; the reviewed claim is that this source
+#       observes an address. Fail-closed both ways: unlisted
 #       DISAGREE is fatal; a listed file that no longer reaches the
 #       compare stage (stale entry) is fatal.
 #   SKIP_UB          — Lean verdict contains UB (UB-in-test: native run
@@ -213,7 +219,7 @@ cd "$PROJECT_ROOT" || { echo "Error: cannot cd $PROJECT_ROOT" >&2; exit 1; }
 # ---------------------------------------------------------------------------
 # Triage ledger (fail-closed both directions, design note §4)
 # ---------------------------------------------------------------------------
-declare -A TRIAGE TRIAGE_GCC TRIAGE_LEAN TRIAGE_USED
+declare -A TRIAGE TRIAGE_GCC TRIAGE_SRC TRIAGE_LEAN TRIAGE_USED
 if [[ -f "$TRIAGE_FILE" ]]; then
     while IFS= read -r line; do
         [[ -z "$line" || "$line" == \#* ]] && continue
@@ -226,20 +232,28 @@ if [[ -f "$TRIAGE_FILE" ]]; then
         set -f
         set -- $line
         set +f
-        # Mandatory pinned-value fields (audit follow-up, design note §4):
+        # Mandatory pin fields (audit follow-up, design note §4):
         # <key> <CLASS> gcc=<exit> lean={<byte-set>} <rationale...>
-        [[ $# -ge 5 ]] || { echo "HARNESS ERROR: triage line needs '<key> <CLASS> gcc=<exit> lean={<set>} <rationale>': $line" >&2; exit 1; }
+        # <key> TRIAGED_ADDR src=<sha256> lean={<byte-set>} <rationale...>
+        [[ $# -ge 5 ]] || { echo "HARNESS ERROR: triage line needs '<key> <CLASS> gcc=<exit>|src=<sha256> lean={<set>} <rationale>': $line" >&2; exit 1; }
         case "$2" in
             TRIAGED_ADDR|TRIAGED_FLOAT|TRIAGED_UB|TRIAGED_ORDER) ;;
             *) echo "HARNESS ERROR: unknown triage class '$2' in: $line" >&2; exit 1 ;;
         esac
-        [[ "$3" =~ ^gcc=[0-9]{1,3}$ ]] \
-            || { echo "HARNESS ERROR: triage field 3 must be gcc=<exit-byte>, got '$3' in: $line" >&2; exit 1; }
+        # The address class pins the program, every other class gcc's exit
+        # byte; neither spelling is accepted in the other's place.
+        if [[ "$2" == TRIAGED_ADDR ]]; then
+            [[ "$3" =~ ^src=[0-9a-f]{64}$ ]] \
+                || { echo "HARNESS ERROR: a TRIAGED_ADDR entry's field 3 must be src=<sha256 of the program>, got '$3' in: $line" >&2; exit 1; }
+        else
+            [[ "$3" =~ ^gcc=[0-9]{1,3}$ ]] \
+                || { echo "HARNESS ERROR: triage field 3 must be gcc=<exit-byte>, got '$3' in: $line" >&2; exit 1; }
+        fi
         [[ "$4" =~ ^lean=\{[0-9]{1,3}(,[0-9]{1,3})*\}$ ]] \
             || { echo "HARNESS ERROR: triage field 4 must be lean={<byte-set>}, got '$4' in: $line" >&2; exit 1; }
         [[ -n "${TRIAGE[$1]+x}" ]] && { echo "HARNESS ERROR: duplicate triage entry for $1" >&2; exit 1; }
         TRIAGE["$1"]="$2"
-        TRIAGE_GCC["$1"]="${3#gcc=}"
+        if [[ "$2" == TRIAGED_ADDR ]]; then TRIAGE_SRC["$1"]="${3#src=}"; else TRIAGE_GCC["$1"]="${3#gcc=}"; fi
         TRIAGE_LEAN["$1"]="${4#lean=}"
     done < "$TRIAGE_FILE"
 fi
@@ -511,7 +525,20 @@ while IFS=$'\t' read -r c_file mode key; do
     # is a loud unresolved DISAGREE (fail-on-drift).
     if [[ -n "${TRIAGE[$base_c]+x}" ]]; then
         TRIAGE_USED["$base_c"]=1
-        if [[ "${TRIAGE_GCC[$base_c]}" == "$G_EXIT" \
+        if [[ "${TRIAGE[$base_c]}" == TRIAGED_ADDR ]]; then
+            # Address observer: the pins are the program text and the Lean
+            # value. gcc's value is reported, never compared (header).
+            src_now=$(sha256sum < "$c_file" | cut -d' ' -f1) && [[ "$src_now" =~ ^[0-9a-f]{64}$ ]] \
+                || { echo "HARNESS ERROR: cannot hash $c_file for its triage pin" >&2; exit 1; }
+            if [[ "${TRIAGE_SRC[$base_c]}" == "$src_now" \
+                  && "${TRIAGE_LEAN[$base_c]}" == "{$expect_list}" ]]; then
+                status=TRIAGED_ADDR
+                detail="gcc=$G_EXIT (machine layout, not pinned) lean={$expect_list} (ledger-declared address observer)"
+            else
+                status=DISAGREE
+                detail="gcc=$G_EXIT lean={$expect_list} src=$src_now (TRIAGE PIN MISMATCH: ledger pins src=${TRIAGE_SRC[$base_c]} lean=${TRIAGE_LEAN[$base_c]} — the program or the Lean value changed, entry does not apply; re-triage required)"
+            fi
+        elif [[ "${TRIAGE_GCC[$base_c]}" == "$G_EXIT" \
               && "${TRIAGE_LEAN[$base_c]}" == "{$expect_list}" ]]; then
             status="${TRIAGE[$base_c]}"
             detail="gcc=$G_EXIT lean={$expect_list} (ledger-declared observer)"
