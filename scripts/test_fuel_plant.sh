@@ -23,7 +23,7 @@
 #   measure.sh           note FUEL(kill;) / FUEL(panic;); no FUEL for assert
 #   test_parse.sh        a crashing stub (exit 134) -> LEAN_FAILURE, fatal (not parse_ok)
 # Nothing here touches the semantics; the oracle runs unchanged on the
-# smallest real inputs. Usage: ./scripts/test_fuel_plant.sh (env: scripts/ce;
+# smallest real inputs. Usage: ./scripts/test_fuel_plant.sh (env: opam exec --switch=. --;
 # binaries fresh — SKIP_BUILD=1 freshness stamps must pass)
 set -uo pipefail
 source "$(dirname "${BASH_SOURCE[0]}")/common.sh"

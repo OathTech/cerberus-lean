@@ -15,14 +15,17 @@
 #
 # Any other state exits 1 with the reason: an unknown name, a malformed or duplicated pin, a
 # directory that is not a git checkout (a tarball cannot be verified), another commit, local
-# modifications. Untracked files are ignored (build output of the corpus itself).
+# modifications, files hidden from git status. Untracked files are ignored (build output of the
+# corpus itself), so an untracked file on a lane's include path is NOT seen by this check.
 set -uo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PINS="${CERB_EXTERNAL_PINS_FILE_FOR_SELFTEST:-$SCRIPT_DIR/external_pins.txt}"
+# The pins file is fixed. No environment variable selects another one: the selftest passes its
+# scratch pins through the internal --selftest-check form below, which real lanes never use.
+PINS="$SCRIPT_DIR/external_pins.txt"
 fail() { echo "check_external_pin: FAIL — $*" >&2; exit 1; }
 
 check() {
-    local name="$1" dir="$2" rows pin head dirty own theirs
+    local name="$1" dir="$2" rows pin head dirty own theirs hidden
     [[ -f "$PINS" ]] || fail "pins file $PINS missing"
     rows=$(awk -v n="$name" '!/^[[:space:]]*(#|$)/ && $1 == n' "$PINS")
     [[ -n "$rows" ]] || fail "no pin named '$name' in $PINS"
@@ -44,11 +47,17 @@ check() {
         || fail "$name: git status failed in $dir: $dirty"
     [[ -z "$dirty" ]] || fail "$name: $dir has local modifications to tracked files at the pinned commit:
 $dirty"
+    # assume-unchanged / skip-worktree files are hidden from `git status`: refuse them.
+    hidden=$(git -C "$dir" ls-files -v 2>&1 | grep -E '^([a-z]|S) ' || true)
+    [[ -z "$hidden" ]] || fail "$name: $dir has tracked files flagged assume-unchanged or skip-worktree, which git status cannot vouch for:
+$hidden"
     echo "check_external_pin: OK — $name at $pin ($dir)"
 }
 
 selftest() {
-    local base="${TMPDIR:-$SCRIPT_DIR/../.tmp}" rc=0 c out
+    # Always under this repository, whatever TMPDIR says: plant S7 needs a plain directory INSIDE
+    # this checkout (the case it guards), and S7b walls the same directory off with a ceiling.
+    local base="$SCRIPT_DIR/../.tmp" rc=0 c out
     mkdir -p "$base" || fail "cannot create $base"
     S=$(mktemp -d "$base/external-pin-selftest.XXXXXXXXXX") || fail "mktemp failed"
     trap 'rm -rf "$S"' EXIT
@@ -60,7 +69,7 @@ selftest() {
     mkdir "$S/plain" && printf 'int x;\n' > "$S/plain/a.c"
     plant() {  # <label> <expected rc> <expected substring> <pins text> <name> <dir>
         printf '%s' "$4" > "$S/pins.txt"
-        out=$(CERB_EXTERNAL_PINS_FILE_FOR_SELFTEST="$S/pins.txt" "${BASH_SOURCE[0]}" "$5" "$6" 2>&1); local got=$?
+        out=$("${BASH_SOURCE[0]}" --selftest-check "$S/pins.txt" "$5" "$6" 2>&1); local got=$?
         if [[ $got -eq $2 && "$out" == *"$3"* ]]; then echo "  PLANT OK   [$1] rc=$got"
         else echo "  PLANT FAIL [$1] rc=$got (wanted $2 and '$3'): $out"; rc=1; fi
     }
@@ -72,21 +81,26 @@ selftest() {
     plant "S5 abbreviated pin" 1 "not a full 40-hex commit" "t ${c:0:12} u"$'\n' t "$S/repo"
     plant "S6 duplicated pin" 1 "more than one pin named 't'" "t $c u"$'\n'"t $c u"$'\n' t "$S/repo"
     plant "S7 a plain directory under this repository" 1 "is not its own git checkout" "t $c u"$'\n' t "$S/plain"
-    out=$(printf 't %s u\n' "$c" > "$S/pins.txt"; GIT_CEILING_DIRECTORIES="$S" CERB_EXTERNAL_PINS_FILE_FOR_SELFTEST="$S/pins.txt" "${BASH_SOURCE[0]}" t "$S/plain" 2>&1); local got=$?
+    out=$(printf 't %s u\n' "$c" > "$S/pins.txt"; GIT_CEILING_DIRECTORIES="$S" "${BASH_SOURCE[0]}" --selftest-check "$S/pins.txt" t "$S/plain" 2>&1); local got=$?
     if [[ $got -eq 1 && "$out" == *"is not inside a git checkout"* ]]; then echo "  PLANT OK   [S7b a plain directory outside any repository] rc=$got"
     else echo "  PLANT FAIL [S7b] rc=$got: $out"; rc=1; fi
     plant "S8 missing directory" 1 "is not a directory" "t $c u"$'\n' t "$S/nowhere"
     printf 'int x = 1;\n' > "$S/repo/a.c"
     plant "S9 a tracked file modified at the pin" 1 "local modifications to tracked files" "t $c u"$'\n' t "$S/repo/sub"
-    git -C "$S/repo" checkout -q -- a.c && printf 'z\n' > "$S/repo/untracked.o"
+    git -C "$S/repo" checkout -q -- a.c && git -C "$S/repo" update-index --assume-unchanged a.c
+    plant "S11 a tracked file flagged assume-unchanged" 1 "assume-unchanged or skip-worktree" "t $c u"$'\n' t "$S/repo"
+    git -C "$S/repo" update-index --no-assume-unchanged a.c && printf 'z\n' > "$S/repo/untracked.o"
     plant "S10 an untracked file only" 0 "OK — t at $c" "t $c u"$'\n' t "$S/repo"
-    [[ $rc -eq 0 ]] && echo "check_external_pin: SELFTEST OK (11 plants with the declared verdict and message)" \
+    [[ $rc -eq 0 ]] && echo "check_external_pin: SELFTEST OK (12 plants with the declared verdict and message)" \
         || echo "check_external_pin: SELFTEST FAILED"
     return $rc
 }
 
 case "${1:-}" in
     --selftest) [[ $# -eq 1 ]] || fail "usage: check_external_pin.sh --selftest"; selftest; exit $? ;;
+    --selftest-check)  # internal: <pins file> <name> <dir>, refused unless the pins file is selftest scratch
+        [[ $# -eq 4 && "$2" == */external-pin-selftest.*/pins.txt ]] || fail "--selftest-check is the selftest's internal form"
+        PINS="$2"; check "$3" "$4" ;;
     ""|-*) fail "usage: check_external_pin.sh <name> <dir> | --selftest" ;;
     *) [[ $# -eq 2 ]] || fail "usage: check_external_pin.sh <name> <dir> | --selftest"; check "$1" "$2" ;;
 esac

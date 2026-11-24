@@ -71,7 +71,7 @@ CORPUS = os.path.join(ROOT, "tests/impl_profile")
 PROFILES = ("hafnium", "default")
 GCC_FLAG = {"hafnium": "-funsigned-char", "default": "-fsigned-char"}
 # $GCC_BIN if set, else the first gcc on the path: the one rule of every lane that runs gcc.
-GCC = os.environ.get("GCC_BIN") or shutil.which("gcc")
+GCC = shutil.which(os.environ.get("GCC_BIN") or "gcc")
 VIP = os.path.join(ROOT, "_build/default/backend/driver/main_vip.exe")
 LIBC_TUS = "ctype stdio stdlib string time utime unistd stat uio internal vfscanf signal".split()
 ENV = dict(os.environ, CERB_INSTALL_PREFIX=PREFIX, LEAN_ABORT_ON_PANIC="1")

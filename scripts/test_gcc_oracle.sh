@@ -21,7 +21,7 @@
 # before it is read as red. No code change.
 #
 # Mechanism per file (design note §3):
-#   * native: gcc -O0 -w, run twice under timeout + the per-test memory cap (exit status =
+#   * native: gcc -std=gnu17 -O0 -w, run twice under timeout + the per-test memory cap (exit status =
 #     the observable; double-run catches ASLR nondeterminism; nonempty
 #     stdout is outside the modeled observable -> skip);
 #   * Lean: cerberus --cabs-json -> cerberus-lean --batch (exhaustive)
@@ -129,8 +129,9 @@ command -v setarch &>/dev/null || { echo "Error: 'setarch' not found (needed for
 setarch -R true 2>/dev/null || { echo "Error: 'setarch -R' not permitted here" >&2; exit 1; }
 # One rule in every lane that runs gcc (this one, test_gcc_capture.sh, the implementation-profile
 # witness): $GCC_BIN if set, else the first gcc on the path.
-GCC_BIN="${GCC_BIN:-$(command -v gcc || true)}"
-[[ -n "$GCC_BIN" && -x "$GCC_BIN" ]] || { echo "Error: gcc not found/executable (GCC_BIN='${GCC_BIN}', else gcc on the path)" >&2; exit 1; }
+# $GCC_BIN may be a path or a command name; either way it is resolved through the path once, here.
+GCC_BIN=$(command -v "${GCC_BIN:-gcc}" || true)
+[[ -n "$GCC_BIN" && -x "$GCC_BIN" ]] || { echo "Error: gcc not found/executable (GCC_BIN='${GCC_BIN:-}', else gcc on the path)" >&2; exit 1; }
 # The language standard is stated, not left to the compiler's default (gnu17 through gcc 14,
 # gnu23 from gcc 15): gnu17 is what the baseline's rows were recorded under.
 GCC_STD=-std=gnu17
@@ -384,7 +385,9 @@ gcc_run() {
     #    path /proc/self/fd/9 (fexecve idiom — the harness opens the
     #    real binary on fd 9). The binary's initial stack contents are
     #    therefore invocation-, session- AND checkout-path-independent,
-    #    which is what makes the ledger's pinned values portable.
+    #    which makes the native values stable on ONE machine. It does not make them portable
+    #    across machines (kernel and libc lay the stack out differently): design note §4,
+    #    amendment of 2026-11-24.
     # timeout(1) reports a kill as exit 124, but a program may LEGITIMATELY
     # exit(124) — found live: the csmith checksum byte
     # (0xAE355683 ^ 0xFFFFFFFF) & 0xFF == 124 (sa_csmith_79 et al.), which
@@ -714,6 +717,11 @@ if [[ -n "$CHECK_BASELINE" ]]; then
         elif [[ $rc_ -gt $rb || $oc -gt $ob ]]; then
             echo "improvement: $f baseline=${B_S[$f]}/${B_O2[$f]} current=${C_S[$f]}/${C_O2[$f]}"
             improvements=$((improvements + 1))
+        elif [[ "${B_S[$f]}" == TRIAGED_* && "${C_S[$f]}" == TRIAGED_* && "${B_S[$f]}" != "${C_S[$f]}" ]]; then
+            # The triage classes are not equally strong since the address class stopped pinning
+            # gcc's value: re-labelling a row is a change of what the gate checks, never a no-op.
+            echo "REGRESSION: $f triage class changed baseline=${B_S[$f]} current=${C_S[$f]} (re-record the baseline deliberately)"
+            regressions=$((regressions + 1))
         elif [[ "${B_S[$f]}" != "${C_S[$f]}" || "${B_O2[$f]}" != "${C_O2[$f]}" ]]; then
             echo "changed (same rank): $f baseline=${B_S[$f]}/${B_O2[$f]} current=${C_S[$f]}/${C_O2[$f]}"
         fi

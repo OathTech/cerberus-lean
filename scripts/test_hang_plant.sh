@@ -19,7 +19,7 @@
 # on the smallest real inputs (tests/minimal/001-return-literal.c,
 # tests/ci/0001-emptymain.c).
 #
-# Usage: ./scripts/test_hang_plant.sh        (needs env: scripts/ce)
+# Usage: ./scripts/test_hang_plant.sh        (needs the OCaml environment: opam exec --switch=. --)
 # Exit 0 only if all four lane readings and the fail-closed probe match.
 set -uo pipefail
 source "$(dirname "${BASH_SOURCE[0]}")/common.sh"

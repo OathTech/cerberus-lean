@@ -25,7 +25,7 @@
 # Also plants capped itself (audit m1/m2): an UNREADABLE witness must not be
 # reported as "not a cap breach", and a grandchild's OOM kill is bannered
 # even when the direct child exits with another status.
-# Usage: ./scripts/test_kill_plant.sh   (needs env: scripts/ce; ~5 min)
+# Usage: ./scripts/test_kill_plant.sh   (needs the OCaml environment: opam exec --switch=. --; ~5 min)
 set -uo pipefail
 source "$(dirname "${BASH_SOURCE[0]}")/common.sh"
 command -v python3 >/dev/null || { echo "Error: python3 needed for the allocating stub" >&2; exit 1; }

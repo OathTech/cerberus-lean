@@ -168,7 +168,8 @@ def artifacts(root=None):
     if lem:
         records['lem_compiler'].update(sha256=sha(Path(lem)), version=run_text([lem, '-v']))
     for executable in ('ocamlc', 'dune', 'gcc'):
-        binary = shutil.which(executable)
+        # gcc: the lanes' rule ($GCC_BIN, a path or a command name, else gcc on the path)
+        binary = shutil.which((os.environ.get('GCC_BIN') or 'gcc') if executable == 'gcc' else executable)
         records[executable] = {'present': bool(binary), 'path': binary}
         if binary:
             flag = '-version' if executable == 'ocamlc' else '--version'
@@ -191,7 +192,8 @@ def external_inputs(root=None):
     root = root or ROOT
     result = {}
     for name, override, relative in [('cn', 'CN_CORPUS_DIR', 'deps/cn/tests/cn'),
-                                     ('libxml2', 'LIBXML2_DIR', 'deps/libxml2')]:
+                                     ('libxml2', 'LIBXML2_DIR', 'deps/libxml2'),
+                                     ('pkvm', 'PKVM_CASE_STUDY', 'deps/CN-pKVM-buddy-allocator-case-study')]:
         path = Path(os.environ[override]).resolve() if os.environ.get(override) else next(
             (p / relative for p in [root, *root.parents] if (p / relative).is_dir()), None)
         row = {'present': path is not None and path.is_dir(), 'path': str(path) if path else None}
@@ -357,7 +359,7 @@ def main():
               'lanes': [], 'status': 'running',
               'release_certification': 'incomplete: reporting/adoption/audit exits require separate evidence',
               'environment': {key: os.environ.get(key) for key in [
-                  'CERB_MEM_MAX', 'CERB_TEST_MEM_MAX', 'TIMEOUT_SECS', 'DUNE_CACHE', 'SKIP_BUILD',
+                  'CERB_MEM_MAX', 'CERB_TEST_MEM_MAX', 'TIMEOUT_SECS', 'DUNE_CACHE', 'SKIP_BUILD', 'GCC_BIN',
                   'CERB_ORACLE_BIN_OVERRIDE', 'CERB_LEAN_BIN_OVERRIDE',
                   'CERB_DRIVER_FRESH_OVERRIDE', 'CERB_FORK_DRIFT_DEV_SKIP', 'TERM', 'NO_COLOR']}}
     write_report(out / 'report.json', report)

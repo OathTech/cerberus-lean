@@ -19,9 +19,13 @@
 # gcc 13.4 and 15.2), with no change to any program or to Lean's values.
 # The entry therefore pins the PROGRAM (sha256 of the .c file: the
 # reviewed claim is that this source observes an address) and Lean's
-# value; gcc's value is printed by the lane, not compared. The gcc
-# numbers in the rationales below are the first machine's, kept as
-# history. [USER 2026-11-24] agreed to this form; design note §4. Classes +
+# value; gcc's value is printed by the lane, not compared: FOR THESE ROWS
+# GCC IS NOT AN ORACLE (any deterministic native result passes). The row
+# checks the program text, Lean's value, that gcc compiles it and that
+# two native runs agree. A row's class may not change against the
+# baseline without a deliberate re-record (fatal in --check-baseline).
+# The gcc numbers in the rationales below are the first machine's, kept
+# as history. [USER 2026-11-24] agreed to this form; design note §4. Classes +
 # procedure: lean_frontend/docs/2026-08-30_gcc-second-oracle-design.md
 # §4. FAIL-CLOSED both directions: unlisted DISAGREE is fatal; a
 # listed file that no longer reaches the compare stage is fatal.

@@ -5,7 +5,7 @@
 # Usage: run_all.sh [--timeout N] [--engines LIST] [--only GLOB] [--out FILE]
 #   Runs classes a/b/c/d in nolibc mode and class e in libc mode; z_base in
 #   both. Rows are appended as they complete (partial sweeps stay useful).
-#   Needs env loaded (scripts/ce); binaries must be fresh
+#   Needs the OCaml environment (opam exec --switch=. --); binaries must be fresh
 #   (tools/check_driver_fresh.sh --check-oracle/--check-lean), checked here
 #   fail-closed before anything runs.
 set -uo pipefail

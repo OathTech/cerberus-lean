@@ -100,6 +100,9 @@ Consequences, all deliberate:
   stack is invocation-, session- and checkout-independent — which is
   what makes the ledger's pinned values (§4) portable. Pinned values
   are captured under, and only meaningful under, this recipe.
+  (Corrected 2026-11-24: independent of invocation, session and
+  checkout on ONE machine. The values are not portable across machines;
+  see the amendment in §4.)
 
 ### 2.2 Determinism / definedness requirements
 
@@ -173,7 +176,9 @@ and any that don't become documented D2/FLOAT rows.
 
 Per program (all inside the worktree; scratch under `.tmp/`):
 
-1. **Native side.** `gcc -O0 -w -o <bin> <file.c>` (csmith tier adds
+1. **Native side.** `gcc -std=gnu17 -O0 -w -o <bin> <file.c>` (the standard
+   stated since 2026-11-24: the compiler's default moved from gnu17 to
+   gnu23 at gcc 15; csmith tier adds
    `-I <stage>`), compile timeout enforced. Run under `timeout`
    (with `-k`: a SIGTERM-ignoring program is SIGKILLed rather than
    hanging the lane) + `ulimit -v`, in the §2.1 normalized
@@ -289,23 +294,45 @@ a triaged file forces re-triage instead of silently staying carried.
 
 **Amendment, 2026-11-24: the address class pins the program, not gcc's
 value.** A `TRIAGED_ADDR` entry now reads `<key> TRIAGED_ADDR
-src=<sha256 of the .c file> lean={<byte-set>} <rationale>`. The native
-value of an address observer is a function of the machine's process
-layout, which §2.1 normalizes within one machine and cannot normalize
-across machines: when the project moved to a machine with a different
-kernel and libc, six of the fourteen address rows' gcc values moved
-(244 to 228, 236 to 220, 64 to 192), identically under gcc 13.4 and gcc
-15.2, with every program and every Lean value unchanged, and the gate
-went red on a property of the machine. The entry's reviewed claim is
-that this source observes an address; the pin on the source text keeps
-the entry tied to the program it was written about, and the Lean pin is
-unchanged and exact. gcc's value is printed in the row's detail and is
-not compared. What this gives up: on one machine, a stable shift of the
-native value no longer turns the row red by itself (the pins did once
-catch an environment-normalization defect that way, §2.1); run-to-run
-nondeterminism is still caught by the double run (`SKIP_NATIVE_NONDET`).
-The other classes keep both value pins. [USER 2026-11-24] agreed to this
-form; the implementation and wording are [AGENT 2026-11-24].
+src=<sha256 of the .c file> lean={<byte-set>} <rationale>`.
+
+Why. The native value of an address observer is a function of the
+machine's process layout, which §2.1 normalizes within one machine and
+cannot normalize across machines. When the project moved to a machine
+with a different kernel and libc, six of the fourteen address rows' gcc
+values moved (244 to 228, 236 to 220, 64 to 192), identically under gcc
+13.4 and gcc 15.2, with every program and every Lean value unchanged,
+and the gate went red on a property of the machine.
+
+What the row checks now: the program text equals its pin, the Lean
+value equals its pin, gcc compiles the program, two native runs agree
+with each other, and the program writes nothing to stdout. gcc's exit
+byte is printed in the row's detail and is not compared with anything.
+
+What this gives up, plainly. **For these fourteen rows gcc is no longer
+an oracle at all.** Any deterministic native result passes, including a
+stable death by signal (exit 139). The loss is not limited to the six
+rows that moved: the other eight pins held on the second machine and
+were dropped with them, and some of those record facts of the ABI or the
+C library rather than of the stack (`align-01`: an 8-aligned global,
+gcc=1; `zd-da-align16`: glibc's 16-byte `malloc` alignment, gcc=3). On
+one machine, a stable shift of a native value no longer turns a row red
+by itself; the value pins did once catch an environment-normalization
+defect that way (§2.1). Run-to-run nondeterminism is still caught by the
+double run (`SKIP_NATIVE_NONDET`). The pin covers the `.c` file only,
+not headers it includes (no current row includes a project header).
+
+Because the classes are no longer equally strong, a change of a row's
+triage class against the baseline is fatal in `--check-baseline`
+(re-labelling a FLOAT or UB row as ADDR would drop its gcc pin). The
+other classes keep both value pins. Open, not done here: keeping an
+optional `gcc=` pin beside `src=` on rows whose native value is fixed by
+the ABI ([AGENT 2026-11-24], raised by the pre-merge review, with the
+user).
+
+[USER 2026-11-24] agreed to the source-pin form; the implementation and
+this wording are [AGENT 2026-11-24], the wording revised after the
+pre-merge review found the first version understated the loss.
 
 ## 5. Corpus selection
 

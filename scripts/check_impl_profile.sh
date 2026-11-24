@@ -24,5 +24,5 @@
 set -euo pipefail
 source "$(dirname "${BASH_SOURCE[0]}")/common.sh"
 require_cerberus
-[[ -n "${GCC_BIN:-}" && -x "${GCC_BIN:-}" ]] || command -v gcc > /dev/null 2>&1 || { echo "check_impl_profile: FAIL -- gcc not found on the path (a prerequisite of this lane, never skipped)" >&2; exit 1; }
+command -v "${GCC_BIN:-gcc}" > /dev/null 2>&1 || { echo "check_impl_profile: FAIL -- gcc not found on the path (a prerequisite of this lane, never skipped)" >&2; exit 1; }
 exec python3 -I "$PROJECT_ROOT/scripts/impl_profile_witness.py" "$@"

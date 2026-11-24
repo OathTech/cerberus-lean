@@ -15,7 +15,7 @@ lean_frontend/docs/2026-09-16_charter-pristine-oracle-instrument.md §2 O3):
 
 The lane (scripts/test_upstream_oracle.py) and scripts/release.py keep their
 PREREQUISITE stance: they never build, and a missing manifest fails them
-closed. Run under the project's OCaml environment (scripts/ce or env.sh):
+closed. Run under the project's OCaml environment (`opam exec --switch=. --`):
 the build needs lem/dune/ocamlfind on PATH. Relocating an existing build is
 not attempted (the manifest records absolute paths; a rebuild is ~1 minute).
 
