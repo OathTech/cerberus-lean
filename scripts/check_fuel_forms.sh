@@ -200,15 +200,16 @@ policy() {
   # non-blank reviewer in field 4.
   if [[ ! -f "$hreg" ]]; then echo "check_fuel_forms: FAIL — hypothesis register $hreg missing (fail-closed)"; return 1; fi
   local hyps_tbl hyps_reg badreg
-  hyps_tbl=$(awk -F'\t' '$1=="FUEL_FORM" && $3=="MEASURED" && NF>=6 && $6!="" {print $2"\t"$6}' "$tbl" | sort -u)
-  hyps_reg=$(grep -v '^\s*#' "$hreg" | awk -F'\t' 'NF>=2 {h=$2; gsub(/[ \t]+/," ",h); sub(/^ /,"",h); sub(/ $/,"",h); print $1"\t"h}' | sort -u)
+  hyps_tbl=$(awk -F'\t' '$1=="FUEL_FORM" && $3=="MEASURED" && NF>=6 && $6!="" {print $2"\t"$6}' "$tbl" | LC_ALL=C sort -u)
+  hyps_reg=$(grep -v '^\s*#' "$hreg" | awk -F'\t' 'NF>=2 {h=$2; gsub(/[ \t]+/," ",h); sub(/^ /,"",h); sub(/ $/,"",h); print $1"\t"h}' | LC_ALL=C sort -u)
   badreg=$(grep -v '^\s*#' "$hreg" | awk -F'\t' 'NF>0 && (NF!=4 || $3 !~ /\.lem:[0-9]/ || $4 ~ /^[ \t]*$/) {print $1}')
   if [[ -n "$badreg" ]]; then
     echo "check_fuel_forms: FAIL — hypothesis register row(s) not of the form <worker> TAB <hyp> TAB <invariant with a .lem:<line> cite> TAB <reviewer>:"; echo "$badreg" | sed 's/^/  /'; rc=1
   fi
   local hnew hstale
-  hnew=$(comm -23 <(echo "$hyps_tbl" | grep .) <(echo "$hyps_reg" | grep .))
-  hstale=$(comm -13 <(echo "$hyps_tbl" | grep .) <(echo "$hyps_reg" | grep .))
+  # byte order in sort and comm alike, whatever the caller's locale or coreutils
+  hnew=$(LC_ALL=C comm -23 <(echo "$hyps_tbl" | grep .) <(echo "$hyps_reg" | grep .))
+  hstale=$(LC_ALL=C comm -13 <(echo "$hyps_tbl" | grep .) <(echo "$hyps_reg" | grep .))
   if [[ -n "$hnew" ]]; then
     echo "check_fuel_forms: FAIL — worker(s) MEASURED under a hypothesis with no reviewed register row for that exact hypothesis in $HYPREG (worker TAB hypothesis):"; echo "$hnew" | sed 's/^/  /'; rc=1
   fi
@@ -226,11 +227,11 @@ policy() {
     echo "check_fuel_forms: forms partition OK ($n_meas MEASURED + $n_abs ABSORBING + $n_amb_yes ambient-reachable + $n_amb_no ambient-unreachable = $n_all fuel'd workers)"
   fi
   local reach_amb pinned
-  reach_amb=$(awk -F'\t' '$1=="FUEL_FORM" && $3=="AMBIENT" && $4 ~ /^yes/ {print $2}' "$tbl" | sort -u)
-  pinned=$(grep -v '^\s*#' "$pend" | awk 'NF>0 {print $1}' | sort -u)
+  reach_amb=$(awk -F'\t' '$1=="FUEL_FORM" && $3=="AMBIENT" && $4 ~ /^yes/ {print $2}' "$tbl" | LC_ALL=C sort -u)
+  pinned=$(grep -v '^\s*#' "$pend" | awk 'NF>0 {print $1}' | LC_ALL=C sort -u)
   local new stale
-  new=$(comm -23 <(echo "$reach_amb") <(echo "$pinned"))
-  stale=$(comm -13 <(echo "$reach_amb") <(echo "$pinned"))
+  new=$(LC_ALL=C comm -23 <(echo "$reach_amb") <(echo "$pinned"))
+  stale=$(LC_ALL=C comm -13 <(echo "$reach_amb") <(echo "$pinned"))
   if [[ -n "$new" ]]; then
     echo "check_fuel_forms: FAIL — fuel'd worker(s) REACHABLE from drive with an opaque (fail-open) exhaustion, not in $PENDING:"; echo "$new" | sed 's/^/  /'; rc=1
   fi

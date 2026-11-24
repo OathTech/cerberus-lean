@@ -523,7 +523,7 @@ fi
 # copy onto its repo path — and every row pins its occurrence COUNT,
 # so duplication in place is visible too). C2 audit MAJOR-2: the
 # EXTERN kind (bare pure/BaseIO @[extern] declarations) joins the pin.
-PIN_EXPECTED=$(grep -E '^PIN (IMPLBY|UNSAFEDECL|UNSAFEBASEIO|EXTERN) ' "$ALLOWLIST" | awk '{print $2" "$3" "$4" "$5}' | sort -u || true)
+PIN_EXPECTED=$(grep -E '^PIN (IMPLBY|UNSAFEDECL|UNSAFEBASEIO|EXTERN) ' "$ALLOWLIST" | awk '{print $2" "$3" "$4" "$5}' | LC_ALL=C sort -u || true)
 if [[ -z "$PIN_EXPECTED" ]]; then
   echo "check_theorem_axioms: FAIL — C2 ratchet leg 3: no PIN rows in $ALLOWLIST (fail-closed; the population pin has no input)"
   exit 1
@@ -551,9 +551,12 @@ if [[ -n "$RATCHET_IMPLBYOTHER" ]]; then
   echo "$RATCHET_IMPLBYOTHER"
   exit 1
 fi
-PIN_FOUND=$(grep -E '^(IMPLBY|UNSAFEDECL|UNSAFEBASEIO|EXTERN) ' <<<"$RATCHET_SCAN" | awk '{print $1" "$2" "$3}' | sort | uniq -c | awk '{print $2" "$3" "$4" "$1}' || true)
-PIN_NEW=$(comm -13 <(echo "$PIN_EXPECTED") <(echo "$PIN_FOUND"))
-PIN_MISSING=$(comm -23 <(echo "$PIN_EXPECTED") <(echo "$PIN_FOUND"))
+PIN_FOUND=$(grep -E '^(IMPLBY|UNSAFEDECL|UNSAFEBASEIO|EXTERN) ' <<<"$RATCHET_SCAN" | awk '{print $1" "$2" "$3}' | LC_ALL=C sort | uniq -c | awk '{print $2" "$3" "$4" "$1}' | LC_ALL=C sort || true)
+# Byte order on both sides and in comm itself: the comparison must not depend on
+# the caller's locale or on which coreutils implementation supplies sort/comm
+# (uutils comm rejects en_US-collated input as unsorted).
+PIN_NEW=$(LC_ALL=C comm -13 <(echo "$PIN_EXPECTED") <(echo "$PIN_FOUND"))
+PIN_MISSING=$(LC_ALL=C comm -23 <(echo "$PIN_EXPECTED") <(echo "$PIN_FOUND"))
 if [[ -n "$PIN_NEW" ]]; then
   echo "check_theorem_axioms: FAIL — C2 ratchet leg 3: implemented_by/unsafe/unsafeBaseIO/extern census row(s) not matching the pinned population ($ALLOWLIST PIN rows; format KIND PATH NAME COUNT). Every such seam is a declared-boundary decision — register it there with its Q4 class, or remove it:"
   echo "$PIN_NEW"

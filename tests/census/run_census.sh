@@ -177,13 +177,13 @@ sig_compare() { # <prefix>
     local p="$1"
     python3 "$PROJECT_ROOT/scripts/extract_core_sig.py" < "$p.fe.stdout" > "$p.sig.ocaml" 2>/dev/null || { echo NA; return; }
     grep -v '^\(procdecl\|builtin\) __builtin_' "$p.elab.stdout" > "$p.sig.lean"
-    python3 "$PROJECT_ROOT/scripts/canonicalize_ids.py" < "$p.sig.ocaml" | sort > "$p.canon.ocaml" || { echo NA; return; }
-    python3 "$PROJECT_ROOT/scripts/canonicalize_ids.py" < "$p.sig.lean" | sort > "$p.canon.lean" || { echo NA; return; }
+    python3 "$PROJECT_ROOT/scripts/canonicalize_ids.py" < "$p.sig.ocaml" | LC_ALL=C sort > "$p.canon.ocaml" || { echo NA; return; }
+    python3 "$PROJECT_ROOT/scripts/canonicalize_ids.py" < "$p.sig.lean" | LC_ALL=C sort > "$p.canon.lean" || { echo NA; return; }
     # oracle lines absent on the Lean side = the signal (MISSING); Lean-only
     # lines are the documented header-declaration asymmetry (counted).
     local miss extra
-    miss=$(comm -23 "$p.canon.ocaml" "$p.canon.lean" | tee "$p.sig.missing" | grep -c .)
-    extra=$(comm -13 "$p.canon.ocaml" "$p.canon.lean" | grep -c .)
+    miss=$(LC_ALL=C comm -23 "$p.canon.ocaml" "$p.canon.lean" | tee "$p.sig.missing" | grep -c .)
+    extra=$(LC_ALL=C comm -13 "$p.canon.ocaml" "$p.canon.lean" | grep -c .)
     [[ $(grep -c . "$p.canon.ocaml") -gt 0 ]] || { echo "NA(empty oracle signature)"; return; }
     if [[ $miss -eq 0 ]]; then echo "OK(oracle $(grep -c . "$p.canon.ocaml") lines all present; lean-only $extra)"
     else echo "MISSING($miss of $(grep -c . "$p.canon.ocaml"); lean-only $extra)"; fi
