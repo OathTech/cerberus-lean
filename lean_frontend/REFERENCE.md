@@ -1,0 +1,327 @@
+# Lean frontend reference catalogue
+
+Lookup material for the Lean frontend: what each unit test, gate, hand-written
+file and script is, with the dated history of how it got that way. It was
+moved here unchanged from [CLAUDE.md](CLAUDE.md) on 2026-11-24 so that the
+practices doc holds only what every agent must know. The rules are in
+[CLAUDE.md](CLAUDE.md); the trust story is [VALIDATION.md](VALIDATION.md); the
+executable test membership is [`scripts/LADDER.md`](../scripts/LADDER.md).
+Entries here describe; they do not grant permissions or waive gates.
+
+## Pin history
+
+**Merge-base bump stage 1, 2026-10-30:** upstream base `c3ff8c53f05982745f9b3a10b3d05442e214bcb5` (was `b9aeedcb4dd438763b0eef7f95ac19e93875d7de`), Lem `e6d8db5680962f49060257d6c2bcb13c284b910f`; the entry-point and Core-text changes are in `docs/2026-10-29_merge-base-bump-stage1-record.md` and the two consumer notes of 2026-10-30. Current build/contract reconciliation: 2026-09-25, Cerberus
+`bb487dda7c56981e76d67f53ae16e874cfe5ed61`, Lem
+`67ec5de70e02e280bb348a4ba826696b76116732` (the Lem pin has since moved to `2d3a492758cb23dc4e417f2961983d25b36ce130` by functional re-pins (via `77ad4fa` and `4e70bb5`, both merged; the pin `2d3a492` was on `mdd/lean-backend` since the 2026-10-07 re-pin, landing note `47348c07e`; the pin `e6d8db5680962f49060257d6c2bcb13c284b910f` was the Lean 4.35.0 move of 2026-10-26, [re-pin record](docs/2026-10-25_lean-4.35-cerberus-record.md), both generated trees byte-identical under it; the current pin `2220010bc25f0c5682d8200f016e786ee66d65c6` is the 2026-11-10 re-pin to lem TODO 54 (unreferenced binders emitted `_name`, inert `termination_by` clauses dropped), [re-pin record](docs/2026-11-10_todo54-repin-record.md), generated OCaml byte-identical and the generated Lean changed in those shapes only), generated OCaml byte-identical at each: [re-pin record](docs/2026-10-04_lem-repin-4e70bb5-record.md), [PNVI S1 record](docs/2026-10-05_pnvi-s1-switch-parameter-record.md)); measured scope and remaining
+public-install checks: [follow-up record](docs/2026-09-25_public-readiness-followup.md).
+
+## Testing
+
+Tests are organized into three categories:
+
+### Unit executables and row-1 gates
+
+Hand-written Lean tests under `lean_frontend/test/Unit/<Name>Test.lean`.
+Each has a `[[lean_exe]]` in `lakefile.toml` that exits 0 on pass. The Core
+quotation executable uses a separate launcher, comparison support, visitor
+generator, Python orchestration and libc hash pin in `test/CoreQuote/`;
+`test/CoreQuote/probes/` contains the unwired D0–D2 development probes.
+Its partial printer/checker and native plugin are instrument code outside the
+exec cone, enumerated in [VALIDATION §3](VALIDATION.md#core-quotation-instrument-boundary). The complete
+`test_unit.sh` also builds/checks the OCaml oracle and needs the explicit
+fork-drift prerequisites in [VALIDATION.md](VALIDATION.md#provisioning-the-fork-drift-oracle).
+
+```bash
+opam exec --switch=. -- ./scripts/test_unit.sh
+opam exec --switch=. -- ./scripts/test_unit.sh fresh-int-test
+```
+
+Current unit tests:
+- `effects-proof-test` / `totality-proof-test` — compile-time checks on the exec cone, as it is today: every fuel'd wrapper is FUEL-PARAMETRIC (`@f ⟨n⟩ = f_lemFuel n` for every `n`, by rfl — the fuel-parameter arc; no default constant exists), symbolic equations hold on the total layout/typing defs, and `tagDefs` is an honest reader parameter (no hidden extern read) — i.e. totality + reader lifting, properties of this port checked by the build (not a verification layer; exe names kept for build stability)
+- `monadic-failstop-test` — C-TF1 seven-arm runtime witnesses, positive controls, and failure-time state checks; `CerbFailProofs` carries the kernel propagation contracts.
+- `allocator-soundness-test` — the four upstream-tray-draft-44 states evaluated on the ACTUAL `CerbMem.allocator` after remedy 1 (cursor 3/(4,4), 7/(8,8), 2/(4,4) killed out-of-memory; 8/(4,4) active at 4) with the pre-fix values quoted as the negative control; imports `CerbMemAllocatorProofs`, so the GENERAL kernel theorem `allocator_active_sound` is compiled on every run (2026-09-16).
+- `Unit.NDFuelStabilityTest` (imported by `totality-proof-test`) — kernel witnesses for ND completion, ordering, state, tracing, and independent budgets; `CerbNDFuelProofs` exports the six-worker stability contracts.
+- `fuel-exemplar-test` — the consumer-shaped ∀-fuel, ∀-address-space-top, ∀-digest theorem over the shipped pipeline `@drive ⟨fuel⟩` from `initial_driver_state _ top digest` (`exemplar_certified_shipped_forall (fuel) (top) (digest) (h : 8 ≤ top)`; the errno allocation + store discharged symbolically by `errnoAction_active` — address-space-bound part two C4, 2026-09-18) (test/Unit/FuelExemplar.lean)
+- `fuel-forms-tool` (not a pass/fail exe: the INSTRUMENT of `scripts/check_fuel_forms.sh`) — `test/Unit/FuelFormsTool.lean` imports the compiled environment at runtime and classifies every fuel'd worker MEASURED/ABSORBING/AMBIENT with its drive-cone reachability (C2; P0 2026-09-05: MEASURED checks the argument correspondence against the wrapper's own body in MetaM, ABSORBING = "kill at zero" checks the `_zero` lemma's left-hand side and cone); the gate `lake build`s the exec entries and every carrier module and compiles its scratch decoys from source BEFORE the tool imports anything (hotfix `fix/fuel-forms-carriers` 2026-09-20, F-1: a carrier's stale `.olean` had been imported as found), and its `--selftest` P24 plants a stale-valid `.olean` over an uncompilable source
+- `core-quote-test` — 638-constructor independent representation visitor, exact elaborated comparator terms, auxiliary generated BEq, mutation controls and all fixture/corpus/multi-TU round trips (Tier A row 1). `scripts/test_unit.sh --core-quote-libc` runs the separately converted libc and libc-linked fixture-001 cases, the standalone SHA-256 and canonical-invocation controls, and `leanchecker LibcLiteral` / `leanchecker LinkedLiteral` with GNU time resource measurements (Tier B row 13). Consumer-generated modules are accepted with `--module`; see the [consumer note](docs/2026-10-18_consumer-note-cerberus-caesium-core-quote.md).
+- `core-parser-test` — 292 checks for `CoreParser.lean` in the follow-up run (derived from its output)
+- `opaque-failure-test` — seam hygiene (2026-09-19): `#guard_msgs` on the two FAILING `rfl` probes of the seam failure leaves (a transparent leaf would turn the build RED), `failwithI` opaque in the environment, default arms reduce; every `@CerbGlobal.has_switch ⟨[]⟩ … = false` by `rfl` (with positive controls under `⟨[.PNVI .AE_UDI]⟩`) and an arm reduces to its default; `oomKill`/`STD_`/timing identities by `rfl`; the structural `BEq MemValue` agrees with the retired impl on 23 pinned pairs (exit 1 on disagreement)
+- `run-digest-test` — D-S kernel acceptance equations for explicit minting, last-unit/empty rules, committed cabs-json digest shape, both entry constructors and mint preservation; old arity rejected by `#guard_msgs`.
+- `cabs-import-test` — Cabs JSON positions (2026-10-16, cerberus-caesium filing 2): `jsonToPos` imports the five-field position object `{file, line, col, lexing_file, lexing_line}` and refuses a missing or ill-typed field (the lexing pair like the source triple); `jsonToLoc` is lossless on a cursor-bearing region; every printer and `getFilename` read the source triple only; `BEq Pos` distinguishes positions that differ only in the lexing pair (the OCaml structural-equality mirror); the committed `tests/fixtures/001-return-literal/cabs.json` carries the fields on every position. Attribute carriage (2026-11-20, contract D19): the attribute slots the fork added to Cabs (`specifier_attrs` on `Specifiers`/`Struct_declaration`/`Type_name`, `attrs` on `TSpec_enum`/`ADecl`/`PDecl`/`Params`/the parameter forms, the three-element enumerator, `Declaration_attribute`, an argument carried as its tokens with no pieces) import, each is refused when missing, and the fixture carries them (T7-T9).
+- `memory-access-test` — SC WP0 (2026-09-25): the passive load/store receipt diagnostic (production primitives, all six ND constructors, drain/re-enable controls) and, via `Unit.MemoryAccessProofs`, the kernel erasure theorems (observation disabled = observation erased, over the production `loadM`/`storeM`, every arm, arbitrary state and fuel; since 2026-10-08 proved in the seam `CerbMemAccessFacts.lean` and restated here under the old names). Args: fuel, iteration count, capture mode; row 1 runs `17 0 on`, Tier A row 13 (`scripts/test_memory_access.py`) the paired native/Lean grid.
+- `reconstruct-legacy-test` — the default-mode reconstruction wrappers are kernel-equal to the linear and indexed references at `productionDiagnostics`, with every fuel/input/overlap-closure quantifier retained. Both references take their direct diagnostics explicitly; `historicalDiagnostics` recovers the old frozen bodies through two separate theorems. This is equality at the production renderer, not equality to the old failure strings (outcome-protocol checkpoint C; consumer contract in `docs/2026-10-20_consumer-note-cerberus-sl-outcome-protocol.md`). Eighteen runtime positive controls exercise the PNVI helpers.
+- `pnvi-arms-test` — PNVI arc S3 (2026-10-07): runtime witnesses of the PNVI-ae-udi arms under `⟨[.PNVI .AE_UDI]⟩` (exposure on an integer cast, iota minting by `ptrfromint`, `resolveIota` narrowing and its second failure, the symbolic load/store/kill/validForDeref/eff_array_shift arms, `eq_ptrval` across iotas, `diff_ptrval`'s collapse, load's exposure) with default-instance controls; compile-time pins that each closed-term-reachable refusal reduces to `failwithI (CerbStop.render (.refusal (pnviRefusal "R-PNVI-nn: …")))` (plus two negative controls). Arg: fuel.
+- `float-literal-test` — `CerbFloat.of_string` binary64 bit-pattern pins (semantics-audit repair D1).
+- `are-compatible-test` — `Ctype_aux.are_compatible`'s array-bound arm (semantics-audit repair D3).
+- `many-restatement-test` — equivalence theorems for the `many`/`many1` parser-combinator restatement (parser-progress measure).
+- `enum-data-test` — the enum's compatible type is program data: kernel pins of the design note §4 plus negative controls on the retired names.
+- `match-pattern-arity-test` — `match_pattern`/`typecheck_pattern` fail closed on tuple-arity mismatch: the consumer's acceptance facts by `rfl`, a negative control, the typing pin, and the argument-list checks of closure round 3.
+- `fresh-int-test` — verifies `fresh_int`/`Symbol.fresh` generate unique values (+ the native-obj fresh-counter floor probe)
+- `pp-test` — pretty-printer mirrors (ctype/value shapes + float formatting), plus byte/text batch escaping against an OCaml 5.4.0 all-byte transcript (`Unit.BatchEscapeTest`).
+
+`test_unit.sh` also runs the gate scripts: the hand-written↔generated
+sync gate, `check_exec_purity.sh`, `check_theorem_axioms.sh`
+(hand-written axiom census — exactly 0 — + generated-tree census +
+exemplar/driver2 axiom cones + the D14 non-kernel-proof-method ban),
+`check_exec_totality.sh` (22 generated modules + CerbND, empty
+allowlist), `check_no_fuel_numerals.sh` (fuel-parameter arc: no fuel
+numeral in seams/generated/test/speclab except Main.lean's `--fuel`
+default; F1–F6 plant-tested by its --selftest; its rule W1, PNVI arc S1: a
+speedbump against accidental default `CerbGlobal.Switches` instances — not adversarially
+robust; the backstop is that Main's local instance wins for every lane, plus review; its rule
+W2, PNVI arc S2: a speedbump against production calls of the default-pinned
+`CerbMem.reconstructValue(_lemFuel)` wrappers — not a trust surface; its rule W3, impl-profile S1: the same speedbump for `CerberusImpl.ImplProfile` instances, also catching the priority form, `attribute [instance]` on the profile values and a header broken across lines; "default-pinned" in W2 means the SWITCH set: the wrappers bind the implementation profile), `check_lakefile_roots.sh`
+(every generated module, `_auxiliary` obligation carriers included, is a
+Lake root; plant-tested), `check_fuel_forms.sh` (C2: the (A)/(B)/(C)
+fuel-forms gate — every fuel'd worker measured, absorbing (= kill at zero;
+propagation not proved, lem TODO 13), unreachable from the drive cone, or a
+reviewed row of `scripts/fuel_forms_pending.txt`; C4: a worker measured
+UNDER A HYPOTHESIS (lem `assuming`, the `lemHyp` binder) must equal a row of
+the reviewed register `scripts/fuel_hypotheses.txt`, both directions; P0
+2026-09-05 (whole-project audit F2): a MEASURED obligation must pass the
+worker to the wrapper's own inputs — the wrapper's body is unfolded and its
+worker call compared argument by argument, with the hypothesis' μ at the
+fuel position — and an ABSORBING `_zero` lemma must state THE worker at
+literal 0 on its own binders; 25 plants incl. 15 compiled decoys and the F-1 stale-carrier plant P24 (2026-09-20) — the
+audit's two verbatim, wrong fuel position, swapped arguments, changed
+measure, wrapper calling another worker, hidden premise, contradictory
+hypothesis caught by the register, extra Prop binder, three `_zero`
+decoys), the lem-sync content-hash gate,
+`check_failure_reach.sh` (the failure-reach register gate, 2026-09-08: every pure
+`failwithI`/`panic!` site of the exec dependency closure = a sealed, reviewed row of
+`scripts/failure_reach_register.txt`, position and reach classes both directions,
+DISCARDABLE generated let-bindings RED; rebuilds the one-module reach instrument,
+~6 s; 5 plants), `check_pin_sites.sh` (2026-09-25 fresh-clone finding: the lem-lean pin is ONE value at the manifest `lem-pin`, the Lake rev, the two lake-manifests and the README's newcomer `opam pin` command; 8 plants, fail-closed), `check_fork_drift.sh` (arc-10 audit follow-up, [USER] mandate: the
+oracle surface must equal the reviewed manifest
+`scripts/fork_drift_manifest.txt`, and the generated-OCaml
+fork-vs-upstream deltas must match their pinned hashes; loud SKIP
+when the upstream remote or a generated tree is absent, fail-closed
+otherwise), and `check_fixture_freeze.sh` (the `corpus/`
+differential-fixture set must match its hash manifest exactly), and
+`test_exec.sh --selftest` (P0 2026-09-05, audit F3: hermetic plants on the
+main lane's verdict extractor — the VAL token is the WHOLE `Defined` line,
+value + stdout + stderr + blocked; the pre-repair value-only collapse of the
+audit's same-value/different-stdout pair is reproduced in-plant so the
+battery cannot be vacuous).
+
+### Fixture differentials
+
+```bash
+opam exec --switch=. -- ./scripts/test_verify.sh   # tests/verify + corpus/ fixture
+                           # differentials: pin provenance (oracle
+                           # --pp=core re-derivation byte-equal /
+                           # content-hash vs the pinned dumps) +
+                           # main-mode differentials + call-point
+                           # differentials (Lean --call vs oracle
+                           # wrapper TU vs recorded pin) — 117 checks
+```
+
+### Integration tests (C → JSON → Lean, per parser)
+
+```bash
+# Cabs JSON bridge: C → OCaml → JSON → Lean (234 tests, 100%)
+opam exec --switch=. -- ./scripts/test_parse.sh              # tests/minimal (106 tests)
+opam exec --switch=. -- ./scripts/test_parse.sh tests/ci     # upstream CI (128 tests)
+
+# Core text parser integration: C → cerberus --pp core → Lean CoreParser
+opam exec --switch=. -- ./scripts/test_core.sh              # tests/minimal (106 tests)
+opam exec --switch=. -- ./scripts/test_core.sh tests/ci     # upstream CI (128 tests)
+```
+
+### Golden tests (full pipeline, per stage)
+
+Golden fixtures live under `tests/fixtures/<name>/`:
+- `source.c` — the C input
+- `expected.txt` — expected final return value
+- (intermediate goldens for each stage as they come online)
+
+```bash
+opam exec --switch=. -- ./scripts/test_golden.sh                     # run all fixtures
+opam exec --switch=. -- ./scripts/test_golden.sh 001-return-literal  # run one fixture
+```
+
+### Self-test
+
+```bash
+(cd lean_frontend && .lake/build/bin/cerberus-lean)  # sizeof, memory model
+```
+
+### End-to-end pipeline test
+
+```bash
+opam exec --switch=. -- _build/default/backend/driver/main.exe \
+    --runtime=_build/install/default --cabs-json test.c > test.json
+LEAN_ABORT_ON_PANIC=1 lean_frontend/.lake/build/bin/cerberus-lean \
+    --runtime=_build/install/default test.json
+```
+
+The driver's runtime (`std.core`, the `.impl` file) is `--runtime DIR` or
+`CERB_INSTALL_PREFIX` (runtime = `DIR/lib/cerberus-lib/runtime`, the
+oracle's `util/cerb_runtime.ml` arms); without either it refuses (exit 2).
+It never searches the working directory, and the oracle's
+`OPAM_SWITCH_PREFIX` fallback is deliberately not mirrored (bug hunt BUG-2,
+`docs/2026-09-29_bug-hunt-fixes-record.md`). Give it the prefix the
+cabs-json was exported with: a location under another runtime's library
+directories is refused (BUG-3). `scripts/common.sh` exports
+`CERB_INSTALL_PREFIX` for every lane.
+
+## Key files
+
+### Hand-written Lean (in `lean_frontend/`, copied to `generated/` by Makefile)
+
+| File | Purpose |
+|------|---------|
+| `CerberusImpl.lean` | LP64 implementation-defined behaviour (sizeof, alignof, etc.). THE IMPLEMENTATION PROFILE is the instance-implicit parameter `class ImplProfile` (contract D20, 2026-11-22, `docs/2026-11-22_impl-profile-record.md`): one field, `char_is_signed`, read by `is_signed_ity`'s `Char` arm (and `precision_ity` through it); every reader binds `[CerberusImpl.ImplProfile]` (lem instance reader, `frontend/model/lean_impl_profile.lem`), binder order `[LemFuel] [CerberusImpl.ImplProfile] [CerbGlobal.Switches]`; `defaultImpl` (upstream's DefaultImpl, signed) and `hafniumImpl` (HafniumImpl, unsigned) are plain values with `rfl` lemmas (`is_signed_ity_char_default`, `…_hafnium`); `profileOfSelector` maps the driver's selector names; NO instance is declared in this repository (speedbump: `scripts/check_no_fuel_numerals.sh` rule W3) |
+| `CerbMem.lean` | Concrete memory model (byte-level load/store, allocation). Address-space-bound slice (2026-09-17): the address-space top is a PARAMETER — `initialMemState (addressSpaceTop : Int)`, `MemState.lastAddress` has NO default (a `{ … : MemState }` literal must give it; tests choose named values) — threaded from `initial_driver_state sup top …` and the desugar state; the one Lean numeral is Main.lean's `defaultAddressSpaceTop`. Arc-14 F1: the pre-doctrine F-row is re-mirrored — relational ptr kill-paths, checked per-byte memcpy/memcmp, MerrUndefinedRealloc, real update_prefix, byte asserts, sizeof/alignof assert-parity; F4: OCaml-(=)-parity leaf instances + the memory-model instance caveat (relocated here). Seam hygiene (2026-09-19, `docs/2026-09-18_seam-hygiene-record.md`): every failure leaf is LemLib's opaque `failwithI` (no kernel equation); the switch-conditioned arms are explicit `if has_switch … then <loud kill> else <default>`; `oomKill` names the allocator's kill; `BEq MemValue` is the structural `beqMemValue`. PNVI arc S2 (2026-10-07, `docs/2026-10-07_pnvi-s2-data-shapes-record.md`): the PNVI data shapes (`IotaEntry`, `MemState.iotaMap : Std.TreeMap Int IotaEntry`, `ProvTaint`, `OverlapResult`), `findOverlapping`, `provsOfBytes`/`mergeTaint`, `mkIval`, `exposeAllocation(s)`/`addIota`/`lookupIota`/`resolveIota`, and the full reconstruction `reconstructValueAbst(_lemFuel)` (switch set, `find_overlaping` closure, taint) that `loadM` calls; `reconstructValue(_lemFuel)` are default-pinned compatibility wrappers for the consumer (rule W2: no production caller); upstream crash arms on the PNVI path are `pnviRefusal` refusals (`R-PNVI-nn`), unreachable at the default set. PNVI arc S3 (2026-10-07, `docs/2026-10-07_pnvi-s3-arms-record.md`): the PNVI-ae-udi ARMS — ptrfromint's `is_PNVI` arm (find_overlaping, `add_iota`), intfromptr's and load's `AE ∨ AE_UDI` exposure (`exposeOnLoad`), `mkIval` at intfromptr, the `Prov_symbolic` kill/load/store arms (`resolveIota` with the arm's precondition), validForDeref/eq/diff/eff_array_shift's iota arms, eff_array_shift's live `is_PNVI ∧ ¬PERMISSIVE` bounds arms — and the refusals R-PNVI-01 (combine_prov), -04 (lookup_iota), -06 (pure array_shift), -07 (case_ptrval's symbolic half), -08 (diff_ptrval invariant), -10 (the stdout-print arm); every PNVI test is `false` at the default set (`rfl`). PNVI arc S4 (2026-10-07, `docs/2026-10-07_pnvi-s4-lane-record.md`): `--switches=PNVI_ae_udi` is ACCEPTED (Main) and validated by `scripts/test_pnvi.sh`; R-PNVI-08/-10 are `pnviRefuseM` (the failure ascribed at `memM`, kernel default a kill) |
+| `CerbMemDefaultFacts.lean` | Theorem-only seam (PNVI arc S2 review fix F1, 2026-10-07; record `docs/2026-10-07_pnvi-s2-data-shapes-record.md` §10): kernel bridges from the full reconstruction `reconstructValueAbst(_lemFuel)` to the default-pinned wrappers `reconstructValue(_lemFuel)` — closure irrelevance at `⟨CerbGlobal.defaultSwitches⟩`, the value component for any closure, the same at any instance whose list is the default (`reconstructValueAbst_snd_of_default`), and the `loadM`-facing `loadM_reconstruct_eq_reconstructValue`; since PNVI arc S5 (2026-10-07, `docs/2026-10-07_consumer-note-cerberus-sl-pnvi-arc.md`) also `resolveIota_ok_of_shape` (a successful iota resolution transfers to any precondition of the same OK/FAIL/error shape — a `Prov_symbolic` arm's location independence); a consumer imports it beside `CerbMem`. Excluded from W2 by name (its statements name the wrappers); a Lake root |
+| `CerbMemAccessFacts.lean` | Theorem-only seam (2026-10-08; consumer ask (c), cerberus-sl DECISIONS C3.399; record `docs/2026-10-08_memory-access-facts-seam-record.md`): the SC WP0 erasure facts moved out of `test/Unit/MemoryAccessProofs.lean` so a consumer can import and cite them — `CerbMem.loadM_erasure`/`CerbMem.storeM_erasure` (erasing the observation buffer commutes with a `loadM`/`storeM` step), `recordAccess_of_observations_none` (receipt recording is the identity when `observations = none`), the `stopObserving_*` field/commuting lemmas, `findOverlapping_stopObserving`, `exposeOnLoad_observations`, `resolveIota_stopObserving`, `liftND_returned_state` (full list in the header). No `def`s, kernel-only; the test restates each under its old name, proved by the seam theorem. A Lake root; compiled in row 1 via `memory-access-test`; all 17 names pinned in the axiom census's mem-scale leg; not W2-excluded (names no wrapper) |
+| `CerbMemAllocatorProofs.lean` | The concrete allocator's soundness contract (allocator-soundness slice, 2026-09-16; upstream-tray draft 44): `allocator_active_sound` — an ACTIVE allocation is `align`-aligned, positive, its end at or below the cursor (disjoint from everything at or above it, for `sz ≥ 0`), and becomes the cursor — and `allocator_below_request_kills` (remedy 1 in kernel terms), one GENERAL statement each from `Int.emod_nonneg`/`Int.emod_def` + `omega`; `allocatorStep` observes the one monadic node (the `CerbFail.step` shape, restated so the seam depends on `CerbMem` alone). Imported by the runtime witness `test/Unit/AllocatorSoundnessTest.lean` |
+| `CerbTags.lean` | Mutable tag definitions state (struct/union defs) |
+| `CerbDebug.lean` | Debug level and output functions |
+| `CerbDecode.lean` | Integer/character constant decoding. Arc-14 F2: decode.ml's exhaustive fail-CLOSED table with C11 cites; `\?` -> 63 and the hex `escaped_char` are BOTH ENGINES since 2026-11-07 (the fork's decode.ml mirrors them — trays 10/11 fixed in the fork, contract D18; the ISO-fix register rows R1/R2 are RETIRED, their markers kept as historical notes) |
+| `CerbGlobal.lean` | The DEFAULT configuration as plain `def`s (execution mode `none`, every flag `false`), each with a `rfl` lemma — the values the oracle driver holds in matched mode, cited line by line; no process state since 2026-09-05 (`docs/2026-09-05_cerbglobal-defs-record.md`). The SWITCH SET is the instance-implicit parameter `class Switches` (PNVI arc S1, 2026-10-05, `docs/2026-10-05_pnvi-s1-switch-parameter-record.md`): `has_switch`/`is_PNVI`/`has_strict_pointer_arith` read `Switches.switches`, every reader binds `[CerbGlobal.Switches]` (lem instance reader, `frontend/model/lean_switches.lem`), `defaultSwitches = []` is the value `Main.lean` supplies by default (`[.PNVI .AE_UDI]` under `--switches=PNVI_ae_udi`, PNVI arc S4), NO instance is declared in this repository (speedbump: `scripts/check_no_fuel_numerals.sh` rule W1, not adversarially robust; Main's local instance wins); `@has_switch ⟨[]⟩ sw = false` by `rfl` (`has_switch_*_default`); `is_CHERI` is a build constant `false`; `CerbSwitch` = the lem subset + the four H2 switches + `PNVI (v : PNVIVariant)` |
+| `CerbFloat.lean` | IEEE 754 float operations; lawful total Ord Float (NaN reflexive, arc-14 F4) |
+| `CerbUtils.lean` | Timing/logging VALUE IDENTITIES (plain `def`s since seam-hygiene H3, 2026-09-19; no opaque, no `IO.Ref`), GCC builtins on Z/two's-complement semantics mirroring ocaml_gcc_builtins.ml per-line (arc-14 F2: ffs(-1)=1, ctz(0)/bswap asserts panic) |
+| `CerbPP.lean` | Pretty-printer placeholders |
+| `CerbFS.lean` | Filesystem seam: every operation REFUSES since contract D2 (2026-09-28); keeps the types and the initial state |
+| `CerbConcurrency.lean` | Concurrency stubs |
+| `CerbCtypeInstances.lean` | BEq (annotation-insensitive ctypeEqual) + lawful derived Ord for mutual ctype types (arc-14 F4; the old unlawful eq-else-lt order is gone) |
+| `CerbCabsInstances.lean` | BEq for Cabs enum types |
+| `CabsImport.lean` | JSON → Cabs AST deserializer |
+| `CoreParser.lean` | Core text parser (Parsec). Arc-14 F3: pre-parse symbol-hash collision TRIPWIRE (String.hash is MurmurHash64A(11) — collisions constructible; parseFile fail-stops, tests/immaculate/g6 pins it) |
+| `CerbND.lean` | Exhaustive ND runner (+ runND1 single-trace, arc-5 `--first`); fuel-TOTALIZED in arc-7 S2 (runNDFuel + wrappers at the ambient `[LemFuel]` fuel since the fuel-parameter arc; the distinguished kill at exhaustion) — no `partial` allowed (totality gate scans it); the FUEL contract: runner leaves + fuel-parametricity pins |
+| `CerbCall.lean` | The `--call <f> [--call-args <ints>]` entry (`CerbCall.driveCall`): `drive` with the startup symbol resolved by name + the elaborated-call-site caller protocol for the parameters. Port-side harness entry (the OCaml driver has no such mode; test_verify.sh checks it against an oracle-run wrapper TU). Relocated 2026-09-02 from the removed `relsemcore/` |
+| `CerbFunMapInstances.lean` | Arc-7 S2: real SetType instance for generic_fun_map_decl (evicts the lem backend's sorried fallback from initial_driver_state's cone) |
+| `CerbStepInstances.lean` | OCaml-poly-eq-parity instances for core_step2 (arc 4) |
+| `CerbLocation.lean` | Source location type; structural lawful Ord (arc-14 F4; was repr-string compare). Since 2026-10-16 (cerberus-caesium filing 2) `Pos` carries the lexing position `lexingFile`/`lexingLine` (the preprocessed file and line, `Cerb_position.to_file_lexing`) beside the source triple `file`/`line`/`col`; printers and orders read the source triple only; the derived `BEq` over all five fields is the OCaml structural-equality mirror (header of `Pos`) |
+| `CerberusFresh.lean` | FRONTEND digest reads, installation and MD5 conversion; runtime minting receives `core_run_state.sym_digest` as data (D-S, 2026-09-22) |
+| `Ctype_lemMeasureProofs.lean`, `Core_lemMeasureProofs.lean`, `Defacto_memory_aux_lemMeasureProofs.lean`, `Utils_…`, `Core_run_aux_…`, `Core_reduction_…`, `Defacto_memory_…`, `Core_aux_…`, `Core_eval_lemMeasureProofs.lean`, `AilTypesAux_…`, `Formatted_…`, `Monadic_parsing_lemMeasureProofs.lean` (the two parser workers under `CerbParserProgress.Consumes`), `Driver_lemMeasureProofs.lean` | The `fuel_measure` sufficiency proofs the generated `*_auxiliary.lean` obligation shells import (fuel-parameter arc C1/C2; one module per lem module with measured functions — the build fails without them, by design; 38 generated obligations). Template: the C2 record §4 / `Core_run_aux_lemMeasureProofs.lean` (strong induction on the derived size, `key` + `size_lt`, `split` for multi-discriminant matches, `to_congr` for list traversals); kernel-only tactics, no option bumps |
+| `CerbParserProgress.lean` | Props-only seam for the printf parser combinators (parser-progress-measure slice, 2026-09-15): `Consumes p` (every result strictly shortens the input) and `NonExpanding p`, the hypothesis of the MEASURED `many_run`/`many1_run` (`monadic_parsing.lem`, `2 * List.length cs + 2` / `+ 1`); closure lemmas over every combinator and the four printf call-site theorems (`callSites_consume`). Imported by `Monadic_parsing_lemMeasureProofs`, not by `extra_import` (it states Props over `Monadic_parsing.parserM`, so the generated module cannot import it) |
+| `CerbCoreShape.lean` | SHAPE predicates on Core terms (`IsValuePexpr`, `IsPureExpr`, `AllPureExprs`): the hypothesis vocabulary of the measured-under-hypothesis `hack`/`to_pure`/`to_pures` (fuel-pending close-out 2026-09-08); the invariant they rest on — `prepare_exit` (driver.lem:1309-1316), the only exit of `driver2` — is cited in its header and in `scripts/fuel_hypotheses.txt` |
+| `CerbCoreMeasure.lean` | The executable fuel MEASURE of the `get_ctx`/`get_ctx_unseq_aux` context-search block (`getCtxBound`: the block's call DEPTH, a structural definition over the Core AST — one unit per worker frame, the maximum over the possible children; fuel-measure-cost arc, landed 2026-09-08) with its `getCtxNext` specification and the `getCtxBound_pos`/`getCtxBound_child_lt` lemmas; imported by the generated `Core_reduction` via `declare {lean} extra_import` — the qualified-helper form lem's FM-free measure validator accepts (no macro, no `WellFounded.fix`) |
+| `CerbMeasureLemmas.lean` | The shared toolbox of those proofs: membership-relative congruences, the derived list helpers' member bounds, positivity, `unatomic_size_le`, the `size_lt` discharger and the bounded `to_congr` descent (C2) |
+| `CerbMem_lemMeasureProofs.lean` | The hand-written MEASURED seams' sufficiency theorems: `CerbMem.typeofMval/unqualifyAndUnatomic/memValueToBytes_measure_sufficient` and the seven layout/reconstruct obligations under `CerbTagsWf.Acyclic`/`AcyclicPair` (the `CerbMem.*` rows of `scripts/fuel_hypotheses.txt`; PNVI arc S2 added `reconstructValueAbst`, the full reconstruction, whose second projection at the default set is `reconstructValue`), same shape and namespace rule as the generated ones — the fuel-forms gate classifies them by the same rule. A Lake root NOTHING imports: built by `build_lean` (every root, 2026-09-20) and by the fuel-forms gate itself (H1, every carrier it imports) — it did not compile from seam-hygiene H1 to 2026-09-20 while its stale `.olean` was imported (hotfix `fix/fuel-forms-carriers`, `docs/2026-09-20_fuel-forms-carriers-hotfix-record.md`). The reconstruct proof needs no equation about the opaque failure leaves: `reconstructValueAbst_lemFuel`'s struct/union arms guard the tag lookup / select the union member BEFORE recursing (option (d)), so every leaf is a whole, fuel-independent result |
+| `Main.lean` | Driver: self-test, parse, desugar pipeline; `--runtime DIR` / `CERB_INSTALL_PREFIX` (the oracle's runtime arms, `resolveRuntime`; refuses without one — bug hunt BUG-2, 2026-09-29) and the import-time library-location refusal (`refuseLibraryLocations`, BUG-3); `--fuel N` (the ONE fuel numeral: `defaultFuel` = 10^8, the harness default; the run's `[LemFuel]` instance is built once here); `--impl-profile NAME` / `--impl-profile=NAME` (contract D20, 2026-11-22): `default` or `hafnium`, the run's `[CerberusImpl.ImplProfile]` instance, supplied beside the fuel's and the switch set's (a property of the run: the Cabs JSON does not record a profile and its import does not read one); an unknown or repeated value is refused (exit 2); Core quotation is refused under a non-default profile; `--switches V` / `--switches=V` parsed as the oracle's cmdliner does (PNVI arc S1); since S4 (2026-10-07) `PNVI_ae_udi` alone is ACCEPTED (`judgeSwitches`; the run's `[CerbGlobal.Switches]` instance `⟨switchSet⟩` — `⟨defaultSwitches⟩` without the option — is supplied beside the fuel's) and every other value refused with a per-element reason (R-PNVI-11 override, R-PNVI-12 unknown name); `--address-space-top N` (the ONE address-space numeral: `defaultAddressSpaceTop` = upstream's `0xFFFFFFFFFFFF`, passed to BOTH entry points — `desugar` for the const-expr mini-run and `initial_driver_state` for the run; address-space-bound slice 2026-09-17); D-S (2026-09-22): `runDigest tunits` (pure selector in `CabsImport.lean`) chooses the last program TU, empty without one; forwarded to `initial_driver_state sup top digest file fs` (digest is the second explicit parameter after top) and `CerbCall.driveCall` |
+
+### Lem modifications (in `frontend/model/`)
+
+`declare lean target_rep` maps Lem functions to hand-written Lean:
+- `ctype_aux.lem` — tagDefs → CerbTags
+- `debug.lem` — get_level, print_debug → CerbDebug
+- `decode.lem` — decode_integer_constant → CerbDecode
+- `implementation.lem` — alignof_ty → CerberusImpl
+- `std.lem` — module renamed to Lem_Std (avoids shadowing Lean's Std)
+- `lean_switches.lem` — LEAN-ONLY (Makefile `LEM_SRC_LEAN_ONLY`): the switch set's instance reader `switches` + its consumers (`Global.has_switch`, … and 17 `Mem.*` vals) — PNVI arc S1
+- `lean_impl_profile.lem` — LEAN-ONLY: the implementation profile's instance reader `char_is_signed` + its 13 consumers (`Implementation.is_signed_ity_norm`/`precision_ity_norm`, `Decode.decode_character_constant`, ten `Mem.*` vals) — contract D20
+- `ail/ailTypesAux.lem` — `is_signed_ity` is a function of its argument (upstream's point-free binding read the profile at module initialisation; fork-ahead fix, tray 100, contract D20)
+
+`declare {lean} skip_instances type T` suppresses auto-generated instances:
+- `ctype.lem` — ctype_/ctype (we provide real BEq/Ord)
+
+### Scripts
+
+| Script | Purpose |
+|--------|---------|
+| `scripts/LADDER.md` | THE test-ladder tiers (arc-6 S4): Tier A fast ladder (every commit), Tier B slow ladder (slice boundaries / close-out / pre-merge), Tier C reporting instruments — the normative meaning of "fast/slow ladder" |
+| `scripts/common.sh` | Shared helpers (build, run, paths). `build_lean` builds EVERY Lake root + the exe (`lake build CerberusLean cerberus-lean`, hotfix 2026-09-20 on the audit's M2: a root nothing imports — `CerbMem_lemMeasureProofs`, `CerbConcurrency`, `Cabs_to_ail_auxiliary` — can no longer go stale unnoticed; measured 17 s first pass / 1 s steady on a warm tree; its content is pinned in `scripts/fork_drift_manifest.txt`, re-pinned with a dated NOTE) |
+| `scripts/test_parse.sh` | Test Cabs JSON bridge on .c files |
+| `scripts/test_core.sh` | Test Core text parser: C → --pp core → Lean |
+| `scripts/test_multi_tu.sh` | Differential multi-TU linking: N .c linked by OCaml vs N cabs-jsons linked by the Lean pipeline (corpus: `tests/multi_tu/<name>/`) |
+| `scripts/libxml2_prep.sh` | libxml2 no-autogen prep: pinned config (`tests/libxml2/config/`) + cerberus args per TU (probe recipe) |
+| `scripts/test_libxml2.sh` | Arc-5 exit-criterion differential: chvalid.c + generated boundary battery (4 slices since arc-6 S3, 1354 points), single-trace both sides (~8 min; Tier B slow ladder since arc-6 S4 — see scripts/LADDER.md) |
+| `scripts/test_libxml2_uri.sh` | Arc-6 GATE (S4, charter success condition 1): 5-TU xmlParseURISafe corpus grown to 16 URIs (RFC 3986 edge classes), 4 lanes (oracle+libc / ocaml-nolibc / lean-nolibc mirrored-failure pair / lean+libc) — pinned per-lane expectations + baseline drift check, fail-closed; 16/16 byte-identical lean+libc vs oracle. Oracle invocations use the ordinary single-supply renumbering path; arc-13 removed the arc-12 grandfather exception. |
+| `scripts/libc_prep.sh` | Arc-6 S1: pins + drift-checks `tests/libc/libc.core` (the oracle's unlinked libc Core text dump) and emits the 12 libc metadata TU cabs-jsons (see Main.loadLibc). Arc-13 audit fix (B-F5): the pin's identity is a CONTENT HASH (`tests/libc/libc.core.sha256`, sha256 of the dump text, rebuild-independent — a clean rebuild re-deriving the same text passes with no re-pin); the libc.co version header is logged informationally only (the old `.co.version` version-string pin is deleted) |
+| `scripts/test_libc_exec.sh` | Arc-6 S1 differential: C-with-libc programs, both sides load the C library (`tests/libc_exec/`, own baseline; NEW mode — standing corpora stay --nolibc) |
+| `scripts/test_cabs_json.sh` | Quick smoke test |
+| `scripts/test_bytes.sh` | Arc-10 S3b: oracle-INDEPENDENT tests/bytes micro-lane — 9 exec files byte-compared to the committed upstream `.exec` records (+ 5 front-end-reject negative pins), fail-closed both directions (Tier A row 4c). tests/float is a plain test_exec.sh lane (`--check-baseline=scripts/exec_float_baseline.txt tests/float`, Tier A row 4b) |
+| `scripts/test_csmith_corpus.sh` | Arc-10 S4: deterministic differential lane over the 1669 in-tree upstream csmith programs (prefixed materialization + kit header shim); committed classified baseline `scripts/exec_csmith_corpus_baseline.txt` (re-baselined arc-12 S1 under the F-D floor: 516 CERB_FLOOR rows, movement table in its header); `--shard K/M` with shard-aware fail-closed baseline check (S5) |
+| (oracle single-supply backstop, arc-13; was the arc-12 F-D floor) | `util/cerb_fresh.ml` `check_ail_window` + `backend/common/ail_sym_hwm.ml` (digest-filtered (min,max) symbol-window fold) + `pipeline.ml` hook: under the arc-13 renumbering (single ambient supply, D1 scheme R-B) every current-digest Ail symbol must lie in `[tu_first..last_issued]` — a re-threaded supply (the F-D-era scheme) REFUSES loudly (`CERB_FRESH_FLOOR_VIOLATION`, exit 70; plant-tested). test_exec.sh classifies `CERB_FLOOR` (SUMMARY `cerb_floor=`); the backstop NEVER fires on healthy inputs — any floor row is a finding. The arc-12 warn-only modes + grandfather flag are DELETED. Records: `docs/2026-08-22_arc13-s0-scheme-decision.md`, `docs/2026-08-22_arc13-s1-build.md` |
+| `scripts/fuzz_csmith.sh` | csmith differential fuzz kit (arc-4 port; csmith + creduce are INSTALLED locally — gen + test_exec.sh differential; deterministic via `CSMITH_SEED_START`). Arc-10 S4 lane portfolio + seed ranges: `docs/2026-08-20_arc10-s4-csmith-campaign.md` |
+| `scripts/csmith_explore.sh` | Arc-10 S4: oracle-only per-configuration yield + construct-coverage measurement (the exploration instrument behind the lane portfolio) |
+| `scripts/creduce` + `scripts/creduce_interestingness.sh` | Arc-10 S0: creduce wrapper (project-local clang-format shim, no global state) + generic interestingness predicate against test_exec.sh single-file mode (`INTERESTING_REGEX` + `EXPECT_SNIPPET` signature pinning) |
+| `scripts/test_memory_access.py` | Tier A row 13 (SC WP0): builds `backend/memory_probe/access_probe.exe` (OCaml) and `memory-access-test` (Lean) and compares both engines' load/store receipts against independently specified expectations — whole stdout, empty stderr, exit 0; 8 instrument controls; `--cost` is measurement, not a threshold; executables run under the per-test cap |
+| `scripts/test_pnvi.sh` | Tier A row 14 (PNVI arc S4, 2026-10-07), a TRUST SURFACE: both engines at `--switches=PNVI_ae_udi` over the 44 PNVI litmus files (exhaustive), `tests/pnvi_refusals` (refusal witnesses), the census pKVM drivers (`page_alloc_census.c` derived at run time) and `tests/minimal`; classifier `scripts/pnvi_lane.py`, baseline `tests/pnvi_lane/baseline.txt` (registered `REFUSAL R-PNVI-nn` rows are never agreement); `--selftest` plants |
+| `scripts/test_verify.sh` | Fixture differentials (tests/verify + corpus/): main-mode vs oracle, plus call-point rows checked three ways — Lean `--call` == an oracle-run wrapper TU == the recorded pin (117 checks, fail-closed, vacuous-pass guarded) |
+| `scripts/check_attribute_carriage.sh`, `scripts/check_discarded_constructs.sh` | Row-1 witnesses of contract D19 (2026-11-20): every attribute the grammar accepts is carried to Ail (`tests/attribute_carriage/`, a 147-program core; `--full` is Tier B row 17; `cerb::with_address` is refused by the parser at every placement), and the constructs outside attributes that were dropped or misapplied are fixed, diagnosed or refused (`tests/discarded_constructs/`; the same script pins the force-included `runtime/libc/include/builtins.h` at 14 lines). One engine, `scripts/discard_witness.py`: both engines once per program, pinned lines, whole refusal texts, pristine's answers the negative control, plants on the recorded observations |
+| `scripts/check_impl_profile.sh` | Row-1 witness of contract D20 (2026-11-22), the ONLY validation of the `hafnium` implementation profile; NEEDS gcc on the path (fails without it): 28 programs of `tests/impl_profile/` under both profiles, both engines exhaustive, 26 equal to gcc under `-funsigned-char` / `-fsigned-char`; a bit-field refusal row; a preprocessor row with gcc's line as the declared difference (the preprocessor does not read the profile); every Cabs export identical under the two profiles; the selector's refusals, the VIP driver's included; pristine's recorded answers under HafniumImpl the negative control (`--pristine-live PREFIX` re-derives them); the libc sources' Core identical under both profiles; engine `scripts/impl_profile_witness.py`; plants on the recorded observations and one that runs both engines with the selector omitted |
+| `scripts/capped` | Arc-7 D7: run any command under a cgroup memory cap (default 64G; `CERB_MEM_MAX` override, `=none` loud opt-out). ALL lake/lean invocations go through it |
+
+## Lem backend mechanisms
+
+**Key Lem mechanisms:**
+- `declare lean target_rep function f = \`Lean.Name\`` — maps lem function to Lean
+- `declare lean target_rep type t = \`Lean.Type\`` — maps lem type to Lean
+- `declare {lean} skip_instances type t` — suppresses all instance generation
+- `declare {lean} rename module = Name` — renames generated module
+- Inhabited handling (arc-8; replaces the old DAEMON axiom fallback,
+  which was logically inconsistent and is DELETED —
+  docs/2026-08-20_daemon-inconsistent-axiom.md, RESOLVED): the
+  backend DERIVES real bounded `Inhabited` instances per generated type
+  (tier-1 nullary + tier-2 per-constructor with `[Inhabited tv]` bounds,
+  in the type's own module); every failure site emits axiom-free
+  `LemLib.failwithI`, with `[Inhabited tv]` binders threaded through
+  exactly the enclosing defs whose failure sites sit at bare-tyvar
+  positions (fixpoint over the call graph, zero call-site edits).
+  FAIL-CLOSED: an underivable type gets NO instance — a demand on it is
+  a generation-time error naming the type and the escape hatches
+  (`skip_instances` + hand target_rep). Reintroduction is
+  build-fatal: check_theorem_axioms.sh treats DAEMON as
+  unconditionally fatal in every probed cone
+- Comparison instances (arc-10 S2b; replaces the old sorried
+  BEq/Ord/SetType/Eq0/Ord0 bodies — 1134 sites → 0): the backend
+  derives total structural `beq_derived`/`compare_derived` per mutual
+  block with OCaml-polymorphic-compare parity (nullary constructors
+  rank below non-nullary, declaration order within each class, fields
+  left-to-right; `[BEq tv]`/`[Ord tv]` bounds for parameterized
+  types). FAIL-CLOSED: fn-carrying types (OCaml compare raises there
+  too) and their referencers get loud greppable failwithI residual
+  bodies, never sorry; surviving set comprehensions are a loud
+  generation-time error
+- The instance-priority LATTICE (arc-14 B4; be:G1/sem:S2): every
+  generated/library instance priority is assigned from ONE normative
+  table (lem-lean doc/notes/2026-08-22_arc14-instance-priority-
+  lattice.md): model/override + derived BEq/Ord at default (1000), the
+  auto SetType/Eq0/Ord0 trio at 500, generic defaults/residuals at low
+  (100), open-tyvar fallbacks at 50 — so a model's own instance beats
+  the auto trio BY PRIORITY, not declaration order. Build-failing
+  resolution probe: lem tests/comprehensive test_instance_priority.lem
+  + TestInstancePriorityCheck.lean (plant-tested)
+- Set-layer comparator coherence (arc-14 B3; be:G4): lem sets are
+  comparator-keyed end to end (Pset parity) — `insert` and set literals
+  splice `setElemCompare` (`setAddBy`/`setFromListBy`); the BEq-keyed
+  setAdd/setFromList are DELETED from LemLib (a finer BEq can no longer
+  smuggle comparator-EQ duplicates past setEqualBy). Adversarial-key
+  property tests: LemLibTest SetCoherence section
+- Most Lean rendering state lives in `lean_backend.ml`'s `St`, with
+  [file]/[invocation]/[render] lifetimes and reset hooks. Backend-common
+  callbacks and the current-module side channel remain outside `St`;
+  effect-free emission is still open. See Lem's pinned DESIGN.md.
+
+**Bug reports:** lem-backend defects are reported in the lem-lean repo
+(`doc/lean-backend/` dated records + `tests/comprehensive` reproducers);
+upstream-facing reports (Cerberus, Lem, Lean) go in
+`lean_frontend/docs/upstream-tray/<target>/` (see its INDEX.md).
+
+## Status
+
+The current public scope is [SUPPORTED.md](SUPPORTED.md). Dated records
+retain historical measurements; they are not all current status. Start points:
+
+- Latest records: `docs/` (dated `*-record.md` / `*-results.md`). The
+  arc index that lived in the container's `ROADMAP.md` is archived at
+  `docs/2026-08-31_container-roadmap-archive.md`; forward options:
+  `docs/2026-08-31_semantics-forward-assessment.md`; backlog: [TODO.md](TODO.md).
+- Trust story + gate list: [VALIDATION.md](VALIDATION.md).
+- Declared boundary: concurrency stubs (the failed SC prototype and feature
+  branches are parked; no announcement dependency), CerbFS (refused in full since 2026-09-28) and the CerbDebug no-op stubs,
+  and the axiom story is CLOSED (effect-retirement arc, 2026-09-01):
+  ZERO axiom declarations anywhere — this repo AND LemLib,
+  recursively, gate-enforced; `runEffectful` is deleted and lem
+  refuses `declare {lean} effectful`; the surviving runtime seams are
+  kernel-checked opaques machine-pinned in
+  `scripts/unsafebaseio_allowlist.txt` (Q4 classes). Bare `sorry`
+  target representations are refused by the backend, including in the
+  excluded CMM surface, which uses unsupported markers.
+- Known operational residuals (step-runner stack ceiling, oracle
+  allocation-census gap, etc.): registered with prices in the latest
+  results docs.
