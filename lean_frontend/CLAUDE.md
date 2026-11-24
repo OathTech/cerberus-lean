@@ -224,21 +224,41 @@ them; they are now provisioned per checkout.
 | `gcc` on the path | A1 (implementation-profile lane), B7 (gcc second oracle) | system | not pinned; rows recorded against gcc's output can move with its version |
 | `upstream` git ref + pristine generated tree | A1 (fork drift) | [VALIDATION: provisioning](VALIDATION.md#provisioning-the-fork-drift-oracle); export `CERB_UPSTREAM_TREE` | `merge-base=` in `scripts/fork_drift_manifest.txt` |
 | Independent upstream oracle | B10, B12 | `scripts/ensure_independent_oracle.py --lem-repo … --cerberus-repo …` builds `.validation-foundations/independent-oracle-v2` | `CERBERUS_REV`, `LEM_REV` in `scripts/build_independent_oracle.py` (upstream Lem, rems-project/lem, not the fork) |
-| CN test corpus | A11 | `deps/cn` (rems-project/cn), or `CN_CORPUS_DIR` | `d1aab80eb`; its `tests/cn/**/*.c` equal `tests/cn_coverage/manifest.txt` |
-| libxml2 | A10, B1, B12 | `deps/libxml2` (GNOME/libxml2), or `LIBXML2_DIR` | `c63248941` (a master commit, not a release tag); `scripts/libxml2_prep.sh --check` verifies the pinned header |
-| pKVM buddy-allocator case study | A14 | `deps/CN-pKVM-buddy-allocator-case-study` (rems-project), or `PKVM_CASE_STUDY` | `460fb6b6e` |
+| CN test corpus | A11 | `deps/cn` (rems-project/cn), or `CN_CORPUS_DIR` | the `cn` pin in `scripts/external_pins.txt` |
+| libxml2 | A10, B1, B12 | `deps/libxml2` (GNOME/libxml2), or `LIBXML2_DIR` | the `libxml2` pin in `scripts/external_pins.txt` (a master commit, not a release tag) |
+| pKVM buddy-allocator case study | A14 | `deps/CN-pKVM-buddy-allocator-case-study` (rems-project), or `PKVM_CASE_STUDY` | the `pkvm` pin in `scripts/external_pins.txt` |
 | Un-forked upstream Cerberus, built | non-gating probes (`tests/noodle-probes`, `tests/z2-probes`) | `deps/cerberus-upstream`, or `CERB_UPSTREAM` | the fork's merge-base |
 
 `deps/` is a directory in the repository root or an ancestor of it; the
-lanes walk upwards to find it. It is not tracked. The corpus revisions above
-are the workspace's checkouts as archived on 2026-11-23; when one moves,
-change it here in the same commit as the baseline it moves with.
+lanes walk upwards to find it. It is not tracked. The three corpora are
+pinned by commit in `scripts/external_pins.txt`, and each lane checks its
+checkout with `scripts/check_external_pin.sh` before reading it (its own git
+checkout, HEAD at the pin, no modified tracked file; fail-closed). A pin
+moves in the same commit as the baseline it moves with.
 
 The runner puts each lane in its own cgroup, so it needs a writable,
 delegated cgroup v2 parent with the memory controller; without one it fails
 before dispatch. Gate scripts must not depend on the caller's locale or on
 which coreutils implementation is installed: comparisons that feed `comm`,
 `uniq` or `diff` sort under `LC_ALL=C`.
+
+**A gate pins what the repository determines, never what the machine does.**
+A baseline, ledger or register may record a value only if it follows from
+the repository's content and the pinned inputs above. A value produced by
+the host (an address, a host tool's message text or default, a path, a
+timing) is printed for the reader, not compared; if it must be compared,
+the tool and its options are stated in the gate. Assumptions the ladder
+does make about the machine, on purpose:
+
+- x86-64 Linux. A few rows record x86-64 behaviour (a NaN's sign bit, a
+  segmentation fault's exit status, a signed-`char` host preprocessor).
+- The host C preprocessor (`cc -E`) feeds every oracle run and is not
+  versioned; the preprocessor is the host's by contract D20.
+- gcc, run with a stated standard (`$GCC_BIN`, else the first `gcc` on the
+  path).
+- A delegated cgroup v2 parent, enough memory for the capped lanes (one
+  elaboration peaks near 15 GB), and a machine fast enough that rows near
+  their wall-clock limits do not time out.
 
 **A new worktree is not ready to gate until it is primed.** It needs its own
 `lean_frontend/.lake` (copy the primary checkout's; a fresh clone of LemLib
@@ -248,7 +268,12 @@ copied `generated/` trees with their `lem_sync.sha256` stamps, the
 `driver_fresh.*.sha256` stamps if binaries were copied, and its own
 independent oracle (`scripts/ensure_independent_oracle.py`). A stale or
 missing stamp fails closed; do not copy a stamp over a tree it does not
-describe.
+describe. A worktree placed inside the repository directory needs
+`--root .` on every `dune` command of the build recipe: without it dune
+takes the enclosing checkout as its root and fails with "Don't know how to
+build" (the lane scripts pass `--root` themselves). After priming, read the
+build log for errors and confirm the exit status of every step; a quiet
+tail is not a successful build.
 
 ## Architecture
 
