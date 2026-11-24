@@ -411,6 +411,10 @@ def corpus(cn_root, stage):
                         if (parent / 'deps/cn/tests/cn').is_dir()), None)
     if cn_root is None:
         raise ValueError('CN corpus missing; provide --cn-root')
+    pin = subprocess.run([str(ROOT / 'scripts/check_external_pin.sh'), 'cn', str(cn_root)],
+                         capture_output=True, text=True)
+    if pin.returncode != 0:
+        raise ValueError('CN corpus is not at its pinned revision: ' + (pin.stderr or pin.stdout).strip())
     rows = (ROOT / 'tests/cn_coverage/manifest.txt').read_text().splitlines()
     for row in rows:
         if not row or row.startswith('#'):

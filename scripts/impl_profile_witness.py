@@ -70,6 +70,8 @@ LEAN = os.path.join(ROOT, "lean_frontend/.lake/build/bin/cerberus-lean")
 CORPUS = os.path.join(ROOT, "tests/impl_profile")
 PROFILES = ("hafnium", "default")
 GCC_FLAG = {"hafnium": "-funsigned-char", "default": "-fsigned-char"}
+# $GCC_BIN if set, else the first gcc on the path: the one rule of every lane that runs gcc.
+GCC = os.environ.get("GCC_BIN") or shutil.which("gcc")
 VIP = os.path.join(ROOT, "_build/default/backend/driver/main_vip.exe")
 LIBC_TUS = "ctype stdio stdlib string time utime unistd stat uio internal vfscanf signal".split()
 ENV = dict(os.environ, CERB_INSTALL_PREFIX=PREFIX, LEAN_ABORT_ON_PANIC="1")
@@ -141,7 +143,7 @@ def pin(row, profile, engine):
 
 def gcc_line(scratch, name, profile):
     exe = os.path.join(scratch, f"{name}.{profile}.gcc")
-    c = run(["gcc", "-std=c11", "-w", "-O0", GCC_FLAG[profile], "-o", exe, name + ".c"], scratch)
+    c = run([GCC, "-std=c11", "-w", "-O0", GCC_FLAG[profile], "-o", exe, name + ".c"], scratch)
     if c.returncode != 0:
         return "GCC-COMPILE-FAILED: " + (c.stderr.splitlines() or [""])[0]
     r = subprocess.run([exe], cwd=scratch, capture_output=True, timeout=60)
@@ -342,8 +344,8 @@ def main():
     for tool in (ORACLE, LEAN, VIP):
         if not os.path.exists(tool):
             die(f"missing {tool} (build both engines and cerberus.install first)")
-    if not shutil.which("gcc"):
-        die("gcc not found: the pinned lines are checked against gcc -funsigned-char / -fsigned-char on every run")
+    if not GCC:
+        die("gcc not found (GCC_BIN, else gcc on the path): the pinned lines are checked against gcc -funsigned-char / -fsigned-char on every run")
     rows = read_rows() if not derive else [
         dict(name=f[:-2], mode="libc" if f.startswith("libc_") else "nolibc", kind="gcc", a="", b="")
         for f in sorted(os.listdir(CORPUS)) if f.endswith(".c")]

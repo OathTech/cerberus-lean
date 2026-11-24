@@ -288,6 +288,7 @@ if [[ $pkvm_selected == 1 ]]; then
     while [[ "$d" != / ]]; do [[ -d "$d/deps" ]] && { PROJ_DEPS="$d/deps"; break; }; d="$(dirname "$d")"; done
     PKVM="${PKVM_CASE_STUDY:-$PROJ_DEPS/CN-pKVM-buddy-allocator-case-study}"
     [[ -f "$PKVM/page_alloc.c" ]] || die "pKVM case study not found (PKVM_CASE_STUDY or deps/CN-pKVM-buddy-allocator-case-study): $PKVM"
+    "$SCRIPT_DIR/check_external_pin.sh" pkvm "$PKVM" || die "the pKVM case study is not at its pinned revision (scripts/external_pins.txt)"
     gen=$(python3 tests/census/pkvm/derive_pool_init.py "$PKVM" "$RUN/pkvm-derived") || die "derive_pool_init.py failed"
     [[ "$gen" == "$RUN/pkvm-derived/page_alloc_census.c" && -s "$gen" ]] || die "derive_pool_init.py printed '$gen'"
     PFL=(--nostdinc -I "$PKVM" -I "$PROJECT_ROOT/tests/census/pkvm")

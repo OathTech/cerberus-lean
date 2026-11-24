@@ -70,6 +70,10 @@ find_libxml2() {
 
 LIBXML2="$(find_libxml2)"
 [[ -f "$LIBXML2/chvalid.c" ]] || die "$LIBXML2 does not look like a libxml2 tree (no chvalid.c)"
+# The revision the lanes' baselines were taken against (scripts/external_pins.txt). The message
+# goes to stderr: this script's stdout is the argument list its callers consume.
+"$(dirname "${BASH_SOURCE[0]}")/check_external_pin.sh" libxml2 "$LIBXML2" >&2 \
+    || die "libxml2 is not at its pinned revision (scripts/external_pins.txt)"
 
 # --- the pinned-config determinism check (always; fail-closed) --------------
 [[ -f "$CONFIG_DIR/config.h" ]] || die "pinned config missing: $CONFIG_DIR/config.h"

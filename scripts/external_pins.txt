@@ -1,0 +1,9 @@
+# External corpora the test ladder reads from outside this repository, pinned by commit.
+# Format: <name> <full 40-hex commit> <upstream URL>
+# Checked fail-closed by scripts/check_external_pin.sh, which the lanes call on the checkout
+# they are about to read: HEAD must be this commit and no tracked file of the checkout may be
+# modified. A pin moves in the same commit as the baseline it moves with.
+# The three revisions are the first development machine's checkouts as archived on 2026-11-23.
+cn d1aab80eb2e574e8dd95b9432610c41ffc9c1226 https://github.com/rems-project/cn
+libxml2 c63248941708bc1d2e3a4292954593312212f6ca https://gitlab.gnome.org/GNOME/libxml2
+pkvm 460fb6b6ebe3ecc3997659ef5637e49ab88104e2 https://github.com/rems-project/CN-pKVM-buddy-allocator-case-study

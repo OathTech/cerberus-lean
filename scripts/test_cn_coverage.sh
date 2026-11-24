@@ -128,6 +128,9 @@ if [[ -z "$CORPUS" || ! -d "$CORPUS" ]]; then
     exit 1
 fi
 CORPUS=$(cd "$CORPUS" && pwd)
+# The revision the baseline was taken against (scripts/external_pins.txt): the manifest below
+# checks the corpus's file NAMES only.
+"$SCRIPT_DIR/check_external_pin.sh" cn "$CORPUS" || { echo "Error: the CN corpus is not at its pinned revision" >&2; exit 1; }
 if [[ ! -f "$MANIFEST" ]]; then
     echo "Error: manifest not found: $MANIFEST" >&2
     exit 1

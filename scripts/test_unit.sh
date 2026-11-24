@@ -420,6 +420,14 @@ if ! "$PIN_SITES_SH"; then
     exit 1
 fi
 
+# External-corpus pin checker (2026-11-24): the instrument the CN, libxml2 and pKVM lanes call
+# on their corpus checkout. Its plants run here; the corpora themselves are checked by the
+# lanes that read them, not by row 1.
+if ! "$(dirname "$PURITY_SH")/check_external_pin.sh" --selftest; then
+    echo "test_unit: external-pin checker SELFTEST FAILED"
+    exit 1
+fi
+
 # Fixture-freeze gate (2026-08-31 semantics-first split; the manifest is
 # scripts/fixture_corpus.sha256): the lean_frontend/corpus
 # differential-fixture set must match its pinned manifest exactly.

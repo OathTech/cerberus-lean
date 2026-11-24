@@ -13,7 +13,7 @@ s = Path(sys.argv[1]).read_text()
 print(s[s.index('gcc_run() {'):s.index('\nfile_num=0')])
 PYCODE
 source "$WORK/helper.sh"
-GCC_BIN=$(command -v gcc)
+GCC_BIN="${GCC_BIN:-$(command -v gcc)}"   # the lanes' one rule (test_gcc_oracle.sh)
 GCC_COMPILE_TIMEOUT=30
 GCC_RUN_TIMEOUT=5
 GCC_RUN_SERIAL=0

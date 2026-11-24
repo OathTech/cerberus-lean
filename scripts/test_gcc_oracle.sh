@@ -113,7 +113,7 @@
 # Environment:
 #   TIMEOUT_SECS       Lean-side + cabs-json timeout (default 30)
 #   GCC_RUN_TIMEOUT    native run timeout, seconds (default 5)
-#   GCC_BIN            compiler (default /usr/bin/gcc)
+#   GCC_BIN            compiler (default: the first gcc on the path); always run with -std=gnu17
 #   SKIP_BUILD=1       binaries must already exist (fail-closed)
 #
 # NOTE: no `set -e` — exit codes are data; every failure path handled
@@ -127,8 +127,13 @@ usage() { sed -n '2,98p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'; exit 0; }
 command -v timeout &>/dev/null || { echo "Error: 'timeout' not found" >&2; exit 1; }
 command -v setarch &>/dev/null || { echo "Error: 'setarch' not found (needed for ASLR-off native runs)" >&2; exit 1; }
 setarch -R true 2>/dev/null || { echo "Error: 'setarch -R' not permitted here" >&2; exit 1; }
-GCC_BIN="${GCC_BIN:-/usr/bin/gcc}"
-[[ -x "$GCC_BIN" ]] || { echo "Error: gcc not found/executable at $GCC_BIN" >&2; exit 1; }
+# One rule in every lane that runs gcc (this one, test_gcc_capture.sh, the implementation-profile
+# witness): $GCC_BIN if set, else the first gcc on the path.
+GCC_BIN="${GCC_BIN:-$(command -v gcc || true)}"
+[[ -n "$GCC_BIN" && -x "$GCC_BIN" ]] || { echo "Error: gcc not found/executable (GCC_BIN='${GCC_BIN}', else gcc on the path)" >&2; exit 1; }
+# The language standard is stated, not left to the compiler's default (gnu17 through gcc 14,
+# gnu23 from gcc 15): gnu17 is what the baseline's rows were recorded under.
+GCC_STD=-std=gnu17
 
 DEFAULT_BASELINE="$SCRIPT_DIR/gcc_oracle_baseline.txt"
 TRIAGE_FILE="$SCRIPT_DIR/gcc_oracle_triage.txt"
@@ -504,7 +509,7 @@ while IFS=$'\t' read -r c_file mode key; do
 
     # ---- native side ------------------------------------------------------
     bin="$WORK/$stem.bin"
-    gcc_run "$c_file" "$bin" -O0 -w || { echo "HARNESS ERROR: native capture failed" >&2; exit 1; }
+    gcc_run "$c_file" "$bin" "$GCC_STD" -O0 -w || { echo "HARNESS ERROR: native capture failed" >&2; exit 1; }
     case "$G_STATUS" in
         compile) record "$base_c" SKIP_GCC_COMPILE - "($(head -1 "$WORK/gcc_err.txt" | cut -c1-80))"; continue ;;
         timeout) record "$base_c" SKIP_GCC_TIMEOUT - "(lean=$expect_list)"; continue ;;
@@ -565,7 +570,7 @@ while IFS=$'\t' read -r c_file mode key; do
         key_crc=$(printf '%s' "$base_c" | cksum)
         key_crc=${key_crc%% *}
         if [[ $O2_STRIDE -gt 0 && $((key_crc % O2_STRIDE)) -eq 0 ]]; then
-            gcc_run "$c_file" "$bin.o2" -O2 -fno-strict-aliasing -w || { echo "HARNESS ERROR: native O2 capture failed" >&2; exit 1; }
+            gcc_run "$c_file" "$bin.o2" "$GCC_STD" -O2 -fno-strict-aliasing -w || { echo "HARNESS ERROR: native O2 capture failed" >&2; exit 1; }
             case "$G_STATUS" in
                 compile) o2=O2_SKIP_COMPILE ;;
                 timeout) o2=O2_SKIP_TIMEOUT ;;
