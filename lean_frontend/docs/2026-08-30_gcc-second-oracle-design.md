@@ -325,10 +325,11 @@ not headers it includes (no current row includes a project header).
 Because the classes are no longer equally strong, a change of a row's
 triage class against the baseline is fatal in `--check-baseline`
 (re-labelling a FLOAT or UB row as ADDR would drop its gcc pin). The
-other classes keep both value pins. Open, not done here: keeping an
+other classes keep both value pins. Considered and declined: keeping an
 optional `gcc=` pin beside `src=` on rows whose native value is fixed by
-the ABI ([AGENT 2026-11-24], raised by the pre-merge review, with the
-user).
+the ABI (raised by the pre-merge review). The gain is marginal: such a
+pin re-checks the C library and the linker, not this project, and is
+again a value tied to a platform ([USER 2026-11-25] agreed).
 
 [USER 2026-11-24] agreed to the source-pin form; the implementation and
 this wording are [AGENT 2026-11-24], the wording revised after the

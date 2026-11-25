@@ -170,6 +170,7 @@ def artifacts(root=None):
     for executable in ('ocamlc', 'dune', 'gcc'):
         # gcc: the lanes' rule ($GCC_BIN, a path or a command name, else gcc on the path)
         binary = shutil.which((os.environ.get('GCC_BIN') or 'gcc') if executable == 'gcc' else executable)
+        binary = os.path.abspath(binary) if binary else binary
         records[executable] = {'present': bool(binary), 'path': binary}
         if binary:
             flag = '-version' if executable == 'ocamlc' else '--version'

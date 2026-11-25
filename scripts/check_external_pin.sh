@@ -25,7 +25,7 @@ PINS="$SCRIPT_DIR/external_pins.txt"
 fail() { echo "check_external_pin: FAIL — $*" >&2; exit 1; }
 
 check() {
-    local name="$1" dir="$2" rows pin head dirty own theirs hidden
+    local name="$1" dir="$2" rows pin head dirty own theirs hidden listed
     [[ -f "$PINS" ]] || fail "pins file $PINS missing"
     rows=$(awk -v n="$name" '!/^[[:space:]]*(#|$)/ && $1 == n' "$PINS")
     [[ -n "$rows" ]] || fail "no pin named '$name' in $PINS"
@@ -48,7 +48,11 @@ check() {
     [[ -z "$dirty" ]] || fail "$name: $dir has local modifications to tracked files at the pinned commit:
 $dirty"
     # assume-unchanged / skip-worktree files are hidden from `git status`: refuse them.
-    hidden=$(git -C "$dir" ls-files -v 2>&1 | grep -E '^([a-z]|S) ' || true)
+    # Listed from the TOP of the checkout, like the status check above (a lane may pass a
+    # subdirectory), and with git's own exit status checked before anything is filtered.
+    listed=$(git -C "$dir" ls-files -v --full-name -- ':/' 2>&1) \
+        || fail "$name: git ls-files failed in $dir: $listed"
+    hidden=$(grep -E '^([a-z]|S) ' <<<"$listed" || true)
     [[ -z "$hidden" ]] || fail "$name: $dir has tracked files flagged assume-unchanged or skip-worktree, which git status cannot vouch for:
 $hidden"
     echo "check_external_pin: OK — $name at $pin ($dir)"
@@ -89,9 +93,12 @@ selftest() {
     plant "S9 a tracked file modified at the pin" 1 "local modifications to tracked files" "t $c u"$'\n' t "$S/repo/sub"
     git -C "$S/repo" checkout -q -- a.c && git -C "$S/repo" update-index --assume-unchanged a.c
     plant "S11 a tracked file flagged assume-unchanged" 1 "assume-unchanged or skip-worktree" "t $c u"$'\n' t "$S/repo"
+    printf 'int x = 2;\n' > "$S/repo/a.c"
+    plant "S12 a flagged and modified file at the root, checked from a subdirectory" 1 "assume-unchanged or skip-worktree" "t $c u"$'\n' t "$S/repo/sub"
+    git -C "$S/repo" update-index --no-assume-unchanged a.c && git -C "$S/repo" checkout -q -- a.c && git -C "$S/repo" update-index --assume-unchanged a.c
     git -C "$S/repo" update-index --no-assume-unchanged a.c && printf 'z\n' > "$S/repo/untracked.o"
     plant "S10 an untracked file only" 0 "OK — t at $c" "t $c u"$'\n' t "$S/repo"
-    [[ $rc -eq 0 ]] && echo "check_external_pin: SELFTEST OK (12 plants with the declared verdict and message)" \
+    [[ $rc -eq 0 ]] && echo "check_external_pin: SELFTEST OK (13 plants with the declared verdict and message)" \
         || echo "check_external_pin: SELFTEST FAILED"
     return $rc
 }
