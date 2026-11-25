@@ -84,6 +84,13 @@ typing, elaboration to Core, execution).
 
 ## Build and run one differential test
 
+The steps of this section, and the further things the test ladder needs, are
+scripted: `scripts/bootstrap.sh all` runs them in order and stops at the
+first that fails, `scripts/preflight.sh` reports in seconds what a checkout
+still lacks, and `scripts/run_c.sh file.c` runs one C program through both
+engines and prints what each says (`--libc` to link the C library). The
+manual recipe below is what those scripts execute.
+
 Measured platform: Linux x86_64; other platforms are unverified.
 Prerequisites: Git, Bash, GNU make/coreutils/findutils/diffutils, GNU time
 (default `/usr/bin/time`), a C toolchain, opam 2, Python 3, and elan with Lean 4.35.0 installed (the committed `lean-toolchain`). The

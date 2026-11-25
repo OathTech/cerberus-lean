@@ -218,6 +218,17 @@ must be present at the pinned revisions before a full run; the lanes fail
 closed without them. Until 2026-11-23 a surrounding workspace folder supplied
 them; they are now provisioned per checkout.
 
+Two scripts do the provisioning and check it (2026-11-25); neither is a gate:
+
+```bash
+scripts/preflight.sh            # report, in seconds: what the ladder needs and what is missing
+scripts/bootstrap.sh --help     # switch | sources | build | oracles | all | worktree NAME [BASE]
+```
+
+Run `scripts/preflight.sh` before starting a ladder run: a lane that lacks
+its prerequisite fails closed, but only when it is reached, which can be
+hours in. A clean preflight means the lanes can start, not that they pass.
+
 | Prerequisite | Used by | Where | Revision |
 |---|---|---|---|
 | Local opam switch, fork Lem | everything | `./_opam` ([README](README.md#build-and-run-one-differential-test)) | the Lem rev in `lakefile.toml`; one value at every pin site (`scripts/check_pin_sites.sh`) |
@@ -260,7 +271,11 @@ does make about the machine, on purpose:
   elaboration peaks near 15 GB), and a machine fast enough that rows near
   their wall-clock limits do not time out.
 
-**A new worktree is not ready to gate until it is primed.** It needs its own
+**A new worktree is not ready to gate until it is primed.**
+`scripts/bootstrap.sh worktree NAME [BASE]` does this: a new branch in
+`worktrees/NAME`, the switch shared by a link, the LemLib source copied, and
+everything else built there from scratch. What it provides, if you prime one
+by hand: its own
 `lean_frontend/.lake` (copy the primary checkout's; a fresh clone of LemLib
 needs the network), an `_opam` (a symlink to the primary checkout's switch is
 allowed: never add or remove opam packages through it), regenerated or

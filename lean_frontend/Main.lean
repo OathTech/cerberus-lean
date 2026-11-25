@@ -1780,7 +1780,61 @@ def refuseSwitchesParseCore (tok : String) (next? : Option String) : IO Unit := 
     s!"cerberus-lean: refused — {flag}: --parse-core runs only the Core text parser, which reads no switch set; the switch would be silently ignored (see CONTRACT.md §2)"
     ⟨"a semantics execution mode which consumes the switch set", by decide⟩)
 
+/-- The usage text of `--help` (2026-11-25). A description for a reader, not a contract: the
+    accepted command line is what the parser below accepts and `refuseFlag` refuses, and
+    lean_frontend/CONTRACT.md states what is supported. Kept free of numerals on purpose
+    (the fuel and address-space defaults are named, not repeated). -/
+def usageText : String :=
+"cerberus-lean: the Lean port of the Cerberus C semantics (driver)
+
+The input is Cabs JSON, the parsed C that the OCaml driver exports:
+  cerberus --runtime=DIR --cabs-json file.c > file.json
+To run a C file through both engines in one step, use scripts/run_c.sh in the repository.
+
+usage:
+  cerberus-lean --batch [--first] [OPTIONS] FILE.json [FILE.json ...]
+        run; print one verdict line per execution (exhaustive unless --first)
+  cerberus-lean --pp-core [--first] [OPTIONS] FILE.json [FILE.json ...]
+        print the elaborated Core signature, do not run
+  cerberus-lean --parse-core FILE.core
+        parse a Core text file
+  cerberus-lean --help | -h
+        this text (only as the sole argument)
+
+The mode flag must come first and --first directly after it. --stdin may stand for a file.
+
+options:
+  --runtime DIR             the installed runtime (DIR/lib/cerberus-lib/runtime); otherwise the
+                            CERB_INSTALL_PREFIX environment variable; there is no default
+  --libc CORE --libc-tu J   run with the C library: the pinned libc Core text and its metadata
+                            JSON files (scripts/libc_prep.sh --jsons)
+  --impl-profile NAME       implementation profile: default (signed plain char) or hafnium
+  --switches NAME           PNVI_ae_udi or inner_arg_temps, each alone; every other set is refused
+  --fuel N                  step budget (a positive decimal numeral; the driver has a default)
+  --address-space-top N     top of the address space (the driver has upstream's default)
+  --args STR                the program's command-line arguments
+  --call F [--call-args I]  call the function F with integer arguments, in place of main
+  --quote-core OUT.lean     write the elaborated Core as a Lean module
+  --quote-libc OUT.lean     the same for the C library alone (with --libc)
+  --trace-nodes             print nondeterminism tree nodes
+
+environment:
+  LEAN_ABORT_ON_PANIC       must be set (any value): without it an internal failure would print
+                            and continue with a default value, so the driver refuses to start
+
+Anything this port does not support is refused loudly with exit status two; it never guesses.
+Documentation: lean_frontend/README.md (build and first run), CONTRACT.md (what is supported),
+VALIDATION.md (why to trust it).
+"
+
 def main (args : List String) : IO Unit := do
+  -- `--help` / `-h` as the SOLE argument (2026-11-25): print the usage text, exit 0. Tested
+  -- before everything else, the LEAN_ABORT_ON_PANIC refusal included: printing the usage runs
+  -- no semantics, so there is nothing for a panic to corrupt. In any other position `--help`
+  -- is an unknown flag, refused as before.
+  if args == ["--help"] || args == ["-h"] then
+    IO.print usageText
+    IO.Process.exit 0
   -- Zero-discrepancy Z2-FL-03 (Z2 audit @ 9e86fe67c; fail-closed hygiene):
   -- a Lean `panic!` — this port's fail-stop mirror of every OCaml
   -- failwith/assert/uncaught exception (CerbFloat.truncToInt, CerbMem.killM

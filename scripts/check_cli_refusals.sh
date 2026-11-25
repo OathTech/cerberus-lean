@@ -207,5 +207,34 @@ CEOF
         fi
     fi
 fi
+# --help / -h (2026-11-25): as the SOLE argument the driver prints its usage text on stdout and
+# exits 0, with or without LEAN_ABORT_ON_PANIC (it runs no semantics). Anywhere else `--help` is
+# an unknown flag and is refused like any other, so a help flag cannot become a way to make an
+# invocation with other arguments exit 0.
+for h in --help -h; do
+    for abort in set unset; do
+        if [[ $abort == set ]]; then hout=$(env LEAN_ABORT_ON_PANIC=1 "$BIN" "$h" 2> "$W/help.stderr"); hrc=$?
+        else hout=$(env -u LEAN_ABORT_ON_PANIC "$BIN" "$h" 2> "$W/help.stderr"); hrc=$?; fi
+        if [[ $hrc -ne 0 || "$hout" != *"usage:"* || "$hout" != *"--batch"* || -s "$W/help.stderr" ]]; then
+            echo "check_cli_refusals: FAIL — $h alone (LEAN_ABORT_ON_PANIC $abort): expected the usage text on stdout, empty stderr, exit 0; got rc=$hrc: ${hout:0:120} / $(head -c 200 "$W/help.stderr")"
+            fails=$((fails + 1))
+        fi
+    done
+done
+capture --batch --help "$INPUT"
+if ! check_flag_refusal "--help" "unknown flag"; then
+    echo "check_cli_refusals: FAIL — --help after --batch must be refused as an unknown flag; got rc=$rc: ${out:0:200}"
+    fails=$((fails + 1))
+fi
+capture --help "$INPUT"
+if [[ $rc -eq 0 ]]; then
+    echo "check_cli_refusals: FAIL — --help followed by another argument must not exit 0; got: ${out:0:200}"
+    fails=$((fails + 1))
+fi
+env -u LEAN_ABORT_ON_PANIC "$BIN" --batch "$INPUT" > "$W/noabort.stdout" 2> "$W/noabort.stderr"; narc=$?
+if [[ $narc -ne 2 ]] || ! grep -q 'LEAN_ABORT_ON_PANIC is not set' "$W/noabort.stdout" "$W/noabort.stderr"; then
+    echo "check_cli_refusals: FAIL — a run without LEAN_ABORT_ON_PANIC must still be refused (exit 2); got rc=$narc"
+    fails=$((fails + 1))
+fi
 [[ $fails -eq 0 ]] || exit 1
 echo "check_cli_refusals: OK (unsupported switch sets, mixtures, duplicates, unknown names, placement and repeated options refused; PNVI_ae_udi and inner_arg_temps accepted alone in both forms and agree with their matched-mode oracle witnesses; --call refused under inner_arg_temps; completed runs report the complete switch set on stderr without changing verdict stdout; default control not refused)"

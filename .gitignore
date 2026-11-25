@@ -95,3 +95,8 @@ lean_frontend/docs/**/*.tar
 .LSOverride
 Icon[]
 ._*
+
+# Provisioned by scripts/bootstrap.sh: external corpora (pinned in scripts/external_pins.txt)
+# and branch worktrees
+/deps/
+/worktrees/
