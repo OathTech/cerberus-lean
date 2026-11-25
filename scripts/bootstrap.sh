@@ -56,19 +56,26 @@ do_switch() {
 }
 
 oracle_lem_rev() { python3 -c 'import sys; sys.path.insert(0, "scripts"); from build_independent_oracle import LEM_REV; print(LEM_REV)'; }
-# ONE deps directory for everything: the nearest deps/ at or above this checkout (a worktree
-# under worktrees/ shares its parent's), else this checkout's own, created on first use. Taking
-# the nearest of any content is what scripts/test_pnvi.sh does; a corpus missing from it is
-# cloned into it, never into a second deps/ further in.
+# ONE deps directory for everything, and never outside this repository: this checkout's own
+# deps/, or, for a worktree nested inside another checkout OF THE SAME REPOSITORY (worktrees/NAME),
+# that enclosing checkout's deps/, which the lanes find by walking up. A deps/ directory that
+# merely happens to sit above the repository is not used: nothing is cloned outside it. Default:
+# this checkout's own, created on first use.
 deps_dir() {
-    local d="$ROOT"
-    while [[ "$d" != / ]]; do [[ -d "$d/deps" ]] && { printf '%s\n' "$d/deps"; return; }; d="$(dirname "$d")"; done
+    local d="$ROOT" own theirs
+    own=$(git -C "$ROOT" rev-parse --path-format=absolute --git-common-dir 2>/dev/null) || own=""
+    while [[ "$d" != / ]]; do
+        theirs=$(git -C "$d" rev-parse --path-format=absolute --git-common-dir 2>/dev/null) || theirs=""
+        [[ -n "$own" && "$theirs" == "$own" ]] || break
+        [[ -d "$d/deps" ]] && { printf '%s\n' "$d/deps"; return; }
+        d="$(dirname "$d")"
+    done
     printf '%s\n' "$ROOT/deps"
 }
 find_in_deps() { local p; p="$(deps_dir)/$1"; [[ -d "$p" ]] && printf '%s\n' "$p"; return 0; }
 clone_at() {  # <pin name> <dir relative to deps/> <url> <commit>
-    # A corpus already provided by an enclosing checkout (a worktree under worktrees/ finds its
-    # parent's deps/, as the lanes do) is verified and used; nothing is cloned twice.
+    # A corpus already in the deps directory (deps_dir: this checkout's, or the enclosing
+    # checkout's for a nested worktree) is verified and used.
     local found; found=$(find_in_deps "$2")
     set -- "$1" "${found:-$(deps_dir)/$2}" "$3" "$4"
     if [[ -d "$2" ]]; then
@@ -140,16 +147,19 @@ do_oracles() {
     git cat-file -e "$mb^{commit}" 2>/dev/null || die "the pinned merge-base $mb is not in this clone: run 'scripts/bootstrap.sh sources'"
     # Built under a private name and renamed only after generation succeeded, with the
     # merge-base recorded in a marker: an interrupted run leaves nothing that reads as present.
-    local marker="$src/.bootstrap-generated-at" part="$src.partial"
+    local marker="$src/.bootstrap-generated-at" part
     if [[ -f "$marker" && "$(cat "$marker")" == "$mb" ]] && compgen -G "$src/ocaml_frontend/generated/*.ml" > /dev/null; then
         note "present, generated at the pinned merge-base: $src/ocaml_frontend/generated"
     elif [[ -e "$src/.git" && "$(git -C "$src" rev-parse HEAD 2>/dev/null)" == "$mb" ]] && compgen -G "$src/ocaml_frontend/generated/*.ml" > /dev/null; then
-        # provisioned by hand with the VALIDATION.md recipe: its own clone, checked out at the pin
-        note "present, a clone at the pinned merge-base: $src/ocaml_frontend/generated"
+        # provisioned by hand with the VALIDATION.md recipe: its own clone, checked out at the pin.
+        # Whether its generation completed is not known here; the fork-drift gate compares the
+        # tree's file set and fails closed on a partial one.
+        note "present, a clone at the pinned merge-base (not built by this script): $src/ocaml_frontend/generated"
     else
         [[ ! -e "$src" ]] || die "$src exists but was not completed by this script at merge-base $mb (remove it; this script does not overwrite)"
-        rm -rf "$part" || die "cannot remove the leftover $part"
-        mkdir -p "$part" || die "cannot create $part"
+        mkdir -p "$(dirname "$src")" || die "cannot create $(dirname "$src")"
+        part=$(mktemp -d "$src.partial.XXXXXXXX") || die "cannot create a build directory beside $src"
+        # (a directory left by an interrupted run is named $src.partial.* and can be removed)
         # The upstream sources at the pinned merge-base, straight from this clone's object store.
         printf '    $ git archive %s | tar -x -C %s\n' "$mb" "$part"
         git archive "$mb" | tar -x -C "$part" || die "git archive of the merge-base failed"

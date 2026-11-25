@@ -20,9 +20,10 @@
 # classified comparison the project's trust rests on (verdict sequences, UB locations, refusal
 # and timeout classes, baselines) is the lanes': scripts/test_exec.sh FILE.c for the default
 # mode, scripts/test_libc_exec.sh for libc mode; see scripts/LADDER.md. Nothing is built here.
-# A missing build, generated trees that are stale against the sources, and binaries that are
-# not the ones scripts/bootstrap.sh build recorded for these sources (tools/check_driver_fresh.sh)
-# are each refused with the command that fixes it.
+# A missing build, generated trees that are stale against the sources, binaries that are not the
+# ones scripts/bootstrap.sh build recorded for these sources (tools/check_driver_fresh.sh), a
+# staged Core runtime that differs from its source, and the harnesses' override variables are
+# each refused. The compiled C library's freshness is not checked.
 set -uo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 LIBC=0; PROFILE=""; TIMEOUT=60; FILE=""
@@ -54,13 +55,22 @@ RUNTIME="$ROOT/_build/install/default"
 # Every engine and library path below is resolved from the repository root, as the lanes do
 # (the libc metadata carries root-relative labels). FILE is absolute already.
 cd "$ROOT" || die "cannot cd to $ROOT"
-# Never show results from stale engines: the generated trees must match the sources, and each
-# binary must be the one recorded for the current sources.
+# Never show results from stale or substituted engines. Refused: an override variable of the
+# harnesses (they replace an engine or silence the freshness check; this script has no use for
+# them); generated trees that do not match the sources; a binary that is not the one recorded
+# for the current sources; a staged Core runtime that differs from runtime/libcore. NOT checked:
+# the compiled C library (libc.co) against runtime/libc, which only a build can establish.
+for v in CERB_DRIVER_FRESH_OVERRIDE CERB_ORACLE_BIN_OVERRIDE CERB_LEAN_BIN_OVERRIDE; do
+    [[ -z "${!v:-}" ]] || die "$v is set: this script does not run with the harnesses' override variables (unset it)"
+done
 ( tools/check_lem_sync.sh --check > /dev/null 2>&1 && tools/check_lem_sync.sh --check-lean > /dev/null 2>&1 \
     && tools/check_handwritten_sync.sh > /dev/null 2>&1 ) \
     || die "the generated trees are missing or stale against the sources — run: scripts/bootstrap.sh build"
 fresh=$(tools/check_driver_fresh.sh --check 2>&1) \
     || { printf '%s\n' "$fresh" | tail -6 >&2; die "a driver binary is not the one built from the current sources — run: scripts/bootstrap.sh build"; }
+diff -rq runtime/libcore "$RUNTIME/lib/cerberus-lib/runtime/libcore" > "$ROOT/.tmp/run_c.runtime.$$" 2>&1 \
+    || { head -5 "$ROOT/.tmp/run_c.runtime.$$" >&2; rm -f "$ROOT/.tmp/run_c.runtime.$$"; die "the staged Core runtime differs from runtime/libcore — run: scripts/bootstrap.sh build"; }
+rm -f "$ROOT/.tmp/run_c.runtime.$$"
 
 mkdir -p "$ROOT/.tmp" || die "cannot create $ROOT/.tmp"
 W=$(mktemp -d "$ROOT/.tmp/run_c.XXXXXXXX") || die "mktemp failed"

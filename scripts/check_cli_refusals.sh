@@ -231,6 +231,15 @@ if [[ $rc -eq 0 ]]; then
     echo "check_cli_refusals: FAIL — --help followed by another argument must not exit 0; got: ${out:0:200}"
     fails=$((fails + 1))
 fi
+# A mode with no input at all is a malformed command line: a usage line and a nonzero exit,
+# never a silent pass (--parse-core alone exited 0 with no output until 2026-11-25).
+for mode in --parse-core --batch --pp-core; do
+    capture "$mode"
+    if [[ $rc -eq 0 || "$out" != *"usage: cerberus-lean"* ]]; then
+        echo "check_cli_refusals: FAIL — '$mode' with no input must print a usage line and not exit 0; got rc=$rc: ${out:0:160}"
+        fails=$((fails + 1))
+    fi
+done
 # -h anywhere but alone is an ordinary argument (a file name): never the help, never exit 0.
 for hv in "-h $INPUT" "--batch -h $INPUT" "--batch $INPUT -h"; do
     # shellcheck disable=SC2086  # deliberate word splitting of the argument list
@@ -246,4 +255,4 @@ if [[ $narc -ne 2 ]] || ! grep -q 'LEAN_ABORT_ON_PANIC is not set' "$W/noabort.s
     fails=$((fails + 1))
 fi
 [[ $fails -eq 0 ]] || exit 1
-echo "check_cli_refusals: OK (--help/-h print the usage only as the sole argument and a run without LEAN_ABORT_ON_PANIC is still refused; unsupported switch sets, mixtures, duplicates, unknown names, placement and repeated options refused; PNVI_ae_udi and inner_arg_temps accepted alone in both forms and agree with their matched-mode oracle witnesses; --call refused under inner_arg_temps; completed runs report the complete switch set on stderr without changing verdict stdout; default control not refused)"
+echo "check_cli_refusals: OK (--help/-h print the usage only as the sole argument and a run without LEAN_ABORT_ON_PANIC is still refused; a mode with no input is not a pass; unsupported switch sets, mixtures, duplicates, unknown names, placement and repeated options refused; PNVI_ae_udi and inner_arg_temps accepted alone in both forms and agree with their matched-mode oracle witnesses; --call refused under inner_arg_temps; completed runs report the complete switch set on stderr without changing verdict stdout; default control not refused)"

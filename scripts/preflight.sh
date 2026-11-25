@@ -12,7 +12,7 @@
 #   scripts/preflight.sh --tier fast   Tier A only (leaves out the independent oracle)
 #
 # It reads and reports; it never builds, downloads, installs or changes a prerequisite, and it
-# writes no file. It is NOT a gate and proves nothing about the semantics: a clean
+# creates no file (git may refresh a corpus checkout's index while its status is read). It is NOT a gate and proves nothing about the semantics: a clean
 # report means the lanes can start, not that they pass. Exit 0 iff nothing is MISSING.
 set -uo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -72,7 +72,8 @@ else miss "gcc (GCC_BIN='${GCC_BIN:-}', else gcc on the path)" "install gcc"; fi
 want_lean=$(sed 's/.*://' lean_frontend/lean-toolchain 2>/dev/null)
 if command -v lake > /dev/null 2>&1 && command -v elan > /dev/null 2>&1; then
     # `elan toolchain list`, not `elan which`: the latter may install a missing toolchain.
-    if elan toolchain list 2>/dev/null | grep -q -- "$want_lean"; then ok "Lean toolchain $want_lean (elan)"
+    toolchains=$(elan toolchain list 2>/dev/null)
+    if [[ "$toolchains" =~ (^|[^0-9A-Za-z.])"$want_lean"([^0-9A-Za-z.-]|$) ]]; then ok "Lean toolchain $want_lean (elan)"
     else miss "Lean toolchain $want_lean is not installed" "elan toolchain install $(cat lean_frontend/lean-toolchain)"; fi
 else miss "elan / lake not on the path" "install elan (https://lean-lang.org), then: elan toolchain install $(cat lean_frontend/lean-toolchain)"; fi
 

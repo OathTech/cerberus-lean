@@ -1798,16 +1798,17 @@ usage:
         print the elaborated Core signature, do not run
   cerberus-lean [OPTIONS] FILE.json [FILE.json ...]
         run and print a human-readable report (the lanes use --batch)
-  cerberus-lean --parse-core FILE.core
-        parse a Core text file
+  cerberus-lean --parse-core FILE.core [FILE.core ...]
+        parse Core text files
   cerberus-lean
         with no argument: a small self-test
   cerberus-lean --help | -h
         this text; only as the sole argument
 
 A mode flag, when given, is the first argument, and --first directly follows --batch or
---pp-core. With a mode flag, --stdin may be given as the only input in place of a file.
-An argument that does not start with two dashes is read as a file name.
+--pp-core. --stdin reads one input from standard input in place of a file; do not combine it
+with files. An argument that does not start with two dashes is read as a file name, and an
+option takes the next argument as its value whatever that argument is.
 
 options:
   --runtime DIR             the installed runtime (DIR/lib/cerberus-lib/runtime); otherwise the
@@ -1831,8 +1832,8 @@ environment:
                             default value, so the driver refuses to start
 
 An unknown flag, a known flag out of position and an unsupported feature are refused with a
-structured message; a malformed command line (a missing option value, no input) ends with a
-usage or error line. In both cases the exit status is not zero and nothing has been run.
+structured message; a command line with no input, or with its last option missing a value, ends
+with a usage or error line. In these cases the exit status is not zero and nothing has been run.
 Documentation: lean_frontend/README.md (build and first run), CONTRACT.md (what is supported),
 VALIDATION.md (why to trust it).
 "
@@ -2156,6 +2157,12 @@ def main (args : List String) : IO Unit := do
         if a == "--switches" || a.startsWith "--switches=" then refuseSwitchesParseCore a more.head?
         if a.startsWith "--" && a != "--stdin" then refuseFlag a
         rest := more
+    -- No file at all is a malformed command line, not a pass (2026-11-25, pre-merge review of
+    -- the usage text): the loop below ran zero times and the driver exited 0 in silence, so a
+    -- caller whose file list expanded to nothing read success. Same shape as the other modes.
+    if files.isEmpty then
+      IO.eprintln "usage: cerberus-lean --parse-core FILE.core [FILE.core ...]"
+      IO.Process.exit 1
     let mut failures := 0
     for file in files do
       let input ← if file == "--stdin" then do
