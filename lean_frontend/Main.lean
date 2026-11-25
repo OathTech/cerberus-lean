@@ -1793,36 +1793,46 @@ To run a C file through both engines in one step, use scripts/run_c.sh in the re
 
 usage:
   cerberus-lean --batch [--first] [OPTIONS] FILE.json [FILE.json ...]
-        run; print one verdict line per execution (exhaustive unless --first)
+        run; print one verdict line per execution (every execution, or one with --first)
   cerberus-lean --pp-core [--first] [OPTIONS] FILE.json [FILE.json ...]
         print the elaborated Core signature, do not run
+  cerberus-lean [OPTIONS] FILE.json [FILE.json ...]
+        run and print a human-readable report (the lanes use --batch)
   cerberus-lean --parse-core FILE.core
         parse a Core text file
+  cerberus-lean
+        with no argument: a small self-test
   cerberus-lean --help | -h
-        this text (only as the sole argument)
+        this text; only as the sole argument
 
-The mode flag must come first and --first directly after it. --stdin may stand for a file.
+A mode flag, when given, is the first argument, and --first directly follows --batch or
+--pp-core. With a mode flag, --stdin may be given as the only input in place of a file.
+An argument that does not start with two dashes is read as a file name.
 
 options:
   --runtime DIR             the installed runtime (DIR/lib/cerberus-lib/runtime); otherwise the
                             CERB_INSTALL_PREFIX environment variable; there is no default
-  --libc CORE --libc-tu J   run with the C library: the pinned libc Core text and its metadata
-                            JSON files (scripts/libc_prep.sh --jsons)
+  --libc CORE --libc-tu J   run with the C library: the pinned libc Core text and each of its
+                            metadata JSON files (scripts/libc_prep.sh --jsons), given together
   --impl-profile NAME       implementation profile: default (signed plain char) or hafnium
   --switches NAME           PNVI_ae_udi or inner_arg_temps, each alone; every other set is refused
-  --fuel N                  step budget (a positive decimal numeral; the driver has a default)
+  --fuel N                  step budget, a positive number (the driver has a default)
   --address-space-top N     top of the address space (the driver has upstream's default)
   --args STR                the program's command-line arguments
   --call F [--call-args I]  call the function F with integer arguments, in place of main
-  --quote-core OUT.lean     write the elaborated Core as a Lean module
-  --quote-libc OUT.lean     the same for the C library alone (with --libc)
+  --quote-core OUT.lean     write the elaborated Core as a Lean module; --quote-libc OUT.lean
+                            does the same for the C library alone. Both have further
+                            requirements on the other arguments: lean_frontend/README.md
   --trace-nodes             print nondeterminism tree nodes
 
 environment:
-  LEAN_ABORT_ON_PANIC       must be set (any value): without it an internal failure would print
-                            and continue with a default value, so the driver refuses to start
+  LEAN_ABORT_ON_PANIC       must be set (any value) for every invocation except this help:
+                            without it an internal failure would print and continue with a
+                            default value, so the driver refuses to start
 
-Anything this port does not support is refused loudly with exit status two; it never guesses.
+An unknown flag, a known flag out of position and an unsupported feature are refused with a
+structured message; a malformed command line (a missing option value, no input) ends with a
+usage or error line. In both cases the exit status is not zero and nothing has been run.
 Documentation: lean_frontend/README.md (build and first run), CONTRACT.md (what is supported),
 VALIDATION.md (why to trust it).
 "

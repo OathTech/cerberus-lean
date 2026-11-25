@@ -11,8 +11,8 @@
 #   scripts/preflight.sh               everything Tier A + Tier B needs
 #   scripts/preflight.sh --tier fast   Tier A only (leaves out the independent oracle)
 #
-# It reads and reports; it never builds, downloads, writes outside its own scratch file or
-# changes a prerequisite. It is NOT a gate and proves nothing about the semantics: a clean
+# It reads and reports; it never builds, downloads, installs or changes a prerequisite, and it
+# writes no file. It is NOT a gate and proves nothing about the semantics: a clean
 # report means the lanes can start, not that they pass. Exit 0 iff nothing is MISSING.
 set -uo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -20,9 +20,9 @@ cd "$ROOT" || exit 2
 TIER=full
 while [[ $# -gt 0 ]]; do
     case "$1" in
-        --tier) TIER="${2:-}"; shift 2 ;;
+        --tier) [[ $# -ge 2 ]] || { echo "preflight: --tier needs a value (fast or full)" >&2; exit 2; }; TIER="$2"; shift 2 ;;
         --tier=*) TIER="${1#--tier=}"; shift ;;
-        -h|--help) sed -n '2,19p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'; exit 0 ;;
+        -h|--help) awk 'NR > 1 && /^#/ { sub(/^# ?/, ""); print; next } NR > 1 { exit }' "${BASH_SOURCE[0]}"; exit 0 ;;
         *) echo "preflight: unknown argument '$1' (see --help)" >&2; exit 2 ;;
     esac
 done
@@ -34,13 +34,23 @@ miss() { printf '  MISSING  %s\n' "$1"; [[ -n "${2:-}" ]] && printf '           
 warn() { printf '  warn     %s\n' "$1"; warned=$((warned + 1)); }
 section() { printf '\n%s\n' "$1"; }
 in_switch() { opam exec --switch="$ROOT" -- "$@"; }
-# A corpus directory as the lanes find it: the environment override, else deps/<rel> in this
-# directory or the nearest ancestor that has it.
+# A corpus directory AS ITS LANE FINDS IT: the environment override, else deps/<rel> in this
+# directory or the nearest ancestor that has it (the CN and libxml2 lanes) ...
 find_dep() {  # <env override value> <relative path under deps/>
     if [[ -n "$1" ]]; then printf '%s\n' "$1"; return; fi
     local d="$ROOT"
     while [[ "$d" != / ]]; do
         [[ -d "$d/deps/$2" ]] && { printf '%s\n' "$d/deps/$2"; return; }
+        d="$(dirname "$d")"
+    done
+}
+# ... or, for the pKVM case study, under the nearest deps/ directory of ANY content
+# (scripts/test_pnvi.sh stops at the first deps/ it meets, whether or not the corpus is in it).
+find_dep_nearest_deps() {  # <env override value> <name under deps/>
+    if [[ -n "$1" ]]; then printf '%s\n' "$1"; return; fi
+    local d="$ROOT"
+    while [[ "$d" != / ]]; do
+        [[ -d "$d/deps" ]] && { printf '%s\n' "$d/deps/$2"; return; }
         d="$(dirname "$d")"
     done
 }
@@ -61,7 +71,8 @@ if [[ -n "$gcc_bin" ]]; then ok "gcc: $gcc_bin ($("$gcc_bin" -dumpfullversion 2>
 else miss "gcc (GCC_BIN='${GCC_BIN:-}', else gcc on the path)" "install gcc"; fi
 want_lean=$(sed 's/.*://' lean_frontend/lean-toolchain 2>/dev/null)
 if command -v lake > /dev/null 2>&1 && command -v elan > /dev/null 2>&1; then
-    if (cd lean_frontend && elan which lean > /dev/null 2>&1); then ok "Lean toolchain $want_lean (elan)"
+    # `elan toolchain list`, not `elan which`: the latter may install a missing toolchain.
+    if elan toolchain list 2>/dev/null | grep -q -- "$want_lean"; then ok "Lean toolchain $want_lean (elan)"
     else miss "Lean toolchain $want_lean is not installed" "elan toolchain install $(cat lean_frontend/lean-toolchain)"; fi
 else miss "elan / lake not on the path" "install elan (https://lean-lang.org), then: elan toolchain install $(cat lean_frontend/lean-toolchain)"; fi
 
@@ -106,15 +117,16 @@ else
 fi
 default_tree="$ROOT/.validation-foundations/fork-drift-upstream/ocaml_frontend/generated"
 if [[ -n "${CERB_UPSTREAM_TREE:-}" ]]; then
-    [[ -d "$CERB_UPSTREAM_TREE" ]] && ok "CERB_UPSTREAM_TREE=$CERB_UPSTREAM_TREE" \
-        || miss "CERB_UPSTREAM_TREE=$CERB_UPSTREAM_TREE is not a directory" "scripts/bootstrap.sh oracles"
-elif [[ -d "$default_tree" ]]; then
+    # A directory is not enough: the generation recipe creates it before Lem runs.
+    if [[ -d "$CERB_UPSTREAM_TREE" ]] && compgen -G "$CERB_UPSTREAM_TREE/*.ml" > /dev/null; then ok "CERB_UPSTREAM_TREE=$CERB_UPSTREAM_TREE"
+    else miss "CERB_UPSTREAM_TREE=$CERB_UPSTREAM_TREE is not a generated OCaml tree (no .ml files)" "scripts/bootstrap.sh oracles"; fi
+elif compgen -G "$default_tree/*.ml" > /dev/null; then
     miss "CERB_UPSTREAM_TREE is not set (the pristine generated tree exists)" "export CERB_UPSTREAM_TREE=$default_tree"
 else
     miss "no pristine upstream generated tree" "scripts/bootstrap.sh oracles, then export CERB_UPSTREAM_TREE=$default_tree"
 fi
 if [[ "$TIER" == full ]]; then
-    out=$(python3 scripts/ensure_independent_oracle.py --no-build 2>&1 | tail -1)
+    out=$(PYTHONDONTWRITEBYTECODE=1 python3 scripts/ensure_independent_oracle.py --no-build 2>&1 | tail -1)
     [[ "$out" == *"VALID standing build"* ]] && ok "independent upstream oracle (rows B10, B12)" \
         || miss "independent upstream oracle: ${out:-not standing}" "scripts/bootstrap.sh oracles"
 fi
@@ -127,7 +139,7 @@ corpus() {  # <pin name> <rows> <dir or empty> <bootstrap hint>
 }
 corpus cn "A11, B10" "$(find_dep "${CN_CORPUS_DIR:-}" cn/tests/cn)" "scripts/bootstrap.sh sources   (needs the network)"
 corpus libxml2 "A10, B1, B12" "$(find_dep "${LIBXML2_DIR:-}" libxml2)" "scripts/bootstrap.sh sources   (needs the network)"
-corpus pkvm "A14" "$(find_dep "${PKVM_CASE_STUDY:-}" CN-pKVM-buddy-allocator-case-study)" "scripts/bootstrap.sh sources   (needs the network)"
+corpus pkvm "A14" "$(find_dep_nearest_deps "${PKVM_CASE_STUDY:-}" CN-pKVM-buddy-allocator-case-study)" "scripts/bootstrap.sh sources   (needs the network)"
 
 section "Build state"
 have() { [[ -e "$1" ]] && ok "$2" || miss "$2 ($1)" "$3"; }

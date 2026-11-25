@@ -19,12 +19,14 @@
 # THIS IS A CONVENIENCE, NOT A GATE. "Identical" here is a byte comparison of two stdouts. The
 # classified comparison the project's trust rests on (verdict sequences, UB locations, refusal
 # and timeout classes, baselines) is the lanes': scripts/test_exec.sh FILE.c for the default
-# mode, scripts/test_libc_exec.sh for libc mode; see scripts/LADDER.md. Nothing is built here:
-# a missing or stale build is reported with the command that fixes it.
+# mode, scripts/test_libc_exec.sh for libc mode; see scripts/LADDER.md. Nothing is built here.
+# A missing build, generated trees that are stale against the sources, and binaries that are
+# not the ones scripts/bootstrap.sh build recorded for these sources (tools/check_driver_fresh.sh)
+# are each refused with the command that fixes it.
 set -uo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 LIBC=0; PROFILE=""; TIMEOUT=60; FILE=""
-usage() { sed -n '2,23p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'; }
+usage() { awk 'NR > 1 && /^#/ { sub(/^# ?/, ""); print; next } NR > 1 { exit }' "${BASH_SOURCE[0]}"; }
 die() { echo "run_c: $*" >&2; exit 2; }
 while [[ $# -gt 0 ]]; do
     case "$1" in
@@ -49,21 +51,27 @@ RUNTIME="$ROOT/_build/install/default"
 [[ -d "$ROOT/_opam" ]] || die "no opam switch at $ROOT/_opam — run: scripts/bootstrap.sh switch"
 [[ -x "$ORACLE" && -e "$RUNTIME/lib/cerberus-lib/runtime/libcore/std.core" ]] || die "the OCaml oracle or its runtime is not built — run: scripts/bootstrap.sh build"
 [[ -x "$LEAN" ]] || die "the Lean driver is not built — run: scripts/bootstrap.sh build"
-# Never show results from engines built over stale generated trees.
-( cd "$ROOT" && tools/check_lem_sync.sh --check > /dev/null 2>&1 && tools/check_lem_sync.sh --check-lean > /dev/null 2>&1 \
+# Every engine and library path below is resolved from the repository root, as the lanes do
+# (the libc metadata carries root-relative labels). FILE is absolute already.
+cd "$ROOT" || die "cannot cd to $ROOT"
+# Never show results from stale engines: the generated trees must match the sources, and each
+# binary must be the one recorded for the current sources.
+( tools/check_lem_sync.sh --check > /dev/null 2>&1 && tools/check_lem_sync.sh --check-lean > /dev/null 2>&1 \
     && tools/check_handwritten_sync.sh > /dev/null 2>&1 ) \
     || die "the generated trees are missing or stale against the sources — run: scripts/bootstrap.sh build"
+fresh=$(tools/check_driver_fresh.sh --check 2>&1) \
+    || { printf '%s\n' "$fresh" | tail -6 >&2; die "a driver binary is not the one built from the current sources — run: scripts/bootstrap.sh build"; }
 
 mkdir -p "$ROOT/.tmp" || die "cannot create $ROOT/.tmp"
 W=$(mktemp -d "$ROOT/.tmp/run_c.XXXXXXXX") || die "mktemp failed"
 trap 'rm -rf "$W"' EXIT
-export CERB_MEM_MAX="${CERB_MEM_MAX:-8G}"
+export CERB_MEM_MAX="${CERB_MEM_MAX:-8G}" NO_COLOR=1 TERM=dumb   # plain diagnostics, as the lanes set
 oracle() { "$ROOT/scripts/capped" timeout "${TIMEOUT}s" opam exec --switch="$ROOT" -- "$ORACLE" --runtime="$RUNTIME" "$@"; }
 PROFILE_ARG=(); [[ -z "$PROFILE" ]] || PROFILE_ARG=("--impl-profile=$PROFILE")
 MODE_ARG=(--nolibc); LEAN_LIBC=()
 if [[ $LIBC -eq 1 ]]; then
     MODE_ARG=()
-    jsons=$(cd "$ROOT" && opam exec --switch="$ROOT" -- scripts/libc_prep.sh --jsons "$W/libcjson" 2> "$W/libc_prep.err") \
+    jsons=$(opam exec --switch="$ROOT" -- scripts/libc_prep.sh --jsons "$W/libcjson" 2> "$W/libc_prep.err") \
         || { cat "$W/libc_prep.err" >&2; die "scripts/libc_prep.sh --jsons failed (the pinned libc dump does not match this build)"; }
     LEAN_LIBC=(--libc "$ROOT/tests/libc/libc.core")
     while IFS= read -r j; do [[ -n "$j" ]] && LEAN_LIBC+=(--libc-tu "$j"); done <<<"$jsons"
@@ -77,6 +85,7 @@ show() {  # <title> <stdout file> <stderr file> <exit status>
     # line, the Lean driver's switch report).
     if grep -v -E '^(Time spent: [0-9.]+ seconds|cerberus-lean switches: \[[a-z_, ]*\])$' "$3" > "$W/stderr.show" && [[ -s "$W/stderr.show" ]]; then
         echo "   -- stderr:"; sed 's/^/   | /' "$W/stderr.show" | head -40
+        [[ $(wc -l < "$W/stderr.show") -le 40 ]] || echo "   | ... ($(( $(wc -l < "$W/stderr.show") - 40 )) more lines not shown)"
     fi
     case "$4" in
         124) echo "   -- timed out after ${TIMEOUT}s (raise with --timeout)" ;;

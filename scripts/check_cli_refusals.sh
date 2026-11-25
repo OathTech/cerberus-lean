@@ -231,10 +231,19 @@ if [[ $rc -eq 0 ]]; then
     echo "check_cli_refusals: FAIL — --help followed by another argument must not exit 0; got: ${out:0:200}"
     fails=$((fails + 1))
 fi
+# -h anywhere but alone is an ordinary argument (a file name): never the help, never exit 0.
+for hv in "-h $INPUT" "--batch -h $INPUT" "--batch $INPUT -h"; do
+    # shellcheck disable=SC2086  # deliberate word splitting of the argument list
+    capture $hv
+    if [[ $rc -eq 0 || "$out" == *"usage:"*"--parse-core FILE.core"* ]]; then
+        echo "check_cli_refusals: FAIL — '$hv' must not print the help or exit 0; got rc=$rc: ${out:0:160}"
+        fails=$((fails + 1))
+    fi
+done
 env -u LEAN_ABORT_ON_PANIC "$BIN" --batch "$INPUT" > "$W/noabort.stdout" 2> "$W/noabort.stderr"; narc=$?
 if [[ $narc -ne 2 ]] || ! grep -q 'LEAN_ABORT_ON_PANIC is not set' "$W/noabort.stdout" "$W/noabort.stderr"; then
     echo "check_cli_refusals: FAIL — a run without LEAN_ABORT_ON_PANIC must still be refused (exit 2); got rc=$narc"
     fails=$((fails + 1))
 fi
 [[ $fails -eq 0 ]] || exit 1
-echo "check_cli_refusals: OK (unsupported switch sets, mixtures, duplicates, unknown names, placement and repeated options refused; PNVI_ae_udi and inner_arg_temps accepted alone in both forms and agree with their matched-mode oracle witnesses; --call refused under inner_arg_temps; completed runs report the complete switch set on stderr without changing verdict stdout; default control not refused)"
+echo "check_cli_refusals: OK (--help/-h print the usage only as the sole argument and a run without LEAN_ABORT_ON_PANIC is still refused; unsupported switch sets, mixtures, duplicates, unknown names, placement and repeated options refused; PNVI_ae_udi and inner_arg_temps accepted alone in both forms and agree with their matched-mode oracle witnesses; --call refused under inner_arg_temps; completed runs report the complete switch set on stderr without changing verdict stdout; default control not refused)"

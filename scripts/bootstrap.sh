@@ -40,7 +40,7 @@ run()  { printf '    $ %s\n' "$*"; "$@" || die "exit $? from: $*"; }
 in_switch() { run opam exec --switch="$ROOT" -- "$@"; }
 lem_pin() { sed -n 's/^lem-pin=//p' scripts/fork_drift_manifest.txt | head -1; }
 merge_base() { sed -n 's/^merge-base=//p' scripts/fork_drift_manifest.txt | head -1; }
-usage() { sed -n '2,27p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'; }
+usage() { awk 'NR > 1 && /^#/ { sub(/^# ?/, ""); print; next } NR > 1 { exit }' "${BASH_SOURCE[0]}"; }
 
 do_switch() {
     say "OCaml switch"
@@ -56,20 +56,26 @@ do_switch() {
 }
 
 oracle_lem_rev() { python3 -c 'import sys; sys.path.insert(0, "scripts"); from build_independent_oracle import LEM_REV; print(LEM_REV)'; }
-find_in_deps() {  # <dir relative to deps/>: this checkout's deps/, else the nearest ancestor's
+# ONE deps directory for everything: the nearest deps/ at or above this checkout (a worktree
+# under worktrees/ shares its parent's), else this checkout's own, created on first use. Taking
+# the nearest of any content is what scripts/test_pnvi.sh does; a corpus missing from it is
+# cloned into it, never into a second deps/ further in.
+deps_dir() {
     local d="$ROOT"
-    while [[ "$d" != / ]]; do [[ -d "$d/deps/$1" ]] && { printf '%s\n' "$d/deps/$1"; return; }; d="$(dirname "$d")"; done
+    while [[ "$d" != / ]]; do [[ -d "$d/deps" ]] && { printf '%s\n' "$d/deps"; return; }; d="$(dirname "$d")"; done
+    printf '%s\n' "$ROOT/deps"
 }
+find_in_deps() { local p; p="$(deps_dir)/$1"; [[ -d "$p" ]] && printf '%s\n' "$p"; return 0; }
 clone_at() {  # <pin name> <dir relative to deps/> <url> <commit>
     # A corpus already provided by an enclosing checkout (a worktree under worktrees/ finds its
     # parent's deps/, as the lanes do) is verified and used; nothing is cloned twice.
     local found; found=$(find_in_deps "$2")
-    set -- "$1" "${found:-$ROOT/deps/$2}" "$3" "$4"
+    set -- "$1" "${found:-$(deps_dir)/$2}" "$3" "$4"
     if [[ -d "$2" ]]; then
         scripts/check_external_pin.sh "$1" "$2" && return
         die "$2 exists but is not a clean checkout of the pinned commit $4 (fix or remove it; this script does not overwrite)"
     fi
-    mkdir -p "$ROOT/deps" || die "cannot create deps/"
+    mkdir -p "$(dirname "$2")" || die "cannot create $(dirname "$2")"
     run git clone "$3" "$2"
     run git -C "$2" checkout --detach "$4"
     run scripts/check_external_pin.sh "$1" "$2"
@@ -79,7 +85,10 @@ do_sources() {
     say "Upstream git ref"
     if git remote get-url upstream > /dev/null 2>&1; then
         [[ "$(git remote get-url upstream)" == *rems-project/cerberus* ]] || die "remote 'upstream' is $(git remote get-url upstream), not rems-project/cerberus"
-    else run git remote add upstream "$UPSTREAM_URL"; fi
+    else
+        run git remote add upstream "$UPSTREAM_URL"
+        run git config remote.upstream.tagOpt --no-tags   # this repository's config only
+    fi
     # --no-tags: upstream's tags do not belong in this fork's tag namespace.
     git rev-parse --verify -q upstream/master > /dev/null && note "upstream/master present" \
         || run git fetch --no-tags upstream master:refs/remotes/upstream/master
@@ -98,8 +107,8 @@ do_sources() {
     local lem rev; lem=$(find_in_deps lem-upstream); rev=$(oracle_lem_rev)
     [[ "$rev" =~ ^[0-9a-f]{40}$ ]] || die "cannot read LEM_REV from scripts/build_independent_oracle.py"
     if [[ -z "$lem" ]]; then
-        mkdir -p "$ROOT/deps" || die "cannot create deps/"
-        lem="$ROOT/deps/lem-upstream"; run git clone "$LEM_UPSTREAM_URL" "$lem"
+        lem="$(deps_dir)/lem-upstream"; mkdir -p "$(dirname "$lem")" || die "cannot create $(dirname "$lem")"
+        run git clone "$LEM_UPSTREAM_URL" "$lem"
     fi
     git -C "$lem" cat-file -e "$rev^{commit}" 2>/dev/null || die "$lem does not contain the oracle's Lem revision $rev (fetch it there: git -C $lem fetch origin)"
     note "upstream Lem with $rev: $lem"
@@ -112,11 +121,13 @@ do_build() {
     # checkout as its root and fail with "Don't know how to build".
     in_switch make prelude-src
     in_switch dune build --root . backend/driver/main.exe cerberus-lib.install
+    in_switch tools/check_driver_fresh.sh --record-oracle   # this binary, from these sources
     in_switch dune install --root . --prefix "$ROOT/_build/local-install" cerberus-lib
     in_switch dune build --root . cerberus.install
     in_switch make lean-prelude-src
     in_switch ./scripts/capped make lean-native-obj
     run bash -c 'cd lean_frontend && ../scripts/capped lake build CerberusLean cerberus-lean'
+    in_switch tools/check_driver_fresh.sh --record-lean
     run bash -c 'cd lean_frontend/speclab && ../../scripts/capped lake build'
     [[ -e _build/install/default/lib/cerberus-lib/runtime/libcore/std.core ]] || die "the runtime was not staged (std.core missing after the build)"
     [[ -x lean_frontend/.lake/build/bin/cerberus-lean ]] || die "the Lean driver is missing after the build"
@@ -127,14 +138,25 @@ do_oracles() {
     [[ -d _opam ]] || die "no ./_opam: run 'scripts/bootstrap.sh switch' first"
     local mb src="$ROOT/.validation-foundations/fork-drift-upstream"; mb=$(merge_base)
     git cat-file -e "$mb^{commit}" 2>/dev/null || die "the pinned merge-base $mb is not in this clone: run 'scripts/bootstrap.sh sources'"
-    if [[ -d "$src/ocaml_frontend/generated" ]]; then note "present: $src/ocaml_frontend/generated"
+    # Built under a private name and renamed only after generation succeeded, with the
+    # merge-base recorded in a marker: an interrupted run leaves nothing that reads as present.
+    local marker="$src/.bootstrap-generated-at" part="$src.partial"
+    if [[ -f "$marker" && "$(cat "$marker")" == "$mb" ]] && compgen -G "$src/ocaml_frontend/generated/*.ml" > /dev/null; then
+        note "present, generated at the pinned merge-base: $src/ocaml_frontend/generated"
+    elif [[ -e "$src/.git" && "$(git -C "$src" rev-parse HEAD 2>/dev/null)" == "$mb" ]] && compgen -G "$src/ocaml_frontend/generated/*.ml" > /dev/null; then
+        # provisioned by hand with the VALIDATION.md recipe: its own clone, checked out at the pin
+        note "present, a clone at the pinned merge-base: $src/ocaml_frontend/generated"
     else
-        [[ ! -e "$src" ]] || die "$src exists without a generated tree (remove it; this script does not overwrite)"
-        mkdir -p "$src" || die "cannot create $src"
+        [[ ! -e "$src" ]] || die "$src exists but was not completed by this script at merge-base $mb (remove it; this script does not overwrite)"
+        rm -rf "$part" || die "cannot remove the leftover $part"
+        mkdir -p "$part" || die "cannot create $part"
         # The upstream sources at the pinned merge-base, straight from this clone's object store.
-        printf '    $ git archive %s | tar -x -C %s\n' "$mb" "$src"
-        git archive "$mb" | tar -x -C "$src" || die "git archive of the merge-base failed"
-        in_switch make -C "$src" prelude-src
+        printf '    $ git archive %s | tar -x -C %s\n' "$mb" "$part"
+        git archive "$mb" | tar -x -C "$part" || die "git archive of the merge-base failed"
+        in_switch make -C "$part" prelude-src
+        compgen -G "$part/ocaml_frontend/generated/*.ml" > /dev/null || die "generation produced no OCaml files in $part"
+        printf '%s\n' "$mb" > "$part/.bootstrap-generated-at" || die "cannot write the completion marker"
+        run mv "$part" "$src"
     fi
     say "Independent upstream oracle (rows B10, B12)"
     # Upstream Lem's sources at the oracle's pinned revision come from a FULL clone of
@@ -168,12 +190,15 @@ do_worktree() {
         run cp -a lean_frontend/.lake/packages "$dst/lean_frontend/.lake/packages"
         run rm -rf "$dst/lean_frontend/.lake/packages/LemLib/lean-lib/.lake"
     else note "no LemLib clone here to copy: the worktree's first Lake build will fetch it [network]"; fi
+    [[ -x "$dst/scripts/bootstrap.sh" ]] || { note "the base $base predates scripts/bootstrap.sh: build the worktree by the README recipe there (dune needs --root .)"; build=0; }
     if [[ $build -eq 1 ]]; then
         run "$dst/scripts/bootstrap.sh" build
         run "$dst/scripts/bootstrap.sh" oracles
         note "ready: cd $dst && scripts/preflight.sh"
     else note "not built: cd $dst && scripts/bootstrap.sh build && scripts/bootstrap.sh oracles"; fi
-    note "when the branch is merged or dropped: rm $dst/_opam && git worktree remove --force $dst && git branch -d $name"
+    # No --force: build output and the link are ignored files and do not block the removal, so
+    # git refuses only when uncommitted work would be lost.
+    note "when the branch is merged or dropped: git worktree remove $dst && git branch -d $name"
 }
 
 cmd="${1:-}"

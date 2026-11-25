@@ -790,7 +790,8 @@ Nothing else.
   dropped — the census is a reading of the grammar and the desugarer, probe-confirmed, not a proof of completeness.
   Deliberate fork ≠ pristine differences (below).
 - *`LEAN_ABORT_ON_PANIC` required* (Z2-FL-03): the driver refuses to
-  start (exit 2) without it, because a Lean `panic!` — the fail-stop
+  start (exit 2) without it (one exception since 2026-11-25: `--help` or
+  `-h` as the sole argument prints the usage text and runs nothing), because a Lean `panic!` — the fail-stop
   mirror of every OCaml failwith/assert/uncaught exception — would
   otherwise print and CONTINUE with a default value. Every harness sets
   it (`scripts/common.sh run_cerberus_lean`).
